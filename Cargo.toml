@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+wgpu = "22.1.0"
+floem = { git = "https://github.com/lapce/floem.git" }
