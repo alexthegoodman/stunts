@@ -1,13 +1,19 @@
+use std::cell::RefCell;
+use std::sync::Arc;
+
+use floem::context::PaintState;
 use floem::peniko::Color;
 use floem::reactive::{SignalGet, SignalUpdate};
 use floem::views::text;
 use floem::views::{h_stack, svg, v_stack};
+use floem::WindowHandle;
 use floem::{
     reactive::create_signal,
     unit::UnitExt, // Import UnitExt for .px() method
     views::{button, dropdown, label, Decorators},
     IntoView,
 };
+use floem::{Application, CustomRenderCallback};
 
 // Define an enum for our dropdown options
 #[derive(Clone, PartialEq, Debug)]
@@ -101,6 +107,52 @@ fn styled_button(
     })
 }
 
+fn create_render_callback() -> CustomRenderCallback {
+    Box::new(|window_handle: &RefCell<&WindowHandle>| {
+        let mut handle = window_handle.borrow_mut();
+
+        if let Some(gpu_resources) = &handle.gpu_resources {
+            // Use gpu_resources here
+            println!("Using GPU resources in render callback");
+
+            // TODO: draw buffers here
+        } else {
+            println!("GPU resources not available yet");
+        }
+    })
+}
+
 fn main() {
-    floem::launch(app_view);
+    let app = Application::new();
+    let (mut app, window_id) = app.window(move |_| app_view(), None);
+
+    let window_id = window_id.expect("Couldn't get window id");
+
+    {
+        let app_handle = app.handle.as_mut().expect("Couldn't get handle");
+        let window_handle = app_handle
+            .window_handles
+            .get_mut(&window_id)
+            .expect("Couldn't get window handle");
+
+        // Create and set the render callback
+        let render_callback = create_render_callback();
+        window_handle.set_render_callback(render_callback);
+
+        // Receive and store GPU resources
+        match &mut window_handle.paint_state {
+            PaintState::PendingGpuResources { rx, .. } => {
+                let gpu_resources = Arc::new(rx.recv().unwrap().unwrap());
+
+                // TODO: initialize wgpu pipeline here
+
+                window_handle.gpu_resources = Some(gpu_resources);
+            }
+            PaintState::Initialized { .. } => {
+                println!("Renderer is already initialized");
+            }
+        }
+    }
+
+    app.run();
 }

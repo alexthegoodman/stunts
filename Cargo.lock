@@ -825,7 +825,6 @@ checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
 [[package]]
 name = "floem"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "bitflags 2.6.0",
  "clipboard-win",
@@ -864,7 +863,6 @@ dependencies = [
 [[package]]
 name = "floem-editor-core"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "bitflags 2.6.0",
  "itertools",
@@ -877,10 +875,10 @@ dependencies = [
 [[package]]
 name = "floem-vger"
 version = "0.3.0"
-source = "git+https://github.com/lapce/vger-rs?rev=cfdec48f8093837f06be6fecfd75b0e5a0c5a3cf#cfdec48f8093837f06be6fecfd75b0e5a0c5a3cf"
 dependencies = [
  "cosmic-text",
  "euclid",
+ "floem_renderer",
  "fontdue",
  "rect_packer",
  "wgpu",
@@ -937,7 +935,6 @@ dependencies = [
 [[package]]
 name = "floem_reactive"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "smallvec",
 ]
@@ -945,7 +942,6 @@ dependencies = [
 [[package]]
 name = "floem_renderer"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "cosmic-text",
  "crossbeam",
@@ -963,7 +959,6 @@ dependencies = [
 [[package]]
 name = "floem_tiny_skia_renderer"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -980,7 +975,6 @@ dependencies = [
 [[package]]
 name = "floem_vger_renderer"
 version = "0.1.1"
-source = "git+https://github.com/lapce/floem.git#7d350fd472e64229223b176983631c701314d090"
 dependencies = [
  "anyhow",
  "floem-vger",
@@ -2548,7 +2542,9 @@ dependencies = [
 name = "stunts"
 version = "0.1.0"
 dependencies = [
+ "crossbeam",
  "floem",
+ "floem_renderer",
  "wgpu",
 ]
 
