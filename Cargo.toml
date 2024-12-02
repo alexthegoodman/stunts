@@ -4,7 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bytemuck = "1.19.0"
 wgpu = "22.1.0"
-floem = { path = "C:/Users/alext/projects/common/common-floem" }
-floem_renderer = { path = "C:/Users/alext/projects/common/common-floem/renderer", version = "0.1.0" }
+floem = { path = "D:/projects/common/common-floem" }
+floem_renderer = { path = "D:/projects/common/common-floem/renderer", version = "0.1.0" }
 crossbeam = "0.8.4"
+stunts-engine = { path = "D:/projects/common/stunts-engine" }
+floem-winit = { git = "https://github.com/lapce/winit", rev = "c8d3b8fd6fa4ffd5e0f99be78aacddcf6de57bcd", features = ["rwh_05"] }
+im = "15.1.0"
+once_cell = "1.20.2"
+uuid = { version = "1.8.0", features = ["v4"] }
+strum = "0.26.3"
+strum_macros = "0.26"
+cgmath = "0.18.0"
+undo = "0.51.0"
+tokio = { version = "1.39.0", features = ["full"] }
