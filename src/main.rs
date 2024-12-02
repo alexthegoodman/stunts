@@ -34,6 +34,7 @@ use cgmath::Transform;
 use cgmath::{Matrix4, Point3, Vector3};
 
 mod editor_state;
+mod helpers;
 mod views;
 
 // Usage in render pass:
