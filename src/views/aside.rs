@@ -151,7 +151,12 @@ pub fn tab_interface(
                             move || tabs.get(),
                             |it| *it,
                             move |it| match it {
-                                "Motion" => assets_view().into_any(),
+                                "Motion" => assets_view(
+                                    gpu_helper.clone(),
+                                    editor.clone(),
+                                    viewport.clone(),
+                                )
+                                .into_any(),
                                 "Settings" => settings_view().into_any(),
                                 _ => label(|| "Not implemented".to_owned()).into_any(),
                             },
