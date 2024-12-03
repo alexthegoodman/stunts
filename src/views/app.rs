@@ -79,6 +79,7 @@ pub fn app_view(
     container((
         tab_interface(
             gpu_helper.clone(),
+            editor_state.clone(),
             editor,
             viewport.clone(),
             // polygon_selected,

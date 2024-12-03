@@ -37,11 +37,14 @@ use floem::{
 use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
+use crate::editor_state::EditorState;
+
 use super::assets_panel::assets_view;
 use super::settings_panel::settings_view;
 
 pub fn tab_interface(
     gpu_helper: Arc<Mutex<GpuHelper>>,
+    editor_state: Arc<Mutex<EditorState>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     viewport: Arc<Mutex<Viewport>>,
     // polygon_selected: RwSignal<bool>,
@@ -145,6 +148,7 @@ pub fn tab_interface(
                     let editor = editor.clone();
                     let viewport = viewport.clone();
                     let gpu_helper = gpu_helper.clone();
+                    let editor_state = editor_state.clone();
                     if show_content {
                         tab(
                             move || active_tab.get(),
@@ -153,6 +157,7 @@ pub fn tab_interface(
                             move |it| match it {
                                 "Motion" => assets_view(
                                     gpu_helper.clone(),
+                                    editor_state.clone(),
                                     editor.clone(),
                                     viewport.clone(),
                                 )

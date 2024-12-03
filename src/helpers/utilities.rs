@@ -25,7 +25,7 @@ pub fn load_ground_truth_state() -> Result<SavedState, Box<dyn std::error::Error
     if !json_path.exists() {
         // TODO: create json file if it doesn't exist
         let json = SavedState {
-            motion_paths: Vec::new(),
+            sequences: Vec::new(),
         };
 
         let json = serde_json::to_string_pretty(&json).expect("Couldn't serialize saved state");

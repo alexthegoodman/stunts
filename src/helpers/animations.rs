@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use std::time::Duration;
 
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct AnimationData {
     /// All motion paths in the animation
     // pub paths: Vec<SkeletonMotionPath>,
@@ -15,7 +15,7 @@ pub struct AnimationData {
 }
 
 /// Represents a property that can be animated in the UI
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct AnimationProperty {
     /// Name of the property (e.g., "Position.X", "Rotation.Z")
     pub name: String,
@@ -30,7 +30,7 @@ pub struct AnimationProperty {
 }
 
 /// Types of easing functions available for interpolation
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub enum EasingType {
     Linear,
     EaseIn,
@@ -39,7 +39,7 @@ pub enum EasingType {
 }
 
 /// Represents a keyframe in the UI
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct UIKeyframe {
     /// Used to associate with this speciifc UI Keyframe
     pub id: String,
@@ -54,10 +54,14 @@ pub struct UIKeyframe {
 }
 
 /// Possible values for keyframes
-#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub enum KeyframeValue {
-    Position([f32; 3]),
-    Rotation([f32; 4]),
-    Scale([f32; 3]),
-    Custom(Vec<f32>),
+    // Position([f32; 3]),
+    // Rotation([f32; 4]),
+    // Scale([f32; 3]),
+    // Custom(Vec<f32>),
+    Position([i32; 3]),
+    Rotation([i32; 4]),
+    Scale([i32; 3]),
+    Custom(Vec<i32>),
 }
