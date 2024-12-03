@@ -11,6 +11,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseScrollDelta};
+use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
 use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize};
@@ -492,6 +493,7 @@ async fn main() {
     let state_2 = Arc::clone(&editor_state);
     let state_3 = Arc::clone(&editor_state);
     let state_4 = Arc::clone(&editor_state);
+    let state_5 = Arc::clone(&editor_state);
 
     let (mut app, window_id) = app.window(
         move |_| {
@@ -713,10 +715,11 @@ async fn main() {
                 window_handle.handle_keyboard_input =
                     handle_keyboard_input(state_2, gpu_resources.clone(), cloned_viewport3.clone());
 
-                // *** Create Test Scene *** //
-                // todo
-
                 editor.update_camera_binding(&gpu_resources.queue);
+
+                // load saved state (no projects as Ground Truth)
+                let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
+                state_5.lock().unwrap().saved_state = Some(saved_state);
 
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));

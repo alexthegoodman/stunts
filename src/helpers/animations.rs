@@ -1,11 +1,13 @@
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use std::time::Duration;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct AnimationData {
     /// All motion paths in the animation
     // pub paths: Vec<SkeletonMotionPath>,
+    pub id: String,
     /// Total duration of the animation
     pub duration: Duration,
     /// Hierarchical property structure for UI
@@ -13,7 +15,7 @@ pub struct AnimationData {
 }
 
 /// Represents a property that can be animated in the UI
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct AnimationProperty {
     /// Name of the property (e.g., "Position.X", "Rotation.Z")
     pub name: String,
@@ -28,7 +30,7 @@ pub struct AnimationProperty {
 }
 
 /// Types of easing functions available for interpolation
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub enum EasingType {
     Linear,
     EaseIn,
@@ -37,12 +39,12 @@ pub enum EasingType {
 }
 
 /// Represents a keyframe in the UI
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct UIKeyframe {
     /// Used to associate with this speciifc UI Keyframe
     pub id: String,
     /// Used to associate with the SkeletonKeyframe for updates
-    pub skel_key_id: String,
+    // pub skel_key_id: String,
     /// Time of the keyframe
     pub time: Duration,
     /// Value at this keyframe (could be position, rotation, etc)
@@ -52,7 +54,7 @@ pub struct UIKeyframe {
 }
 
 /// Possible values for keyframes
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub enum KeyframeValue {
     Position([f32; 3]),
     Rotation([f32; 4]),

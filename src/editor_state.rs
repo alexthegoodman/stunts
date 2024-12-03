@@ -11,6 +11,8 @@ use undo::Edit;
 use undo::Record;
 use uuid::Uuid;
 
+use crate::helpers::saved_state::SavedState;
+
 #[derive(Debug)]
 pub struct PolygonEdit {
     pub polygon_id: Uuid,
@@ -59,6 +61,7 @@ pub struct EditorState {
     pub selected_polygon_id: Uuid,
     pub value_signals: Arc<Mutex<HashMap<String, RwSignal<String>>>>,
     pub current_modifiers: ModifiersState,
+    pub saved_state: Option<SavedState>,
 }
 
 pub struct RecordState {
@@ -79,6 +82,7 @@ impl EditorState {
             selected_polygon_id: Uuid::nil(),
             value_signals: Arc::new(Mutex::new(HashMap::new())),
             current_modifiers: ModifiersState::empty(),
+            saved_state: None,
         }
     }
 
