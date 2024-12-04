@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::rc::{Rc, Weak};
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 
 use bytemuck::Contiguous;
 use floem::event::{Event, EventListener, EventPropagation};
@@ -23,7 +24,8 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
-use stunts_engine::editor::{Editor, Viewport};
+use stunts_engine::editor::{Editor, Point, PolygonClickHandler, Viewport};
+use stunts_engine::polygon::{PolygonConfig, Stroke};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
 // use winit::{event_loop, window};
@@ -43,9 +45,13 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
+use crate::helpers::animations::{AnimationData, UIKeyframe};
+use crate::helpers::saved_state::Sequence;
 
 use super::aside::tab_interface;
+use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::properties_panel::properties_view;
+use super::sequence_panel::sequence_panel;
 
 pub fn app_view(
     editor_state: Arc<Mutex<EditorState>>,
@@ -58,23 +64,108 @@ pub fn app_view(
     let editor_cloned3 = Arc::clone(&editor);
     let editor_cloned4 = Arc::clone(&editor);
 
-    // let polygon_selected = create_rw_signal(false);
-    // let selected_polygon_id = create_rw_signal(Uuid::nil());
-    // let selected_polygon_data = create_rw_signal(PolygonConfig {
-    //     id: Uuid::nil(),
-    //     name: String::new(),
-    //     points: Vec::new(),
-    //     dimensions: (100.0, 100.0),
-    //     position: Point { x: 0.0, y: 0.0 },
-    //     border_radius: 0.0,
-    //     fill: [0.0, 0.0, 0.0, 1.0],
-    //     stroke: Stroke {
-    //         fill: [1.0, 1.0, 1.0, 1.0],
-    //         thickness: 2.0,
-    //     },
-    // });
+    let state_cloned = Arc::clone(&editor_state);
+    let state_cloned2 = Arc::clone(&editor_state);
+
+    let gpu_cloned = Arc::clone(&gpu_helper);
+    let gpu_cloned2 = Arc::clone(&gpu_helper);
+
+    let viewport_cloned = Arc::clone(&viewport);
+    let viewport_cloned2 = Arc::clone(&viewport);
+
+    // set in sequence_panel
+    let sequence_selected = create_rw_signal(false);
+    let selected_sequence_id = create_rw_signal(String::new());
+    let selected_sequence_data = create_rw_signal(Sequence {
+        id: String::new(),
+        motion_paths: Vec::new(),
+    });
+
+    // set
+    let polygon_selected = create_rw_signal(false);
+    let selected_polygon_id = create_rw_signal(Uuid::nil());
+    let selected_polygon_data = create_rw_signal(PolygonConfig {
+        id: Uuid::nil(),
+        name: String::new(),
+        points: Vec::new(),
+        dimensions: (100.0, 100.0),
+        position: Point { x: 0.0, y: 0.0 },
+        border_radius: 0.0,
+        fill: [0.0, 0.0, 0.0, 1.0],
+        stroke: Stroke {
+            fill: [1.0, 1.0, 1.0, 1.0],
+            thickness: 2.0,
+        },
+    });
+
+    let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
+    let selected_keyframes: RwSignal<Vec<UIKeyframe>> = create_rw_signal(Vec::new());
+
+    let polygon_selected_ref = Arc::new(Mutex::new(polygon_selected));
+    let selected_polygon_id_ref = Arc::new(Mutex::new(selected_polygon_id));
+    let selected_polygon_data_ref = Arc::new(Mutex::new(selected_polygon_data));
+    let animation_data_ref = Arc::new(Mutex::new(animation_data));
 
     let editor_cloned2 = editor_cloned2.clone();
+
+    // Create the handle_polygon_click function
+    let handle_polygon_click: Arc<PolygonClickHandler> = Arc::new({
+        let editor_state = editor_state.clone();
+        // let set_counter_ref = Arc::clone(&set_counter_ref);
+        let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
+        let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        move || {
+            let editor_state = editor_state.clone();
+            // let set_counter_ref = set_counter_ref.clone();
+            let polygon_selected_ref = polygon_selected_ref.clone();
+            let selected_polygon_id_ref = selected_polygon_id_ref.clone();
+            let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            Some(
+                Box::new(move |polygon_id: Uuid, polygon_data: PolygonConfig| {
+                    // cannot lock editor here!
+                    // {
+                    //     let mut editor = new_editor.lock().unwrap();
+                    //     // Update editor as needed
+                    // }
+
+                    if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+                        polygon_selected.update(|c| {
+                            *c = true;
+                        });
+                    }
+                    if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+                        selected_polygon_id.update(|c| {
+                            *c = polygon_id;
+                        });
+                        let mut editor_state = editor_state.lock().unwrap();
+                        editor_state.selected_polygon_id = polygon_id;
+                        editor_state.polygon_selected = true;
+                    }
+                    if let Ok(mut selected_polygon_data) = selected_polygon_data_ref.lock() {
+                        selected_polygon_data.update(|c| {
+                            *c = polygon_data;
+                        });
+                    }
+                    // if let Ok(mut animation_data) = animation_data_ref.lock() {
+                    //     animation_data.update(|c| {
+                    //         *c = Some();
+                    //     });
+                    // }
+                }) as Box<dyn FnMut(Uuid, PolygonConfig) + Send>,
+            )
+        }
+    });
+
+    // Use create_effect to set the handler only once
+    create_effect({
+        let handle_polygon_click = Arc::clone(&handle_polygon_click);
+        let editor_cloned3 = Arc::clone(&editor_cloned3);
+        move |_| {
+            let mut editor = editor_cloned3.lock().unwrap();
+            editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
+        }
+    });
 
     container((
         tab_interface(
@@ -84,24 +175,77 @@ pub fn app_view(
             viewport.clone(),
             // polygon_selected,
         ),
-        // dyn_container(
-        //     move || polygon_selected.get(),
-        //     move |polygon_selected_real| {
-        //         if polygon_selected_real {
-        //             properties_view(
-        //                 editor_state.clone(),
-        //                 gpu_helper.clone(),
-        //                 editor_cloned4.clone(),
-        //                 viewport.clone(),
-        //                 // polygon_selected,
-        //                 // selected_polygon_id,
-        //                 // selected_polygon_data,
-        //             )
-        //             .into_any()
-        //         } else {
-        //             empty().into_any()
-        //         }
-        //     },
-        // ),
+        dyn_container(
+            move || sequence_selected.get(),
+            move |sequence_selected_real| {
+                if sequence_selected_real {
+                    h_stack((
+                        sequence_panel(
+                            state_cloned.clone(),
+                            gpu_cloned.clone(),
+                            editor_cloned3.clone(),
+                            viewport_cloned.clone(),
+                            sequence_selected,
+                            selected_sequence_id,
+                            selected_sequence_data,
+                        ),
+                        // keyframe_timeline,
+                    ))
+                    .into_any()
+                } else {
+                    empty().into_any()
+                }
+            },
+        ),
+        dyn_container(
+            move || polygon_selected.get(),
+            move |polygon_selected_real| {
+                if polygon_selected_real {
+                    let state = TimelineState {
+                        current_time: Duration::from_secs_f64(0.0),
+                        zoom_level: 1.0,
+                        scroll_offset: 0.0,
+                        // selected_keyframes: Vec::new(),
+                        property_expansions: im::HashMap::from_iter([
+                            ("position".to_string(), true),
+                            ("rotation".to_string(), true),
+                        ]),
+                        dragging: None,
+                        hovered_keyframe: None,
+                        selected_keyframes,
+                    };
+
+                    let config = TimelineConfig {
+                        width: 1200.0,
+                        height: 300.0,
+                        header_height: 30.0,
+                        property_width: 200.0,
+                        row_height: 24.0,
+                        // offset_x: 325.0,
+                        // offset_y: 300.0,
+                        offset_x: 0.0,
+                        offset_y: 0.0,
+                    };
+
+                    let keyframe_timeline = create_timeline(state, config, animation_data);
+
+                    h_stack((
+                        properties_view(
+                            state_cloned2.clone(),
+                            gpu_cloned2.clone(),
+                            editor_cloned4.clone(),
+                            viewport_cloned2.clone(),
+                            polygon_selected,
+                            selected_polygon_id,
+                            selected_polygon_data,
+                        ),
+                        keyframe_timeline,
+                    ))
+                    .into_any()
+                } else {
+                    empty().into_any()
+                }
+            },
+        ),
     ))
 }

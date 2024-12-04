@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Viewport;
+use stunts_engine::polygon::PolygonConfig;
 use uuid::Uuid;
 use wgpu::util::DeviceExt;
 
@@ -26,9 +27,9 @@ pub fn properties_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     viewport: std::sync::Arc<Mutex<Viewport>>,
-    // polygon_selected: RwSignal<bool>,
-    // selected_polygon_id: RwSignal<Uuid>,
-    // selected_polygon_data: RwSignal<PolygonConfig>,
+    polygon_selected: RwSignal<bool>,
+    selected_polygon_id: RwSignal<Uuid>,
+    selected_polygon_data: RwSignal<PolygonConfig>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
 

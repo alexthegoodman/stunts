@@ -8,6 +8,8 @@ pub struct AnimationData {
     /// All motion paths in the animation
     // pub paths: Vec<SkeletonMotionPath>,
     pub id: String,
+    /// id of the associated polygon
+    pub polygon_id: String,
     /// Total duration of the animation
     pub duration: Duration,
     /// Hierarchical property structure for UI

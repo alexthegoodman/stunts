@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use floem::common::{card_styles, option_button};
+use floem::reactive::RwSignal;
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
@@ -8,10 +9,17 @@ use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
 use uuid::Uuid;
 
+use crate::editor_state::EditorState;
+use crate::helpers::saved_state::Sequence;
+
 pub fn sequence_panel(
+    editor_state: Arc<Mutex<EditorState>>,
     gpu_helper: Arc<Mutex<GpuHelper>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     viewport: Arc<Mutex<Viewport>>,
+    sequence_selected: RwSignal<bool>,
+    selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
