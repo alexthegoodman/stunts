@@ -78,7 +78,9 @@ pub fn app_view(
     let selected_sequence_id = create_rw_signal(String::new());
     let selected_sequence_data = create_rw_signal(Sequence {
         id: String::new(),
-        motion_paths: Vec::new(),
+        active_polygons: Vec::new(),
+        enter_motion_paths: Vec::new(),
+        exit_motion_paths: Vec::new(),
     });
 
     // set
@@ -108,22 +110,23 @@ pub fn app_view(
 
     let editor_cloned2 = editor_cloned2.clone();
 
-    // Create the handle_polygon_click function
     let handle_polygon_click: Arc<PolygonClickHandler> = Arc::new({
         let editor_state = editor_state.clone();
-        // let set_counter_ref = Arc::clone(&set_counter_ref);
         let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
         let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
         let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+
         move || {
             let editor_state = editor_state.clone();
-            // let set_counter_ref = set_counter_ref.clone();
             let polygon_selected_ref = polygon_selected_ref.clone();
             let selected_polygon_id_ref = selected_polygon_id_ref.clone();
             let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let animation_data_ref = animation_data_ref.clone();
+
             Some(
                 Box::new(move |polygon_id: Uuid, polygon_data: PolygonConfig| {
-                    // cannot lock editor here!
+                    // cannot lock editor here! probably because called from Editor
                     // {
                     //     let mut editor = new_editor.lock().unwrap();
                     //     // Update editor as needed
@@ -138,20 +141,48 @@ pub fn app_view(
                         selected_polygon_id.update(|c| {
                             *c = polygon_id;
                         });
+
                         let mut editor_state = editor_state.lock().unwrap();
+
                         editor_state.selected_polygon_id = polygon_id;
                         editor_state.polygon_selected = true;
+
+                        drop(editor_state);
                     }
                     if let Ok(mut selected_polygon_data) = selected_polygon_data_ref.lock() {
                         selected_polygon_data.update(|c| {
                             *c = polygon_data;
                         });
                     }
-                    // if let Ok(mut animation_data) = animation_data_ref.lock() {
-                    //     animation_data.update(|c| {
-                    //         *c = Some();
-                    //     });
-                    // }
+                    if let Ok(mut animation_data) = animation_data_ref.lock() {
+                        let editor_state = editor_state.lock().unwrap();
+                        let saved_state = editor_state
+                            .saved_state
+                            .as_ref()
+                            .expect("Couldn't get Saved State");
+
+                        // let saved_sequence = saved_state
+                        //     .sequences
+                        //     .iter()
+                        //     .find(|s| {
+                        //         s.enter_motion_paths
+                        //             .iter()
+                        //             .any(|m| m.polygon_id == polygon_id.to_string())
+                        //     })
+                        //     .expect("Couldn't find matching sequence");
+                        let saved_enter_animation_data = saved_state
+                            .sequences
+                            .iter()
+                            .flat_map(|s| s.enter_motion_paths.iter())
+                            .find(|p| p.polygon_id == polygon_id.to_string())
+                            .expect("Couldn't find matching polygon in sequence");
+
+                        animation_data.update(|c| {
+                            *c = Some(saved_enter_animation_data.clone());
+                        });
+
+                        drop(editor_state);
+                    }
                 }) as Box<dyn FnMut(Uuid, PolygonConfig) + Send>,
             )
         }
