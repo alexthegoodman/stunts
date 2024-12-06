@@ -7,8 +7,7 @@ use super::animations::AnimationData;
 pub struct Sequence {
     pub id: String,
     pub active_polygons: Vec<SavedPolygonConfig>, // used for dimensions, etc
-    pub enter_motion_paths: Vec<AnimationData>,
-    pub exit_motion_paths: Vec<AnimationData>,
+    pub polygon_motion_paths: Vec<AnimationData>,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]

@@ -62,8 +62,11 @@ pub enum KeyframeValue {
     // Rotation([f32; 4]),
     // Scale([f32; 3]),
     // Custom(Vec<f32>),
-    Position([i32; 3]),
-    Rotation([i32; 4]),
-    Scale([i32; 3]),
+    Position([i32; 2]),
+    Rotation(i32),
+    Scale(i32), // this will be 100 for default size to work with i32 and Eq
+    PerspectiveX(i32),
+    PerspectiveY(i32),
+    Opacity(i32), // also out of 100
     Custom(Vec<i32>),
 }
