@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use bytemuck::Contiguous;
+use floem::common::card_styles;
 use floem::event::{Event, EventListener, EventPropagation};
 use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::kurbo::Size;
@@ -51,6 +52,7 @@ use crate::helpers::animations::{
 use crate::helpers::saved_state::Sequence;
 
 use super::aside::tab_interface;
+use super::inputs::styled_input;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::properties_panel::properties_view;
 use super::sequence_panel::sequence_panel;
@@ -68,6 +70,8 @@ pub fn app_view(
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
+    let state_cloned3 = Arc::clone(&editor_state);
+    let state_cloned4 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
@@ -110,6 +114,11 @@ pub fn app_view(
     let animation_data_ref = Arc::new(Mutex::new(animation_data));
 
     let editor_cloned2 = editor_cloned2.clone();
+
+    let aside_width = 260.0;
+    let quarters = (aside_width / 4.0) + (5.0 * 4.0);
+    let thirds = (aside_width / 3.0) + (5.0 * 3.0);
+    let halfs = (aside_width / 2.0) + (5.0 * 2.0);
 
     let handle_polygon_click: Arc<PolygonClickHandler> = Arc::new({
         let editor_state = editor_state.clone();
@@ -328,99 +337,99 @@ pub fn app_view(
                                 depth: 0,
                             };
 
-                            let mut perspective_x_keyframes = Vec::new();
+                            // let mut perspective_x_keyframes = Vec::new();
 
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(0),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_millis(2500),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(5),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(15),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_millis(17500),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_x_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(20),
-                                value: KeyframeValue::PerspectiveX(0),
-                                easing: EasingType::EaseInOut,
-                            });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(0),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_millis(2500),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(5),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(15),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_millis(17500),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_x_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(20),
+                            //     value: KeyframeValue::PerspectiveX(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
 
-                            let mut perspective_x_prop = AnimationProperty {
-                                name: "Perspective X".to_string(),
-                                property_path: "perspective_x".to_string(),
-                                children: Vec::new(),
-                                keyframes: perspective_x_keyframes,
-                                depth: 0,
-                            };
+                            // let mut perspective_x_prop = AnimationProperty {
+                            //     name: "Perspective X".to_string(),
+                            //     property_path: "perspective_x".to_string(),
+                            //     children: Vec::new(),
+                            //     keyframes: perspective_x_keyframes,
+                            //     depth: 0,
+                            // };
 
-                            let mut perspective_y_keyframes = Vec::new();
+                            // let mut perspective_y_keyframes = Vec::new();
 
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(0),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_millis(2500),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(5),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(15),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_millis(17500),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
-                            perspective_y_keyframes.push(UIKeyframe {
-                                id: Uuid::new_v4().to_string(),
-                                time: Duration::from_secs(20),
-                                value: KeyframeValue::PerspectiveY(0),
-                                easing: EasingType::EaseInOut,
-                            });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(0),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_millis(2500),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(5),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(15),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_millis(17500),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
+                            // perspective_y_keyframes.push(UIKeyframe {
+                            //     id: Uuid::new_v4().to_string(),
+                            //     time: Duration::from_secs(20),
+                            //     value: KeyframeValue::PerspectiveY(0),
+                            //     easing: EasingType::EaseInOut,
+                            // });
 
-                            let mut perspective_y_prop = AnimationProperty {
-                                name: "Perspective Y".to_string(),
-                                property_path: "perspective_y".to_string(),
-                                children: Vec::new(),
-                                keyframes: perspective_y_keyframes,
-                                depth: 0,
-                            };
+                            // let mut perspective_y_prop = AnimationProperty {
+                            //     name: "Perspective Y".to_string(),
+                            //     property_path: "perspective_y".to_string(),
+                            //     children: Vec::new(),
+                            //     keyframes: perspective_y_keyframes,
+                            //     depth: 0,
+                            // };
 
                             let mut opacity_keyframes = Vec::new();
 
@@ -469,11 +478,11 @@ pub fn app_view(
                                 depth: 0,
                             };
 
-                            properties.push(position_prop);
-                            properties.push(rotation_prop);
-                            properties.push(scale_prop);
-                            properties.push(perspective_x_prop);
-                            properties.push(perspective_y_prop);
+                            properties.push(position_prop); // usually easiest with a top-left anchor point...
+                            properties.push(rotation_prop); // TODO: best with centered anchor point?
+                            properties.push(scale_prop); // TODO: also better with centered anchor point?
+                                                         // properties.push(perspective_x_prop);
+                                                         // properties.push(perspective_y_prop);
                             properties.push(opacity_prop);
 
                             animation_data.update(|c| {
@@ -537,6 +546,9 @@ pub fn app_view(
             move || polygon_selected.get(),
             move |polygon_selected_real| {
                 if polygon_selected_real {
+                    let state_cloned3 = state_cloned3.clone();
+                    let state_cloned4 = state_cloned4.clone();
+
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
                         zoom_level: 1.0,
@@ -566,14 +578,87 @@ pub fn app_view(
                     let keyframe_timeline = create_timeline(state, config, animation_data);
 
                     h_stack((
-                        properties_view(
-                            state_cloned2.clone(),
-                            gpu_cloned2.clone(),
-                            editor_cloned4.clone(),
-                            viewport_cloned2.clone(),
-                            polygon_selected,
-                            selected_polygon_id,
-                            selected_polygon_data,
+                        dyn_container(
+                            move || selected_keyframes.get(),
+                            move |selected_keyframes_real| {
+                                if let Some(selected_keyframe) = selected_keyframes_real.get(0) {
+                                    let state_cloned3 = state_cloned3.clone();
+                                    let state_cloned4 = state_cloned4.clone();
+
+                                    match selected_keyframe.value {
+                                        KeyframeValue::Position(position) => container(
+                                            (v_stack((label(|| "Keyframe"),))
+                                                .style(|s| card_styles(s))),
+                                        )
+                                        .into_any(),
+                                        KeyframeValue::Rotation(rotation) => container(
+                                            (v_stack((label(|| "Keyframe"),))
+                                                .style(|s| card_styles(s))),
+                                        )
+                                        .into_any(),
+                                        KeyframeValue::Scale(scale) => container(
+                                            (v_stack((label(|| "Keyframe"),))
+                                                .style(|s| card_styles(s))),
+                                        )
+                                        .into_any(),
+                                        KeyframeValue::Opacity(opacity) => container(
+                                            (v_stack((label(|| "Keyframe"),))
+                                                .style(|s| card_styles(s))),
+                                        )
+                                        .into_any(),
+                                        _ => container(
+                                            (v_stack((
+                                                label(|| "Properties"),
+                                                h_stack((
+                                                    styled_input(
+                                                        "Width:".to_string(),
+                                                        &selected_polygon_data
+                                                            .read()
+                                                            .borrow()
+                                                            .dimensions
+                                                            .0
+                                                            .to_string(),
+                                                        "Enter width",
+                                                        Box::new({
+                                                            move |mut editor_state, value| {
+                                                                editor_state.update_width(&value);
+                                                            }
+                                                        }),
+                                                        state_cloned3,
+                                                        "width".to_string(),
+                                                    )
+                                                    .style(move |s| {
+                                                        s.width(halfs).margin_right(5.0)
+                                                    }),
+                                                    styled_input(
+                                                        "Height:".to_string(),
+                                                        &selected_polygon_data
+                                                            .read()
+                                                            .borrow()
+                                                            .dimensions
+                                                            .1
+                                                            .to_string(),
+                                                        "Enter height",
+                                                        Box::new({
+                                                            move |mut editor_state, value| {
+                                                                editor_state.update_height(&value);
+                                                            }
+                                                        }),
+                                                        state_cloned4,
+                                                        "height".to_string(),
+                                                    )
+                                                    .style(move |s| s.width(halfs)),
+                                                ))
+                                                .style(move |s| s.width(aside_width)),
+                                            ))
+                                            .style(|s| card_styles(s))),
+                                        )
+                                        .into_any(),
+                                    }
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
                         ),
                         keyframe_timeline,
                     ))
