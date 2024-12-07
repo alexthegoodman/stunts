@@ -25,7 +25,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
-use stunts_engine::editor::{Editor, Point, PolygonClickHandler, Viewport};
+use stunts_engine::editor::{string_to_f32, Editor, Point, PolygonClickHandler, Viewport};
 use stunts_engine::polygon::{PolygonConfig, Stroke};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
@@ -50,12 +50,80 @@ use crate::helpers::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
 };
 use crate::helpers::saved_state::Sequence;
+use crate::helpers::utilities::save_saved_state_raw;
 
 use super::aside::tab_interface;
 use super::inputs::styled_input;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::properties_panel::properties_view;
 use super::sequence_panel::sequence_panel;
+
+pub fn update_keyframe(
+    mut editor_state: MutexGuard<EditorState>,
+    mut current_animation_data: AnimationData,
+    mut current_keyframe: &mut UIKeyframe,
+    mut current_sequence: Sequence,
+    selected_keyframes: RwSignal<Vec<UIKeyframe>>,
+    animation_data: RwSignal<Option<AnimationData>>,
+    selected_sequence_data: RwSignal<Sequence>,
+    selected_sequence_id: RwSignal<String>,
+) {
+    let mut new_keyframes = Vec::new();
+    new_keyframes.push(current_keyframe.to_owned());
+
+    selected_keyframes.set(new_keyframes);
+
+    // update animation data
+    current_animation_data.properties.iter_mut().for_each(|p| {
+        p.keyframes.iter_mut().for_each(|mut k| {
+            if k.id == current_keyframe.id {
+                *k = current_keyframe.to_owned();
+            }
+        });
+    });
+
+    animation_data.set(Some(current_animation_data));
+
+    // update sequence
+    current_sequence
+        .polygon_motion_paths
+        .iter_mut()
+        .for_each(|pm| {
+            pm.properties.iter_mut().for_each(|p| {
+                p.keyframes.iter_mut().for_each(|k| {
+                    if k.id == current_keyframe.id {
+                        *k = current_keyframe.to_owned();
+                    }
+                });
+            });
+        });
+
+    selected_sequence_data.set(current_sequence);
+
+    // save to file
+    let last_saved_state = editor_state
+        .saved_state
+        .as_mut()
+        .expect("Couldn't get Saved State");
+
+    last_saved_state.sequences.iter_mut().for_each(|s| {
+        if s.id == selected_sequence_id.get() {
+            s.polygon_motion_paths.iter_mut().for_each(|pm| {
+                pm.properties.iter_mut().for_each(|p| {
+                    p.keyframes.iter_mut().for_each(|k| {
+                        if k.id == current_keyframe.id {
+                            *k = current_keyframe.to_owned();
+                        }
+                    });
+                });
+            });
+        }
+    });
+
+    let new_saved_state = last_saved_state.to_owned();
+
+    save_saved_state_raw(new_saved_state);
+}
 
 pub fn app_view(
     editor_state: Arc<Mutex<EditorState>>,
@@ -557,6 +625,8 @@ pub fn app_view(
                         property_expansions: im::HashMap::from_iter([
                             ("position".to_string(), true),
                             ("rotation".to_string(), true),
+                            ("scale".to_string(), true),
+                            ("opacity".to_string(), true),
                         ]),
                         dragging: None,
                         hovered_keyframe: None,
@@ -587,8 +657,87 @@ pub fn app_view(
 
                                     match selected_keyframe.value {
                                         KeyframeValue::Position(position) => container(
-                                            (v_stack((label(|| "Keyframe"),))
-                                                .style(|s| card_styles(s))),
+                                            (v_stack((
+                                                label(|| "Keyframe"),
+                                                h_stack((
+                                                    styled_input(
+                                                        "X:".to_string(),
+                                                        &position[0].to_string(),
+                                                        "Enter X",
+                                                        Box::new({
+                                                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                                // then save merge animation_data with saved_data and save to file
+                                                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                                                                let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                                                                let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                                                                let mut current_keyframe = selected_keyframes.get();
+                                                                let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                                                                let mut current_sequence = selected_sequence_data.get();
+                                                                // let current_polygon = selected_polygon_data.read();
+                                                                // let current_polygon = current_polygon.borrow();
+
+                                                                // update keyframe
+                                                                current_keyframe.value = KeyframeValue::Position([value as i32, position[1]]);
+
+                                                                update_keyframe(
+                                                                    editor_state,
+                                                                    current_animation_data,
+                                                                    current_keyframe,
+                                                                    current_sequence,
+                                                                    selected_keyframes,
+                                                                    animation_data,
+                                                                    selected_sequence_data,
+                                                                    selected_sequence_id
+                                                                );
+                                                            }
+                                                        }),
+                                                        state_cloned3,
+                                                        "x".to_string(),
+                                                    )
+                                                    .style(move |s| {
+                                                        s.width(halfs).margin_right(5.0)
+                                                    }),
+                                                    styled_input(
+                                                        "Y:".to_string(),
+                                                        &position[1].to_string(),
+                                                        "Enter Y",
+                                                        Box::new({
+                                                            move |mut editor_state, value| {
+                                                                let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                                                                let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                                                                let mut current_keyframe = selected_keyframes.get();
+                                                                let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                                                                let mut current_sequence = selected_sequence_data.get();
+                                                                // let current_polygon = selected_polygon_data.read();
+                                                                // let current_polygon = current_polygon.borrow();
+
+                                                                // update keyframe
+                                                                current_keyframe.value = KeyframeValue::Position([position[0], value as i32]);
+
+                                                                update_keyframe(
+                                                                    editor_state,
+                                                                    current_animation_data,
+                                                                    current_keyframe,
+                                                                    current_sequence,
+                                                                    selected_keyframes,
+                                                                    animation_data,
+                                                                    selected_sequence_data,
+                                                                    selected_sequence_id
+                                                                );
+                                                            }
+                                                        }),
+                                                        state_cloned4,
+                                                        "y".to_string(),
+                                                    )
+                                                    .style(move |s| s.width(halfs)),
+                                                ))
+                                                .style(move |s| s.width(aside_width)),
+                                            ))
+                                            .style(|s| card_styles(s))),
                                         )
                                         .into_any(),
                                         KeyframeValue::Rotation(rotation) => container(
@@ -621,7 +770,8 @@ pub fn app_view(
                                                         "Enter width",
                                                         Box::new({
                                                             move |mut editor_state, value| {
-                                                                editor_state.update_width(&value);
+                                                                editor_state.update_width(&value).expect("Couldn't update width");
+                                                                // TODO: probably should update selected_polygon_data
                                                             }
                                                         }),
                                                         state_cloned3,
@@ -641,7 +791,8 @@ pub fn app_view(
                                                         "Enter height",
                                                         Box::new({
                                                             move |mut editor_state, value| {
-                                                                editor_state.update_height(&value);
+                                                                editor_state.update_height(&value).expect("Couldn't update height");
+                                                                // TODO: probably should update selected_polygon_data
                                                             }
                                                         }),
                                                         state_cloned4,
