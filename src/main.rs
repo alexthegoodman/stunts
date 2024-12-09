@@ -434,6 +434,8 @@ fn handle_keyboard_input(
 
 #[tokio::main]
 async fn main() {
+    println!("Initializing Stunts...");
+
     let app = Application::new();
 
     // Get the primary monitor's size
@@ -494,6 +496,13 @@ async fn main() {
     let state_3 = Arc::clone(&editor_state);
     let state_4 = Arc::clone(&editor_state);
     let state_5 = Arc::clone(&editor_state);
+
+    // load saved state (no projects as Ground Truth)
+    println!("Loading saved state...");
+    let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
+    let mut state_guard = state_5.lock().unwrap();
+    state_guard.saved_state = Some(saved_state);
+    drop(state_guard);
 
     let (mut app, window_id) = app.window(
         move |_| {
@@ -716,10 +725,6 @@ async fn main() {
                     handle_keyboard_input(state_2, gpu_resources.clone(), cloned_viewport3.clone());
 
                 editor.update_camera_binding(&gpu_resources.queue);
-
-                // load saved state (no projects as Ground Truth)
-                let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
-                state_5.lock().unwrap().saved_state = Some(saved_state);
 
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));

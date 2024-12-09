@@ -38,6 +38,7 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
+use crate::helpers::saved_state::Sequence;
 
 use super::assets_panel::assets_view;
 use super::settings_panel::settings_view;
@@ -47,10 +48,10 @@ pub fn tab_interface(
     editor_state: Arc<Mutex<EditorState>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     viewport: Arc<Mutex<Viewport>>,
-    // polygon_selected: RwSignal<bool>,
+    sequence_selected: RwSignal<bool>,
+    selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl View {
-    // let editor_cloned = Arc::clone(&editor);
-
     let tabs: im::Vector<&str> = vec!["Motion", "Settings"].into_iter().collect();
     let (tabs, _set_tabs) = create_signal(tabs);
     let (active_tab, set_active_tab) = create_signal(0);
@@ -160,6 +161,9 @@ pub fn tab_interface(
                                     editor_state.clone(),
                                     editor.clone(),
                                     viewport.clone(),
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
                                 )
                                 .into_any(),
                                 "Settings" => settings_view().into_any(),

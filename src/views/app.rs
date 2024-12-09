@@ -67,6 +67,7 @@ pub fn update_keyframe(
     animation_data: RwSignal<Option<AnimationData>>,
     selected_sequence_data: RwSignal<Sequence>,
     selected_sequence_id: RwSignal<String>,
+    sequence_selected: RwSignal<bool>,
 ) {
     let mut new_keyframes = Vec::new();
     new_keyframes.push(current_keyframe.to_owned());
@@ -85,20 +86,23 @@ pub fn update_keyframe(
     animation_data.set(Some(current_animation_data));
 
     // update sequence
-    current_sequence
-        .polygon_motion_paths
-        .iter_mut()
-        .for_each(|pm| {
-            pm.properties.iter_mut().for_each(|p| {
-                p.keyframes.iter_mut().for_each(|k| {
-                    if k.id == current_keyframe.id {
-                        *k = current_keyframe.to_owned();
-                    }
-                });
-            });
-        });
+    // also need selected_sequence_id
+    // current_sequence
+    //     .polygon_motion_paths
+    //     .iter_mut()
+    //     .for_each(|pm| {
+    //         pm.properties.iter_mut().for_each(|p| {
+    //             p.keyframes.iter_mut().for_each(|k| {
+    //                 if k.id == current_keyframe.id {
+    //                     *k = current_keyframe.to_owned();
+    //                 }
+    //             });
+    //         });
+    //     });
 
-    selected_sequence_data.set(current_sequence);
+    // selected_sequence_data.set(current_sequence);
+
+    // sequence_selected.set(true);
 
     // save to file
     let last_saved_state = editor_state
@@ -586,7 +590,9 @@ pub fn app_view(
             editor_state.clone(),
             editor,
             viewport.clone(),
-            // polygon_selected,
+            sequence_selected,
+            selected_sequence_id,
+            selected_sequence_data,
         ),
         dyn_container(
             move || sequence_selected.get(),
@@ -690,7 +696,8 @@ pub fn app_view(
                                                                     selected_keyframes,
                                                                     animation_data,
                                                                     selected_sequence_data,
-                                                                    selected_sequence_id
+                                                                    selected_sequence_id,
+                                                                    sequence_selected
                                                                 );
                                                             }
                                                         }),
@@ -726,7 +733,8 @@ pub fn app_view(
                                                                     selected_keyframes,
                                                                     animation_data,
                                                                     selected_sequence_data,
-                                                                    selected_sequence_id
+                                                                    selected_sequence_id,
+                                                                    sequence_selected
                                                                 );
                                                             }
                                                         }),
@@ -772,7 +780,8 @@ pub fn app_view(
                                                             selected_keyframes,
                                                             animation_data,
                                                             selected_sequence_data,
-                                                            selected_sequence_id
+                                                            selected_sequence_id,
+                                                            sequence_selected
                                                         );
                                                     }
                                                 }),
@@ -814,7 +823,8 @@ pub fn app_view(
                                                             selected_keyframes,
                                                             animation_data,
                                                             selected_sequence_data,
-                                                            selected_sequence_id
+                                                            selected_sequence_id,
+                                                            sequence_selected
                                                         );
                                                     }
                                                 }),
@@ -856,7 +866,8 @@ pub fn app_view(
                                                             selected_keyframes,
                                                             animation_data,
                                                             selected_sequence_data,
-                                                            selected_sequence_id
+                                                            selected_sequence_id,
+                                                            sequence_selected
                                                         );
                                                     }
                                                 }),
