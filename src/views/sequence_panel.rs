@@ -10,7 +10,9 @@ use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
-use crate::helpers::saved_state::Sequence;
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+};
 
 pub fn sequence_panel(
     editor_state: Arc<Mutex<EditorState>>,
@@ -48,7 +50,7 @@ pub fn sequence_panel(
                     ],
                     dimensions: (100.0, 100.0),
                     position: Point { x: 600.0, y: 100.0 },
-                    border_radius: 5.0,
+                    border_radius: 0.0,
                     fill: [1.0, 1.0, 1.0, 1.0],
                     stroke: Stroke {
                         fill: [1.0, 1.0, 1.0, 1.0],

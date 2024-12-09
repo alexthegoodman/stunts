@@ -18,7 +18,9 @@ use floem_renderer::Renderer;
 
 use std::time::Duration;
 
-use crate::helpers::animations::{AnimationData, AnimationProperty, UIKeyframe};
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+};
 
 /// State for the timeline component
 #[derive(Debug, Clone)]

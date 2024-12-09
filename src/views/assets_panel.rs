@@ -14,8 +14,10 @@ use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
-use crate::helpers::saved_state::Sequence;
 use crate::helpers::utilities::save_saved_state_raw;
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+};
 
 pub fn assets_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,

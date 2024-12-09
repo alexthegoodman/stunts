@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use bytemuck::Contiguous;
-use floem::common::card_styles;
+use floem::common::{card_styles, simple_button};
 use floem::event::{Event, EventListener, EventPropagation};
 use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::kurbo::Size;
@@ -46,10 +46,9 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
-use crate::helpers::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
+use stunts_engine::animations::{
+    Sequence, AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
 };
-use crate::helpers::saved_state::Sequence;
 use crate::helpers::utilities::save_saved_state_raw;
 
 use super::aside::tab_interface;
@@ -144,6 +143,7 @@ pub fn app_view(
     let state_cloned2 = Arc::clone(&editor_state);
     let state_cloned3 = Arc::clone(&editor_state);
     let state_cloned4 = Arc::clone(&editor_state);
+    let state_cloned5 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
@@ -622,6 +622,7 @@ pub fn app_view(
                 if polygon_selected_real {
                     let state_cloned3 = state_cloned3.clone();
                     let state_cloned4 = state_cloned4.clone();
+                    let editor_cloned4 = editor_cloned4.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -933,7 +934,20 @@ pub fn app_view(
                                 }
                             },
                         ),
-                        keyframe_timeline,
+                        v_stack((
+                            simple_button("Play Sequence".to_string(), move |_| {
+                                println!("Play Sequence...");
+        
+                                let mut editor = editor_cloned4.lock().unwrap();
+
+                                editor.current_sequence_data = Some(selected_sequence_data.get());
+                                editor.is_playing = true;
+
+                                // EventPropagation::Continue
+                            }),
+                            keyframe_timeline,
+                        ))
+                        
                     ))
                     .into_any()
                 } else {

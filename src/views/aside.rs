@@ -38,7 +38,9 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
-use crate::helpers::saved_state::Sequence;
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+};
 
 use super::assets_panel::assets_view;
 use super::settings_panel::settings_view;
