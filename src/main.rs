@@ -1,5 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::rc::{Rc, Weak};
+use std::str::FromStr;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use bytemuck::Contiguous;
@@ -15,6 +16,7 @@ use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
 use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize};
+use stunts_engine::polygon::Polygon;
 use stunts_engine::vertex::Vertex;
 use uuid::Uuid;
 use views::app::app_view;
@@ -501,7 +503,7 @@ async fn main() {
     println!("Loading saved state...");
     let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
     let mut state_guard = state_5.lock().unwrap();
-    state_guard.saved_state = Some(saved_state);
+    state_guard.saved_state = Some(saved_state.clone());
     drop(state_guard);
 
     let (mut app, window_id) = app.window(
@@ -695,6 +697,32 @@ async fn main() {
                 // window_handle.depth_view = gpu_helper.depth_view;
 
                 println!("Initialized...");
+
+                saved_state.sequences.iter().for_each(|s| {
+                    s.active_polygons.iter().for_each(|p| {
+                        let restored_polygon = Polygon::new(
+                            &window_size,
+                            &gpu_resources.device,
+                            &camera,
+                            vec![
+                                Point { x: 0.0, y: 0.0 },
+                                Point { x: 1.0, y: 0.0 },
+                                Point { x: 1.0, y: 1.0 },
+                                Point { x: 0.0, y: 1.0 },
+                            ],
+                            (p.dimensions.0 as f32, p.dimensions.1 as f32),
+                            Point { x: 600.0, y: 100.0 },
+                            0.0,
+                            [1.0, 1.0, 1.0, 1.0],
+                            p.name.clone(),
+                            Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
+                        );
+
+                        editor.add_polygon(restored_polygon);
+                    });
+                });
+
+                println!("Polygons restored...");
 
                 window_handle.handle_cursor_moved = handle_cursor_moved(
                     cloned2.clone(),

@@ -70,6 +70,7 @@ pub fn sequence_panel(
                     height: viewport.height as u32,
                 };
                 let camera = editor.camera.expect("Couldn't get camera");
+                let new_id = Uuid::new_v4();
                 editor.add_polygon(Polygon::new(
                     &window_size,
                     &device,
@@ -80,6 +81,7 @@ pub fn sequence_panel(
                     polygon_config.border_radius,
                     polygon_config.fill,
                     "Polygon".to_string(),
+                    new_id,
                 ));
 
                 drop(viewport);
