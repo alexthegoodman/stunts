@@ -895,7 +895,22 @@ pub fn app_view(
                                                             move |mut editor_state, value| {
                                                                 editor_state.update_width(&value).expect("Couldn't update width");
                                                                 // TODO: probably should update selected_polygon_data
-                                                                // TODO: need to update active_polygons in saved_data
+                                                                // need to update active_polygons in saved_data
+                                                                // TODO: on_debounce_stop?
+                                                                let value = string_to_f32(&value).expect("Couldn't convert string");
+                                                                let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
+
+                                                                saved_state.sequences.iter_mut().for_each(|s| {
+                                                                    if s.id == selected_sequence_id.get() {
+                                                                        s.active_polygons.iter_mut().for_each(|p| {
+                                                                            if p.id == selected_polygon_id.get().to_string() {
+                                                                                p.dimensions = (p.dimensions.0, value as i32);
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                });
+
+                                                                save_saved_state_raw(saved_state.clone());
                                                             }
                                                         }),
                                                         state_cloned3,
@@ -917,6 +932,22 @@ pub fn app_view(
                                                             move |mut editor_state, value| {
                                                                 editor_state.update_height(&value).expect("Couldn't update height");
                                                                 // TODO: probably should update selected_polygon_data
+                                                                // need to update active_polygons in saved_data
+                                                                // TODO: on_debounce_stop?
+                                                                let value = string_to_f32(&value).expect("Couldn't convert string");
+                                                                let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
+
+                                                                saved_state.sequences.iter_mut().for_each(|s| {
+                                                                    if s.id == selected_sequence_id.get() {
+                                                                        s.active_polygons.iter_mut().for_each(|p| {
+                                                                            if p.id == selected_polygon_id.get().to_string() {
+                                                                                p.dimensions = (value as i32, p.dimensions.1);
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                });
+
+                                                                save_saved_state_raw(saved_state.clone());
                                                             }
                                                         }),
                                                         state_cloned4,
