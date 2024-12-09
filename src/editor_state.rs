@@ -7,11 +7,13 @@ use std::sync::{Arc, Mutex};
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
 use stunts_engine::editor::{string_to_f32, Editor, InputValue, PolygonProperty};
+use stunts_engine::polygon::SavedPolygonConfig;
 use undo::Edit;
 use undo::Record;
 use uuid::Uuid;
 
 use crate::helpers::saved_state::SavedState;
+use crate::helpers::utilities::save_saved_state_raw;
 
 #[derive(Debug)]
 pub struct PolygonEdit {
@@ -96,6 +98,22 @@ impl EditorState {
             current_modifiers: ModifiersState::empty(),
             saved_state: None,
         }
+    }
+
+    pub fn add_saved_polygon(
+        &mut self,
+        selected_sequence_id: String,
+        savable_polygon: SavedPolygonConfig,
+    ) {
+        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id {
+                s.active_polygons.push(savable_polygon.clone());
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
     }
 
     // Helper method to register a new signal

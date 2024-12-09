@@ -895,6 +895,7 @@ pub fn app_view(
                                                             move |mut editor_state, value| {
                                                                 editor_state.update_width(&value).expect("Couldn't update width");
                                                                 // TODO: probably should update selected_polygon_data
+                                                                // TODO: need to update active_polygons in saved_data
                                                             }
                                                         }),
                                                         state_cloned3,

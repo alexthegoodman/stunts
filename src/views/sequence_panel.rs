@@ -1,12 +1,12 @@
 use std::sync::{Arc, Mutex};
 
 use floem::common::{card_styles, option_button};
-use floem::reactive::RwSignal;
+use floem::reactive::{RwSignal, SignalGet};
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
-use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
+use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
@@ -23,6 +23,7 @@ pub fn sequence_panel(
     selected_sequence_id: RwSignal<String>,
     selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
+    let state_cloned = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
@@ -80,6 +81,23 @@ pub fn sequence_panel(
                     polygon_config.fill,
                     "Polygon".to_string(),
                 ));
+
+                drop(viewport);
+                drop(gpu_helper);
+                drop(editor);
+
+                let mut editor_state = state_cloned.lock().unwrap();
+                editor_state.add_saved_polygon(
+                    selected_sequence_id.get(),
+                    SavedPolygonConfig {
+                        id: polygon_config.id.to_string().clone(),
+                        name: polygon_config.name.clone(),
+                        dimensions: (
+                            polygon_config.dimensions.0 as i32,
+                            polygon_config.dimensions.1 as i32,
+                        ),
+                    },
+                );
             }),
             false,
         ),
