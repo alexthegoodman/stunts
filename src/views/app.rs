@@ -741,17 +741,128 @@ pub fn app_view(
                                         )
                                         .into_any(),
                                         KeyframeValue::Rotation(rotation) => container(
-                                            (v_stack((label(|| "Keyframe"),))
+                                            (v_stack((label(|| "Keyframe"),
+                                            styled_input(
+                                                "Rotation Degrees:".to_string(),
+                                                &rotation.to_string(),
+                                                "Enter Degrees",
+                                                Box::new({
+                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                        // then save merge animation_data with saved_data and save to file
+                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                                                        let mut current_keyframe = selected_keyframes.get();
+                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                                                        let mut current_sequence = selected_sequence_data.get();
+                                                        // let current_polygon = selected_polygon_data.read();
+                                                        // let current_polygon = current_polygon.borrow();
+
+                                                        // update keyframe
+                                                        current_keyframe.value = KeyframeValue::Rotation(value as i32);
+
+                                                        update_keyframe(
+                                                            editor_state,
+                                                            current_animation_data,
+                                                            current_keyframe,
+                                                            current_sequence,
+                                                            selected_keyframes,
+                                                            animation_data,
+                                                            selected_sequence_data,
+                                                            selected_sequence_id
+                                                        );
+                                                    }
+                                                }),
+                                                state_cloned3,
+                                                "rotation".to_string(),
+                                            )))
                                                 .style(|s| card_styles(s))),
                                         )
                                         .into_any(),
                                         KeyframeValue::Scale(scale) => container(
-                                            (v_stack((label(|| "Keyframe"),))
+                                            (v_stack((label(|| "Keyframe"),
+                                            styled_input(
+                                                "Scale (100 default):".to_string(),
+                                                &scale.to_string(),
+                                                "Enter Scale",
+                                                Box::new({
+                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                        // then save merge animation_data with saved_data and save to file
+                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                                                        let mut current_keyframe = selected_keyframes.get();
+                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                                                        let mut current_sequence = selected_sequence_data.get();
+                                                        // let current_polygon = selected_polygon_data.read();
+                                                        // let current_polygon = current_polygon.borrow();
+
+                                                        // update keyframe
+                                                        current_keyframe.value = KeyframeValue::Scale(value as i32);
+
+                                                        update_keyframe(
+                                                            editor_state,
+                                                            current_animation_data,
+                                                            current_keyframe,
+                                                            current_sequence,
+                                                            selected_keyframes,
+                                                            animation_data,
+                                                            selected_sequence_data,
+                                                            selected_sequence_id
+                                                        );
+                                                    }
+                                                }),
+                                                state_cloned3,
+                                                "scale".to_string(),
+                                            )))
                                                 .style(|s| card_styles(s))),
                                         )
                                         .into_any(),
                                         KeyframeValue::Opacity(opacity) => container(
-                                            (v_stack((label(|| "Keyframe"),))
+                                            (v_stack((label(|| "Keyframe"),
+                                            styled_input(
+                                                "Opacity (default 100):".to_string(),
+                                                &opacity.to_string(),
+                                                "Enter Opacity",
+                                                Box::new({
+                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                        // then save merge animation_data with saved_data and save to file
+                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                                                        let mut current_keyframe = selected_keyframes.get();
+                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                                                        let mut current_sequence = selected_sequence_data.get();
+                                                        // let current_polygon = selected_polygon_data.read();
+                                                        // let current_polygon = current_polygon.borrow();
+
+                                                        // update keyframe
+                                                        current_keyframe.value = KeyframeValue::Opacity(value as i32);
+
+                                                        update_keyframe(
+                                                            editor_state,
+                                                            current_animation_data,
+                                                            current_keyframe,
+                                                            current_sequence,
+                                                            selected_keyframes,
+                                                            animation_data,
+                                                            selected_sequence_data,
+                                                            selected_sequence_id
+                                                        );
+                                                    }
+                                                }),
+                                                state_cloned3,
+                                                "opacity".to_string(),
+                                            )))
                                                 .style(|s| card_styles(s))),
                                         )
                                         .into_any(),
