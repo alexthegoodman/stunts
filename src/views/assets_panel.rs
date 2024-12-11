@@ -9,6 +9,8 @@ use floem::views::{
 };
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
+use floem_renderer::gpu_resources;
+use std::str::FromStr;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
 use uuid::Uuid;
@@ -76,6 +78,8 @@ pub fn assets_view(
                 .clone();
             new_state.sequences.push(new_sequence);
 
+            editor_state.saved_state = Some(new_state.clone());
+
             save_saved_state_raw(new_state);
 
             sequences.update(|s| s.push_front(new_sequence_id.clone()));
@@ -90,6 +94,8 @@ pub fn assets_view(
                 move |item| item.clone(),
                 move |item| {
                     let state_cloned2 = state_cloned2.clone();
+                    let editor_cloned = editor_cloned.clone();
+                    let viewport_cloned = viewport_cloned.clone();
 
                     simple_button(item.clone(), move |_| {
                         println!("Open Sequence...");
@@ -109,6 +115,46 @@ pub fn assets_view(
                         selected_sequence_data.set(saved_sequence.clone());
                         selected_sequence_id.set(item.clone());
                         sequence_selected.set(true);
+
+                        let mut editor = editor_cloned.lock().unwrap();
+
+                        let camera = editor.camera.expect("Couldn't get camera");
+                        let viewport = viewport_cloned.lock().unwrap();
+
+                        let window_size = WindowSize {
+                            width: viewport.width as u32,
+                            height: viewport.height as u32,
+                        };
+
+                        saved_sequence.active_polygons.iter().for_each(|p| {
+                            let gpu_resources = editor
+                                .gpu_resources
+                                .as_ref()
+                                .expect("Couldn't get GPU Resources");
+
+                            let restored_polygon = Polygon::new(
+                                &window_size,
+                                &gpu_resources.device,
+                                &camera,
+                                vec![
+                                    Point { x: 0.0, y: 0.0 },
+                                    Point { x: 1.0, y: 0.0 },
+                                    Point { x: 1.0, y: 1.0 },
+                                    Point { x: 0.0, y: 1.0 },
+                                ],
+                                (p.dimensions.0 as f32, p.dimensions.1 as f32),
+                                Point { x: 600.0, y: 100.0 },
+                                0.0,
+                                [1.0, 1.0, 1.0, 1.0],
+                                p.name.clone(),
+                                Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
+                            );
+
+                            editor.add_polygon(restored_polygon);
+                        });
+
+                        println!("Polygons restored...");
+
                         // EventPropagation::Continue
                     })
                 },

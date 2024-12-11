@@ -167,7 +167,7 @@ impl TimelineGridView {
             );
 
             // Time label
-            let mut attrs_list = AttrsList::new(Attrs::new().color(Color::BLACK));
+            let mut attrs_list = AttrsList::new(Attrs::new().color(Color::BLACK).font_size(10.0));
             let mut text_layout = TextLayout::new();
             text_layout.set_text(&format!("{:.1}s", time), attrs_list);
 
@@ -567,8 +567,8 @@ pub fn create_timeline(
         .style(|s| {
             s.width(1200.0)
                 .height(300.0)
-                .margin_top(50.0)
-                .margin_left(50.0)
+                .margin_top(450.0)
+                .margin_left(25.0)
                 .background(Color::LIGHT_CORAL)
         })
         .on_event(EventListener::PointerDown, move |e| {

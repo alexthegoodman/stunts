@@ -176,11 +176,13 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 //     .unwrap();
                 let editor = get_sensor_editor(engine_handle);
                 // does this freeze?
-                let editor = editor
+                let mut editor = editor
                     .as_ref()
                     .expect("Couldn't get user engine")
                     .lock()
                     .unwrap();
+
+                editor.step_motion_path_animations();
 
                 let camera_binding = editor
                     .camera_binding
@@ -192,14 +194,14 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
 
                 render_pass.set_bind_group(0, &camera_binding.bind_group, &[]);
 
-                // for (poly_index, polygon) in editor.polygons.iter().enumerate() {
-                //     render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
-                //     render_pass.set_index_buffer(
-                //         polygon.index_buffer.slice(..),
-                //         wgpu::IndexFormat::Uint32,
-                //     );
-                //     render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
-                // }
+                for (poly_index, polygon) in editor.polygons.iter().enumerate() {
+                    render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
+                    render_pass.set_index_buffer(
+                        polygon.index_buffer.slice(..),
+                        wgpu::IndexFormat::Uint32,
+                    );
+                    render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
+                }
 
                 let viewport = editor.viewport.lock().unwrap();
                 let window_size = WindowSize {
@@ -521,7 +523,7 @@ async fn main() {
                     window_size.width as f64,
                     window_size.height as f64,
                 ))
-                .title("CommonOS Sensor"),
+                .title("CommonOS Stunts"),
         ),
     );
 
@@ -698,31 +700,32 @@ async fn main() {
 
                 println!("Initialized...");
 
-                saved_state.sequences.iter().for_each(|s| {
-                    s.active_polygons.iter().for_each(|p| {
-                        let restored_polygon = Polygon::new(
-                            &window_size,
-                            &gpu_resources.device,
-                            &camera,
-                            vec![
-                                Point { x: 0.0, y: 0.0 },
-                                Point { x: 1.0, y: 0.0 },
-                                Point { x: 1.0, y: 1.0 },
-                                Point { x: 0.0, y: 1.0 },
-                            ],
-                            (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                            Point { x: 600.0, y: 100.0 },
-                            0.0,
-                            [1.0, 1.0, 1.0, 1.0],
-                            p.name.clone(),
-                            Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
-                        );
+                // TODO: actually do this when opening a sequence
+                // saved_state.sequences.iter().for_each(|s| {
+                //     s.active_polygons.iter().for_each(|p| {
+                //         let restored_polygon = Polygon::new(
+                //             &window_size,
+                //             &gpu_resources.device,
+                //             &camera,
+                //             vec![
+                //                 Point { x: 0.0, y: 0.0 },
+                //                 Point { x: 1.0, y: 0.0 },
+                //                 Point { x: 1.0, y: 1.0 },
+                //                 Point { x: 0.0, y: 1.0 },
+                //             ],
+                //             (p.dimensions.0 as f32, p.dimensions.1 as f32),
+                //             Point { x: 600.0, y: 100.0 },
+                //             0.0,
+                //             [1.0, 1.0, 1.0, 1.0],
+                //             p.name.clone(),
+                //             Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
+                //         );
 
-                        editor.add_polygon(restored_polygon);
-                    });
-                });
+                //         editor.add_polygon(restored_polygon);
+                //     });
+                // });
 
-                println!("Polygons restored...");
+                // println!("Polygons restored...");
 
                 window_handle.handle_cursor_moved = handle_cursor_moved(
                     cloned2.clone(),

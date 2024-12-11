@@ -644,7 +644,7 @@ pub fn app_view(
                         width: 1200.0,
                         height: 300.0,
                         header_height: 30.0,
-                        property_width: 200.0,
+                        property_width: 38.0,
                         row_height: 24.0,
                         // offset_x: 325.0,
                         // offset_y: 300.0,
