@@ -595,7 +595,7 @@ pub fn app_view(
             selected_sequence_data,
         ),
         dyn_container(
-            move || sequence_selected.get(),
+            move || sequence_selected.get() && selected_keyframes.get().len() == 0,
             move |sequence_selected_real| {
                 if sequence_selected_real {
                     h_stack((
@@ -968,17 +968,21 @@ pub fn app_view(
                         ),
                         v_stack((
                             simple_button("Play Sequence".to_string(), move |_| {
-                                println!("Play Sequence...");
-        
                                 let mut editor = editor_cloned4.lock().unwrap();
 
-                                editor.current_sequence_data = Some(selected_sequence_data.get());
-                                editor.is_playing = true;
+                                if editor.is_playing {
+                                    println!("Pause Sequence...");
+                                    editor.is_playing = false;
+                                } else {
+                                    println!("Play Sequence...");
+                                    editor.current_sequence_data = Some(selected_sequence_data.get());
+                                    editor.is_playing = true;
+                                }
 
                                 // EventPropagation::Continue
                             }),
                             keyframe_timeline,
-                        ))
+                        )).style(|s| s.margin_top(425.0))
                         
                     ))
                     .into_any()

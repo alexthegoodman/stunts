@@ -145,8 +145,8 @@ pub fn tab_interface(
         container((
             list,
             dyn_container(
-                // move || !polygon_selected.get(),
-                || true,
+                move || !sequence_selected.get(),
+                // || true,
                 move |show_content| {
                     let editor = editor.clone();
                     let viewport = viewport.clone();

@@ -567,7 +567,7 @@ pub fn create_timeline(
         .style(|s| {
             s.width(1200.0)
                 .height(300.0)
-                .margin_top(450.0)
+                .margin_top(25.0)
                 .margin_left(25.0)
                 .background(Color::LIGHT_CORAL)
         })
