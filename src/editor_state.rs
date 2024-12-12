@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 // use common_vector::basic::wgpu_to_human;
 // use common_vector::editor::{InputValue, PolygonProperty};
 // use common_vector::{basic::string_to_f32, editor::Editor};
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
+};
 use stunts_engine::editor::{string_to_f32, Editor, InputValue, PolygonProperty};
 use stunts_engine::polygon::SavedPolygonConfig;
 use undo::Edit;
@@ -107,13 +111,220 @@ impl EditorState {
     ) {
         let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
 
+        let mut properties = Vec::new();
+
+        let mut position_keyframes = Vec::new();
+
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(0),
+            value: KeyframeValue::Position([0, 0]),
+            easing: EasingType::EaseInOut,
+        });
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(2500),
+            value: KeyframeValue::Position([10, 10]),
+            easing: EasingType::EaseInOut,
+        });
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(5),
+            value: KeyframeValue::Position([20, 20]),
+            easing: EasingType::EaseInOut,
+        });
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(15),
+            value: KeyframeValue::Position([20, 20]),
+            easing: EasingType::EaseInOut,
+        });
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(17500),
+            value: KeyframeValue::Position([30, 30]),
+            easing: EasingType::EaseInOut,
+        });
+        position_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(20),
+            value: KeyframeValue::Position([40, 40]),
+            easing: EasingType::EaseInOut,
+        });
+
+        let mut position_prop = AnimationProperty {
+            name: "Position".to_string(),
+            property_path: "position".to_string(),
+            children: Vec::new(),
+            keyframes: position_keyframes,
+            depth: 0,
+        };
+
+        let mut rotation_keyframes = Vec::new();
+
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(0),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(2500),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(5),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(15),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(17500),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+        rotation_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(20),
+            value: KeyframeValue::Rotation(0),
+            easing: EasingType::EaseInOut,
+        });
+
+        let mut rotation_prop = AnimationProperty {
+            name: "Rotation".to_string(),
+            property_path: "rotation".to_string(),
+            children: Vec::new(),
+            keyframes: rotation_keyframes,
+            depth: 0,
+        };
+
+        let mut scale_keyframes = Vec::new();
+
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(0),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(2500),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(5),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(15),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(17500),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+        scale_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(20),
+            value: KeyframeValue::Scale(100),
+            easing: EasingType::EaseInOut,
+        });
+
+        let mut scale_prop = AnimationProperty {
+            name: "Scale".to_string(),
+            property_path: "scale".to_string(),
+            children: Vec::new(),
+            keyframes: scale_keyframes,
+            depth: 0,
+        };
+
+        let mut opacity_keyframes = Vec::new();
+
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(0),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(2500),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(5),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(15),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_millis(17500),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+        opacity_keyframes.push(UIKeyframe {
+            id: Uuid::new_v4().to_string(),
+            time: Duration::from_secs(20),
+            value: KeyframeValue::Opacity(100),
+            easing: EasingType::EaseInOut,
+        });
+
+        let mut opacity_prop = AnimationProperty {
+            name: "Opacity".to_string(),
+            property_path: "opacity".to_string(),
+            children: Vec::new(),
+            keyframes: opacity_keyframes,
+            depth: 0,
+        };
+
+        properties.push(position_prop); // usually easiest with a top-left anchor point...
+        properties.push(rotation_prop); // TODO: best with centered anchor point?
+        properties.push(scale_prop); // TODO: also better with centered anchor point?
+                                     // properties.push(perspective_x_prop);
+                                     // properties.push(perspective_y_prop);
+        properties.push(opacity_prop);
+
+        let new_motion_path = AnimationData {
+            id: Uuid::new_v4().to_string(),
+            polygon_id: savable_polygon.id.clone(),
+            duration: Duration::from_secs(20),
+            properties: properties,
+        };
+
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
                 s.active_polygons.push(savable_polygon.clone());
+                s.polygon_motion_paths.push(new_motion_path.clone());
             }
         });
 
         save_saved_state_raw(saved_state.clone());
+
+        self.saved_state = Some(saved_state.clone());
     }
 
     // Helper method to register a new signal
