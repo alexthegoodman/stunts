@@ -105,4 +105,5 @@ pub fn sequence_panel(
         ),
     ))
     .style(|s| card_styles(s))
+    .style(|s| s.width(300.0))
 }

@@ -53,6 +53,7 @@ pub fn tab_interface(
     sequence_selected: RwSignal<bool>,
     selected_sequence_id: RwSignal<String>,
     selected_sequence_data: RwSignal<Sequence>,
+    polygon_selected: RwSignal<bool>,
 ) -> impl View {
     let tabs: im::Vector<&str> = vec!["Motion", "Settings"].into_iter().collect();
     let (tabs, _set_tabs) = create_signal(tabs);

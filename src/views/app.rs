@@ -138,12 +138,16 @@ pub fn app_view(
     let editor_cloned2 = Arc::clone(&editor);
     let editor_cloned3 = Arc::clone(&editor);
     let editor_cloned4 = Arc::clone(&editor);
+    let editor_cloned5 = Arc::clone(&editor);
+    let editor_cloned6 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
     let state_cloned3 = Arc::clone(&editor_state);
     let state_cloned4 = Arc::clone(&editor_state);
     let state_cloned5 = Arc::clone(&editor_state);
+    let state_cloned6 = Arc::clone(&editor_state);
+    let state_cloned7 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
@@ -593,9 +597,10 @@ pub fn app_view(
             sequence_selected,
             selected_sequence_id,
             selected_sequence_data,
+            polygon_selected
         ),
         dyn_container(
-            move || sequence_selected.get() && selected_keyframes.get().len() == 0,
+            move || sequence_selected.get()  && !polygon_selected.get() && selected_keyframes.get().len() == 0,
             move |sequence_selected_real| {
                 if sequence_selected_real {
                     h_stack((
@@ -623,6 +628,8 @@ pub fn app_view(
                     let state_cloned3 = state_cloned3.clone();
                     let state_cloned4 = state_cloned4.clone();
                     let editor_cloned4 = editor_cloned4.clone();
+                    let state_cloned6 = state_cloned6.clone();
+                    let state_cloned7 = state_cloned7.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -656,6 +663,103 @@ pub fn app_view(
 
                     h_stack((
                         dyn_container(
+                            move || polygon_selected.get() && selected_keyframes.get().len() == 0,
+                            move |polygon_selected_real| {
+                                if polygon_selected_real {
+                                    let state_cloned5 = state_cloned6.clone();
+                                    let state_cloned6 = state_cloned7.clone();
+
+                                    container(
+                                        (v_stack((
+                                            label(|| "Properties"),
+                                            simple_button("Back to Sequence".to_string(), move |_| {
+                                                polygon_selected.set(false);
+                                            }),
+                                            h_stack((
+                                                styled_input(
+                                                    "Width:".to_string(),
+                                                    &selected_polygon_data
+                                                        .read()
+                                                        .borrow()
+                                                        .dimensions
+                                                        .0
+                                                        .to_string(),
+                                                    "Enter width",
+                                                    Box::new({
+                                                        move |mut editor_state, value| {
+                                                            editor_state.update_width(&value).expect("Couldn't update width");
+                                                            // TODO: probably should update selected_polygon_data
+                                                            // need to update active_polygons in saved_data
+                                                            // TODO: on_debounce_stop?
+                                                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                                                            let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
+
+                                                            saved_state.sequences.iter_mut().for_each(|s| {
+                                                                if s.id == selected_sequence_id.get() {
+                                                                    s.active_polygons.iter_mut().for_each(|p| {
+                                                                        if p.id == selected_polygon_id.get().to_string() {
+                                                                            p.dimensions = (p.dimensions.0, value as i32);
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+
+                                                            save_saved_state_raw(saved_state.clone());
+                                                        }
+                                                    }),
+                                                    state_cloned5,
+                                                    "width".to_string(),
+                                                )
+                                                .style(move |s| {
+                                                    s.width(halfs).margin_right(5.0)
+                                                }),
+                                                styled_input(
+                                                    "Height:".to_string(),
+                                                    &selected_polygon_data
+                                                        .read()
+                                                        .borrow()
+                                                        .dimensions
+                                                        .1
+                                                        .to_string(),
+                                                    "Enter height",
+                                                    Box::new({
+                                                        move |mut editor_state, value| {
+                                                            editor_state.update_height(&value).expect("Couldn't update height");
+                                                            // TODO: probably should update selected_polygon_data
+                                                            // need to update active_polygons in saved_data
+                                                            // TODO: on_debounce_stop?
+                                                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                                                            let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
+
+                                                            saved_state.sequences.iter_mut().for_each(|s| {
+                                                                if s.id == selected_sequence_id.get() {
+                                                                    s.active_polygons.iter_mut().for_each(|p| {
+                                                                        if p.id == selected_polygon_id.get().to_string() {
+                                                                            p.dimensions = (value as i32, p.dimensions.1);
+                                                                        }
+                                                                    });
+                                                                }
+                                                            });
+
+                                                            save_saved_state_raw(saved_state.clone());
+                                                        }
+                                                    }),
+                                                    state_cloned6,
+                                                    "height".to_string(),
+                                                )
+                                                .style(move |s| s.width(halfs)),
+                                            ))
+                                            .style(move |s| s.width(aside_width)),
+                                        ))
+                                        .style(|s| card_styles(s))),
+                                    )
+                                    .into_any()
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
+                        ),
+                        dyn_container(
                             move || selected_keyframes.get(),
                             move |selected_keyframes_real| {
                                 if let Some(selected_keyframe) = selected_keyframes_real.get(0) {
@@ -666,6 +770,9 @@ pub fn app_view(
                                         KeyframeValue::Position(position) => container(
                                             (v_stack((
                                                 label(|| "Keyframe"),
+                                                simple_button("Back to Properties".to_string(), move |_| {
+                                                    selected_keyframes.set(Vec::new());
+                                                }),
                                                 h_stack((
                                                     styled_input(
                                                         "X:".to_string(),
@@ -751,6 +858,9 @@ pub fn app_view(
                                         .into_any(),
                                         KeyframeValue::Rotation(rotation) => container(
                                             (v_stack((label(|| "Keyframe"),
+                                            simple_button("Back to Properties".to_string(), move |_| {
+                                                selected_keyframes.set(Vec::new());
+                                            }),
                                             styled_input(
                                                 "Rotation Degrees:".to_string(),
                                                 &rotation.to_string(),
@@ -794,6 +904,9 @@ pub fn app_view(
                                         .into_any(),
                                         KeyframeValue::Scale(scale) => container(
                                             (v_stack((label(|| "Keyframe"),
+                                            simple_button("Back to Properties".to_string(), move |_| {
+                                                selected_keyframes.set(Vec::new());
+                                            }),
                                             styled_input(
                                                 "Scale (100 default):".to_string(),
                                                 &scale.to_string(),
@@ -837,6 +950,9 @@ pub fn app_view(
                                         .into_any(),
                                         KeyframeValue::Opacity(opacity) => container(
                                             (v_stack((label(|| "Keyframe"),
+                                            simple_button("Back to Properties".to_string(), move |_| {
+                                                selected_keyframes.set(Vec::new());
+                                            }),
                                             styled_input(
                                                 "Opacity (default 100):".to_string(),
                                                 &opacity.to_string(),
@@ -878,88 +994,7 @@ pub fn app_view(
                                                 .style(|s| card_styles(s))),
                                         )
                                         .into_any(),
-                                        _ => container(
-                                            (v_stack((
-                                                label(|| "Properties"),
-                                                h_stack((
-                                                    styled_input(
-                                                        "Width:".to_string(),
-                                                        &selected_polygon_data
-                                                            .read()
-                                                            .borrow()
-                                                            .dimensions
-                                                            .0
-                                                            .to_string(),
-                                                        "Enter width",
-                                                        Box::new({
-                                                            move |mut editor_state, value| {
-                                                                editor_state.update_width(&value).expect("Couldn't update width");
-                                                                // TODO: probably should update selected_polygon_data
-                                                                // need to update active_polygons in saved_data
-                                                                // TODO: on_debounce_stop?
-                                                                let value = string_to_f32(&value).expect("Couldn't convert string");
-                                                                let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
-
-                                                                saved_state.sequences.iter_mut().for_each(|s| {
-                                                                    if s.id == selected_sequence_id.get() {
-                                                                        s.active_polygons.iter_mut().for_each(|p| {
-                                                                            if p.id == selected_polygon_id.get().to_string() {
-                                                                                p.dimensions = (p.dimensions.0, value as i32);
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                });
-
-                                                                save_saved_state_raw(saved_state.clone());
-                                                            }
-                                                        }),
-                                                        state_cloned3,
-                                                        "width".to_string(),
-                                                    )
-                                                    .style(move |s| {
-                                                        s.width(halfs).margin_right(5.0)
-                                                    }),
-                                                    styled_input(
-                                                        "Height:".to_string(),
-                                                        &selected_polygon_data
-                                                            .read()
-                                                            .borrow()
-                                                            .dimensions
-                                                            .1
-                                                            .to_string(),
-                                                        "Enter height",
-                                                        Box::new({
-                                                            move |mut editor_state, value| {
-                                                                editor_state.update_height(&value).expect("Couldn't update height");
-                                                                // TODO: probably should update selected_polygon_data
-                                                                // need to update active_polygons in saved_data
-                                                                // TODO: on_debounce_stop?
-                                                                let value = string_to_f32(&value).expect("Couldn't convert string");
-                                                                let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
-
-                                                                saved_state.sequences.iter_mut().for_each(|s| {
-                                                                    if s.id == selected_sequence_id.get() {
-                                                                        s.active_polygons.iter_mut().for_each(|p| {
-                                                                            if p.id == selected_polygon_id.get().to_string() {
-                                                                                p.dimensions = (value as i32, p.dimensions.1);
-                                                                            }
-                                                                        });
-                                                                    }
-                                                                });
-
-                                                                save_saved_state_raw(saved_state.clone());
-                                                            }
-                                                        }),
-                                                        state_cloned4,
-                                                        "height".to_string(),
-                                                    )
-                                                    .style(move |s| s.width(halfs)),
-                                                ))
-                                                .style(move |s| s.width(aside_width)),
-                                            ))
-                                            .style(|s| card_styles(s))),
-                                        )
-                                        .into_any(),
+                                        _ => empty().into_any(),
                                     }
                                 } else {
                                     empty().into_any()
