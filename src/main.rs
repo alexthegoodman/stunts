@@ -204,6 +204,19 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     &[],
                 );
 
+                for (poly_index, polygon) in editor.static_polygons.iter().enumerate() {
+                    polygon
+                        .transform
+                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    render_pass.set_bind_group(1, &polygon.bind_group, &[]);
+                    render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
+                    render_pass.set_index_buffer(
+                        polygon.index_buffer.slice(..),
+                        wgpu::IndexFormat::Uint32,
+                    );
+                    render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
+                }
+
                 for (poly_index, polygon) in editor.polygons.iter().enumerate() {
                     polygon
                         .transform
@@ -776,32 +789,26 @@ async fn main() {
 
                 println!("Initialized...");
 
-                // TODO: actually do this when opening a sequence
-                // saved_state.sequences.iter().for_each(|s| {
-                //     s.active_polygons.iter().for_each(|p| {
-                //         let restored_polygon = Polygon::new(
-                //             &window_size,
-                //             &gpu_resources.device,
-                //             &camera,
-                //             vec![
-                //                 Point { x: 0.0, y: 0.0 },
-                //                 Point { x: 1.0, y: 0.0 },
-                //                 Point { x: 1.0, y: 1.0 },
-                //                 Point { x: 0.0, y: 1.0 },
-                //             ],
-                //             (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                //             Point { x: 600.0, y: 100.0 },
-                //             0.0,
-                //             [1.0, 1.0, 1.0, 1.0],
-                //             p.name.clone(),
-                //             Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
-                //         );
+                let canvas_polygon = Polygon::new(
+                    &window_size,
+                    &gpu_resources.device,
+                    &model_bind_group_layout,
+                    &camera,
+                    vec![
+                        Point { x: 0.0, y: 0.0 },
+                        Point { x: 1.0, y: 0.0 },
+                        Point { x: 1.0, y: 1.0 },
+                        Point { x: 0.0, y: 1.0 },
+                    ],
+                    (800.0 as f32, 450.0 as f32),
+                    Point { x: 0.0, y: 0.0 },
+                    0.0,
+                    [0.9, 0.9, 0.9, 1.0],
+                    "Canvas Background".to_string(),
+                    Uuid::new_v4(),
+                );
 
-                //         editor.add_polygon(restored_polygon);
-                //     });
-                // });
-
-                // println!("Polygons restored...");
+                editor.static_polygons.push(canvas_polygon);
 
                 window_handle.handle_cursor_moved = handle_cursor_moved(
                     cloned2.clone(),
