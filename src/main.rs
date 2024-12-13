@@ -15,7 +15,7 @@ use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseSc
 use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
-use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader};
 use stunts_engine::polygon::Polygon;
 use stunts_engine::vertex::Vertex;
 use uuid::Uuid;
@@ -182,7 +182,9 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     .lock()
                     .unwrap();
 
-                editor.step_motion_path_animations();
+                let camera = editor.camera.expect("Couldn't get camera");
+
+                editor.step_motion_path_animations(&camera);
 
                 let camera_binding = editor
                     .camera_binding
@@ -193,11 +195,19 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // editor.update_camera_binding(&gpu_resources.queue);
 
                 render_pass.set_bind_group(0, &camera_binding.bind_group, &[]);
+                render_pass.set_bind_group(
+                    2,
+                    editor
+                        .window_size_bind_group
+                        .as_ref()
+                        .expect("Couldn't get window size group"),
+                    &[],
+                );
 
                 for (poly_index, polygon) in editor.polygons.iter().enumerate() {
                     polygon
                         .transform
-                        .update_uniform_buffer(&gpu_resources.queue);
+                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
                     render_pass.set_bind_group(1, &polygon.bind_group, &[]);
                     render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
@@ -619,6 +629,46 @@ async fn main() {
 
                 let model_bind_group_layout = Arc::new(model_bind_group_layout);
 
+                let window_size_buffer =
+                    gpu_resources
+                        .device
+                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                            label: None,
+                            contents: bytemuck::cast_slice(&[WindowSizeShader {
+                                width: window_size.width as f32,
+                                height: window_size.height as f32,
+                            }]),
+                            usage: wgpu::BufferUsages::UNIFORM,
+                        });
+
+                let window_size_bind_group_layout = gpu_resources.device.create_bind_group_layout(
+                    &wgpu::BindGroupLayoutDescriptor {
+                        label: None,
+                        entries: &[wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::VERTEX,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        }],
+                    },
+                );
+
+                let window_size_bind_group =
+                    gpu_resources
+                        .device
+                        .create_bind_group(&wgpu::BindGroupDescriptor {
+                            layout: &window_size_bind_group_layout,
+                            entries: &[wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: window_size_buffer.as_entire_binding(),
+                            }],
+                            label: None,
+                        });
+
                 // Define the layouts
                 let pipeline_layout =
                     gpu_resources
@@ -629,6 +679,7 @@ async fn main() {
                             bind_group_layouts: &[
                                 &camera_binding.bind_group_layout,
                                 &model_bind_group_layout,
+                                &window_size_bind_group_layout,
                             ], // No bind group layouts
                             push_constant_ranges: &[],
                         });
@@ -785,6 +836,7 @@ async fn main() {
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.model_bind_group_layout = Some(model_bind_group_layout);
+                editor.window_size_bind_group = Some(window_size_bind_group);
                 window_handle.gpu_resources = Some(gpu_resources);
                 // window_handle.gpu_helper = Some(gpu_clonsed2);
                 editor.window = window_handle.window.clone();

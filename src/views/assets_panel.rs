@@ -147,7 +147,7 @@ pub fn assets_view(
                                     Point { x: 0.0, y: 1.0 },
                                 ],
                                 (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                Point { x: 0.1, y: 0.1 },
+                                Point { x: 600.0, y: 100.0 },
                                 0.0,
                                 [1.0, 1.0, 1.0, 1.0],
                                 p.name.clone(),
