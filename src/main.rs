@@ -195,6 +195,10 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 render_pass.set_bind_group(0, &camera_binding.bind_group, &[]);
 
                 for (poly_index, polygon) in editor.polygons.iter().enumerate() {
+                    polygon
+                        .transform
+                        .update_uniform_buffer(&gpu_resources.queue);
+                    render_pass.set_bind_group(1, &polygon.bind_group, &[]);
                     render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
                         polygon.index_buffer.slice(..),
@@ -211,23 +215,23 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
 
                 // println!("Render size {:?}", window_size);
 
-                let camera = editor.camera.expect("Couldn't get camera");
+                // let camera = editor.camera.expect("Couldn't get camera");
 
-                let ndc_position = point_to_ndc(editor.last_top_left, &window_size);
-                let (vertices, indices, vertex_buffer, index_buffer) = draw_dot(
-                    &gpu_resources.device,
-                    &window_size,
-                    Point {
-                        x: ndc_position.x,
-                        y: ndc_position.y,
-                    },
-                    rgb_to_wgpu(47, 131, 222, 1.0),
-                    &camera,
-                ); // Green dot
+                // let ndc_position = point_to_ndc(editor.last_top_left, &window_size);
+                // let (vertices, indices, vertex_buffer, index_buffer) = draw_dot(
+                //     &gpu_resources.device,
+                //     &window_size,
+                //     Point {
+                //         x: ndc_position.x,
+                //         y: ndc_position.y,
+                //     },
+                //     rgb_to_wgpu(47, 131, 222, 1.0),
+                //     &camera,
+                // ); // Green dot
 
-                render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-                render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
+                // render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
+                // render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                // render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
             }
 
             (Some(encoder), Some(frame), Some(view), Some(resolve_view))
@@ -597,6 +601,24 @@ async fn main() {
                     .as_ref()
                     .expect("Couldn't get camera binding");
 
+                let model_bind_group_layout = gpu_resources.device.create_bind_group_layout(
+                    &wgpu::BindGroupLayoutDescriptor {
+                        entries: &[wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::VERTEX,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        }],
+                        label: Some("model_bind_group_layout"),
+                    },
+                );
+
+                let model_bind_group_layout = Arc::new(model_bind_group_layout);
+
                 // Define the layouts
                 let pipeline_layout =
                     gpu_resources
@@ -604,7 +626,10 @@ async fn main() {
                         .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                             label: Some("Pipeline Layout"),
                             // bind_group_layouts: &[&bind_group_layout],
-                            bind_group_layouts: &[&camera_binding.bind_group_layout], // No bind group layouts
+                            bind_group_layouts: &[
+                                &camera_binding.bind_group_layout,
+                                &model_bind_group_layout,
+                            ], // No bind group layouts
                             push_constant_ranges: &[],
                         });
 
@@ -759,6 +784,7 @@ async fn main() {
 
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));
+                editor.model_bind_group_layout = Some(model_bind_group_layout);
                 window_handle.gpu_resources = Some(gpu_resources);
                 // window_handle.gpu_helper = Some(gpu_clonsed2);
                 editor.window = window_handle.window.clone();

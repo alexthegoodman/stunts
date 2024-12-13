@@ -71,18 +71,14 @@ pub fn sequence_panel(
                 };
                 let camera = editor.camera.expect("Couldn't get camera");
                 let new_id = Uuid::new_v4();
-                editor.add_polygon(Polygon::new(
+                editor.add_polygon(
                     &window_size,
                     &device,
                     &camera,
-                    polygon_config.points.clone(),
-                    polygon_config.dimensions,
-                    polygon_config.position,
-                    polygon_config.border_radius,
-                    polygon_config.fill,
+                    polygon_config.clone(),
                     "Polygon".to_string(),
                     new_id,
-                ));
+                );
 
                 drop(viewport);
                 drop(gpu_helper);

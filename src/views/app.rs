@@ -707,9 +707,15 @@ pub fn app_view(
 
                                 if editor.is_playing {
                                     println!("Pause Sequence...");
+                                    
                                     editor.is_playing = false;
+                                    editor.start_playing_time = None;
                                 } else {
                                     println!("Play Sequence...");
+
+                                    let now = std::time::Instant::now();
+                                    editor.start_playing_time = Some(now);
+
                                     editor.current_sequence_data = Some(selected_sequence_data.get());
                                     editor.is_playing = true;
                                 }

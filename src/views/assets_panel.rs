@@ -135,6 +135,10 @@ pub fn assets_view(
                             let restored_polygon = Polygon::new(
                                 &window_size,
                                 &gpu_resources.device,
+                                &editor
+                                    .model_bind_group_layout
+                                    .as_ref()
+                                    .expect("Couldn't get model bind group layout"),
                                 &camera,
                                 vec![
                                     Point { x: 0.0, y: 0.0 },
@@ -143,14 +147,15 @@ pub fn assets_view(
                                     Point { x: 0.0, y: 1.0 },
                                 ],
                                 (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                Point { x: 600.0, y: 100.0 },
+                                Point { x: 0.1, y: 0.1 },
                                 0.0,
                                 [1.0, 1.0, 1.0, 1.0],
                                 p.name.clone(),
                                 Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
                             );
 
-                            editor.add_polygon(restored_polygon);
+                            // editor.add_polygon(restored_polygon);
+                            editor.polygons.push(restored_polygon);
                         });
 
                         println!("Polygons restored...");

@@ -24,8 +24,13 @@ struct CameraUniform {
     view_proj: mat4x4<f32>,
 };
 
+struct ModelUniforms {
+    model: mat4x4<f32>
+};
+
 @group(0) @binding(0)
 var<uniform> camera: CameraUniform;
+@group(1) @binding(0) var<uniform> model_uniforms: ModelUniforms; // Model Transform
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -44,7 +49,8 @@ fn vs_main(
     vertex: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-    let pos = vec4<f32>(vertex.position, 1.0);
+    // let pos = vec4<f32>(vertex.position, 1.0);
+    let pos = model_uniforms.model * vec4<f32>(vertex.position, 1.0);
     out.clip_position = camera.view_proj * pos;
     out.tex_coords = vertex.tex_coords;
     out.color = vertex.color;  // Pass color from input to output
