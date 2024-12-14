@@ -803,6 +803,7 @@ async fn main() {
                     (800.0 as f32, 450.0 as f32),
                     Point { x: 0.0, y: 0.0 },
                     0.0,
+                    0.0,
                     [0.9, 0.9, 0.9, 1.0],
                     "Canvas Background".to_string(),
                     Uuid::new_v4(),

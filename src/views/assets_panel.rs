@@ -149,6 +149,7 @@ pub fn assets_view(
                                 (p.dimensions.0 as f32, p.dimensions.1 as f32),
                                 Point { x: 600.0, y: 100.0 },
                                 0.0,
+                                0.0,
                                 [1.0, 1.0, 1.0, 1.0],
                                 p.name.clone(),
                                 Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
@@ -158,7 +159,11 @@ pub fn assets_view(
                             editor.polygons.push(restored_polygon);
                         });
 
-                        println!("Polygons restored...");
+                        println!("Polygons restored!");
+
+                        editor.update_motion_paths(&saved_sequence);
+
+                        println!("Motion Paths restored!");
 
                         // EventPropagation::Continue
                     })
