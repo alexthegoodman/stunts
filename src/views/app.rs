@@ -25,7 +25,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
-use stunts_engine::editor::{string_to_f32, Editor, Point, PolygonClickHandler, Viewport};
+use stunts_engine::editor::{string_to_f32, Editor, OnMouseUp, Point, PolygonClickHandler, Viewport};
 use stunts_engine::polygon::{PolygonConfig, Stroke};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
@@ -139,6 +139,7 @@ pub fn app_view(
     let editor_cloned4 = Arc::clone(&editor);
     let editor_cloned5 = Arc::clone(&editor);
     let editor_cloned6 = Arc::clone(&editor);
+    let editor_cloned7 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
@@ -277,6 +278,72 @@ pub fn app_view(
         }
     });
 
+    let on_mouse_up: Arc<OnMouseUp> = Arc::new({
+        let editor_state = editor_state.clone();
+        let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
+        let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+
+        move || {
+            let editor_state = editor_state.clone();
+            let polygon_selected_ref = polygon_selected_ref.clone();
+            let selected_polygon_id_ref = selected_polygon_id_ref.clone();
+            let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let animation_data_ref = animation_data_ref.clone();
+
+            Some(
+                Box::new(move |poly_index: usize, point: Point| {
+                    // cannot lock editor here! probably because called from Editor
+                    // {
+                    //     let mut editor = new_editor.lock().unwrap();
+                    //     // Update editor as needed
+                    // }
+
+                    // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+
+                    let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
+                    let mut current_keyframe = selected_keyframes.get();
+
+                    if let Some(current_keyframe) = current_keyframe.get_mut(0) {
+                        // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                        let mut current_sequence = selected_sequence_data.get();
+                        // let current_polygon = selected_polygon_data.read();
+                        // let current_polygon = current_polygon.borrow();
+
+                        // update keyframe
+                        current_keyframe.value = KeyframeValue::Position([point.x as i32, point.y as i32]);
+
+                        let mut editor_state = editor_state.lock().unwrap();
+
+                        update_keyframe(
+                            editor_state,
+                            current_animation_data,
+                            current_keyframe,
+                            current_sequence,
+                            selected_keyframes,
+                            animation_data,
+                            selected_sequence_data,
+                            selected_sequence_id,
+                            sequence_selected
+                        );
+
+                        // drop(editor_state);
+
+                        println!("Keyframe updated!");
+                    }                    
+
+                    // let mut editor = editor_cloned7.lock().unwrap();
+                    // editor.update_motion_paths(&selected_sequence_data.get());
+
+                    // println!("Motion Paths updated!");
+
+                    selected_sequence_data.get()
+                }) as Box<dyn FnMut(usize, Point) -> Sequence + Send>,
+            )
+        }
+    });
+
     // Use create_effect to set the handler only once
     create_effect({
         let handle_polygon_click = Arc::clone(&handle_polygon_click);
@@ -284,6 +351,7 @@ pub fn app_view(
         move |_| {
             let mut editor = editor_cloned3.lock().unwrap();
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
+            editor.on_mouse_up = Some(Arc::clone(&on_mouse_up));
         }
     });
 
