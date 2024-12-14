@@ -11,7 +11,7 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use std::str::FromStr;
-use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
 use uuid::Uuid;
 
@@ -151,6 +151,11 @@ pub fn assets_view(
                                 0.0,
                                 0.0,
                                 [1.0, 1.0, 1.0, 1.0],
+                                Stroke {
+                                    thickness: 2.0,
+                                    fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                                },
+                                0.0,
                                 p.name.clone(),
                                 Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
                             );

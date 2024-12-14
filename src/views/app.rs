@@ -85,21 +85,20 @@ pub fn update_keyframe(
     animation_data.set(Some(current_animation_data));
 
     // update sequence
-    // also need selected_sequence_id
-    // current_sequence
-    //     .polygon_motion_paths
-    //     .iter_mut()
-    //     .for_each(|pm| {
-    //         pm.properties.iter_mut().for_each(|p| {
-    //             p.keyframes.iter_mut().for_each(|k| {
-    //                 if k.id == current_keyframe.id {
-    //                     *k = current_keyframe.to_owned();
-    //                 }
-    //             });
-    //         });
-    //     });
+    current_sequence
+        .polygon_motion_paths
+        .iter_mut()
+        .for_each(|pm| {
+            pm.properties.iter_mut().for_each(|p| {
+                p.keyframes.iter_mut().for_each(|k| {
+                    if k.id == current_keyframe.id {
+                        *k = current_keyframe.to_owned();
+                    }
+                });
+            });
+        });
 
-    // selected_sequence_data.set(current_sequence);
+    selected_sequence_data.set(current_sequence);
 
     // sequence_selected.set(true);
 
@@ -330,6 +329,8 @@ pub fn app_view(
                     let editor_cloned4 = editor_cloned4.clone();
                     let state_cloned6 = state_cloned6.clone();
                     let state_cloned7 = state_cloned7.clone();
+                    let editor_cloned5 = editor_cloned5.clone();
+                    let editor_cloned6 = editor_cloned6.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -465,6 +466,8 @@ pub fn app_view(
                                 if let Some(selected_keyframe) = selected_keyframes_real.get(0) {
                                     let state_cloned3 = state_cloned3.clone();
                                     let state_cloned4 = state_cloned4.clone();
+                                    let editor_cloned5 = editor_cloned5.clone();
+                                    let editor_cloned6 = editor_cloned6.clone();
 
                                     match selected_keyframe.value {
                                         KeyframeValue::Position(position) => container(
@@ -507,6 +510,13 @@ pub fn app_view(
                                                                     selected_sequence_id,
                                                                     sequence_selected
                                                                 );
+
+                                                                println!("Keyframe updated!");
+
+                                                                let mut editor = editor_cloned5.lock().unwrap();
+                                                                editor.update_motion_paths(&selected_sequence_data.get());
+
+                                                                println!("Motion Paths updated!");
                                                             }
                                                         }),
                                                         state_cloned3,
@@ -544,6 +554,13 @@ pub fn app_view(
                                                                     selected_sequence_id,
                                                                     sequence_selected
                                                                 );
+
+                                                                println!("Keyframe updated!");
+
+                                                                let mut editor = editor_cloned6.lock().unwrap();
+                                                                editor.update_motion_paths(&selected_sequence_data.get());
+
+                                                                println!("Motion Paths updated!");
                                                             }
                                                         }),
                                                         state_cloned4,

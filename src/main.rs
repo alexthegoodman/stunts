@@ -16,7 +16,7 @@ use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
 use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader};
-use stunts_engine::polygon::Polygon;
+use stunts_engine::polygon::{Polygon, Stroke};
 use stunts_engine::vertex::Vertex;
 use uuid::Uuid;
 use views::app::app_view;
@@ -804,7 +804,12 @@ async fn main() {
                     Point { x: 0.0, y: 0.0 },
                     0.0,
                     0.0,
-                    [0.9, 0.9, 0.9, 1.0],
+                    [0.8, 0.8, 0.8, 1.0],
+                    Stroke {
+                        thickness: 0.0,
+                        fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                    },
+                    0.0,
                     "Canvas Background".to_string(),
                     Uuid::new_v4(),
                 );
