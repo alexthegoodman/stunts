@@ -91,7 +91,7 @@ pub fn assets_view(
         scroll({
             virtual_stack(
                 VirtualDirection::Vertical,
-                VirtualItemSize::Fixed(Box::new(|| 90.0)),
+                VirtualItemSize::Fixed(Box::new(|| 28.0)),
                 move || sequences.get(),
                 move |item| item.clone(),
                 move |item| {
@@ -139,6 +139,8 @@ pub fn assets_view(
                                 };
 
                                 let mut rng = rand::thread_rng();
+
+                                editor.polygons = Vec::new();
 
                                 saved_sequence.active_polygons.iter().for_each(|p| {
                                     let gpu_resources = editor

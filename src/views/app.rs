@@ -467,7 +467,7 @@ pub fn app_view(
                                                                 if s.id == selected_sequence_id.get() {
                                                                     s.active_polygons.iter_mut().for_each(|p| {
                                                                         if p.id == selected_polygon_id.get().to_string() {
-                                                                            p.dimensions = (p.dimensions.0, value as i32);
+                                                                            p.dimensions = (value as i32, p.dimensions.1);
                                                                         }
                                                                     });
                                                                 }
@@ -504,7 +504,7 @@ pub fn app_view(
                                                                 if s.id == selected_sequence_id.get() {
                                                                     s.active_polygons.iter_mut().for_each(|p| {
                                                                         if p.id == selected_polygon_id.get().to_string() {
-                                                                            p.dimensions = (value as i32, p.dimensions.1);
+                                                                            p.dimensions = (p.dimensions.0, value as i32);
                                                                         }
                                                                     });
                                                                 }
