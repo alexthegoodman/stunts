@@ -122,6 +122,7 @@ pub fn update_keyframe(
         }
     });
 
+    // TODO: probably perf hit with larger files, or does it get released?
     let new_saved_state = last_saved_state.to_owned();
 
     save_saved_state_raw(new_saved_state);

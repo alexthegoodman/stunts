@@ -84,7 +84,7 @@ pub fn assets_view(
 
             save_saved_state_raw(new_state);
 
-            sequences.update(|s| s.push_front(new_sequence_id.clone()));
+            sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
             // EventPropagation::Continue
         }),
@@ -226,7 +226,7 @@ pub fn assets_view(
 
                             save_saved_state_raw(new_state.clone());
 
-                            sequences.update(|s| s.push_front(new_sequence_id.clone()));
+                            sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
                             println!("Sequence duplicated!");
                         }),
@@ -235,13 +235,13 @@ pub fn assets_view(
             )
             .style(|s| {
                 s.flex_col()
-                    .height(600.0)
                     .width(260.0)
                     .padding_vert(15.0)
                     .padding_horiz(20.0)
                     .background(Color::LIGHT_BLUE)
             })
-        }),
+        })
+        .style(|s| s.height(400.0)),
     ))
     .style(|s| card_styles(s))
     .style(|s| s.width(300.0))
