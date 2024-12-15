@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
-use floem::common::{card_styles, option_button};
+use floem::common::{card_styles, option_button, simple_button};
+use floem::reactive::SignalUpdate;
 use floem::reactive::{RwSignal, SignalGet};
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
@@ -30,6 +31,9 @@ pub fn sequence_panel(
 
     v_stack((
         label(move || format!("Assets / Motion")).style(|s| s.margin_bottom(10)),
+        simple_button("Back to Sequence List".to_string(), move |_| {
+            sequence_selected.set(false);
+        }),
         option_button(
             "Add Square",
             "square",
