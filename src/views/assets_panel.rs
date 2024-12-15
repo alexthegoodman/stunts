@@ -10,6 +10,7 @@ use floem::views::{
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
+use rand::Rng;
 use std::str::FromStr;
 use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
@@ -56,8 +57,6 @@ pub fn assets_view(
             .map(|s| s.id)
             .collect();
 
-        println!("sequences {:?}", im_sequences);
-
         sequences.set(im_sequences);
     });
 
@@ -103,8 +102,6 @@ pub fn assets_view(
 
                     let item_cloned = item.clone();
 
-                    println!("List item {:?}", item_cloned.clone());
-
                     h_stack((
                         simple_button(
                             item.clone()
@@ -141,11 +138,19 @@ pub fn assets_view(
                                     height: viewport.height as u32,
                                 };
 
+                                let mut rng = rand::thread_rng();
+
                                 saved_sequence.active_polygons.iter().for_each(|p| {
                                     let gpu_resources = editor
                                         .gpu_resources
                                         .as_ref()
                                         .expect("Couldn't get GPU Resources");
+
+                                    // Generate a random number between 0 and 800
+                                    let random_number_800 = rng.gen_range(0..=800);
+
+                                    // Generate a random number between 0 and 450
+                                    let random_number_450 = rng.gen_range(0..=450);
 
                                     let restored_polygon = Polygon::new(
                                         &window_size,
@@ -162,7 +167,10 @@ pub fn assets_view(
                                             Point { x: 0.0, y: 1.0 },
                                         ],
                                         (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                        Point { x: 600.0, y: 100.0 },
+                                        Point {
+                                            x: random_number_800 as f32,
+                                            y: random_number_450 as f32,
+                                        },
                                         0.0,
                                         0.0,
                                         [1.0, 1.0, 1.0, 1.0],

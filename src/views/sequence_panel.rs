@@ -6,6 +6,7 @@ use floem::reactive::{RwSignal, SignalGet};
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
+use rand::Rng;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
 use uuid::Uuid;
@@ -44,6 +45,14 @@ pub fn sequence_panel(
 
                 // square_handler.handle_button_click(editor_cloned);
 
+                let mut rng = rand::thread_rng();
+
+                // Generate a random number between 0 and 800
+                let random_number_800 = rng.gen_range(0..=800);
+
+                // Generate a random number between 0 and 450
+                let random_number_450 = rng.gen_range(0..=450);
+
                 let polygon_config = PolygonConfig {
                     id: Uuid::new_v4(),
                     name: "Square".to_string(),
@@ -54,7 +63,10 @@ pub fn sequence_panel(
                         Point { x: 0.0, y: 1.0 },
                     ],
                     dimensions: (100.0, 100.0),
-                    position: Point { x: 600.0, y: 100.0 },
+                    position: Point {
+                        x: random_number_800 as f32,
+                        y: random_number_450 as f32,
+                    },
                     border_radius: 0.0,
                     fill: [1.0, 1.0, 1.0, 1.0],
                     stroke: Stroke {
