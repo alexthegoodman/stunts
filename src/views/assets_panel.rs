@@ -5,7 +5,7 @@ use floem::peniko::Color;
 use floem::reactive::SignalGet;
 use floem::reactive::{create_effect, create_rw_signal, RwSignal, SignalUpdate};
 use floem::views::{
-    scroll, stack, v_stack, virtual_stack, Decorators, VirtualDirection, VirtualItemSize,
+    h_stack, scroll, stack, v_stack, virtual_stack, Decorators, VirtualDirection, VirtualItemSize,
 };
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
@@ -35,6 +35,7 @@ pub fn assets_view(
     let viewport_cloned = Arc::clone(&viewport);
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
+    let state_cloned3 = Arc::clone(&editor_state);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
@@ -54,6 +55,8 @@ pub fn assets_view(
             .into_iter()
             .map(|s| s.id)
             .collect();
+
+        println!("sequences {:?}", im_sequences);
 
         sequences.set(im_sequences);
     });
@@ -94,94 +97,142 @@ pub fn assets_view(
                 move |item| item.clone(),
                 move |item| {
                     let state_cloned2 = state_cloned2.clone();
+                    let state_cloned3 = state_cloned3.clone();
                     let editor_cloned = editor_cloned.clone();
                     let viewport_cloned = viewport_cloned.clone();
 
-                    simple_button(item.clone(), move |_| {
-                        println!("Open Sequence...");
+                    let item_cloned = item.clone();
 
-                        let editor_state = state_cloned2.lock().unwrap();
-                        let saved_state = editor_state
-                            .saved_state
-                            .as_ref()
-                            .expect("Couldn't get Saved State");
+                    println!("List item {:?}", item_cloned.clone());
 
-                        let saved_sequence = saved_state
-                            .sequences
-                            .iter()
-                            .find(|s| s.id == item.clone())
-                            .expect("Couldn't find matching sequence");
+                    h_stack((
+                        simple_button(
+                            item.clone()
+                                .split("-")
+                                .last()
+                                .expect("Couldn't get last piece")
+                                .to_string(),
+                            move |_| {
+                                println!("Open Sequence...");
 
-                        selected_sequence_data.set(saved_sequence.clone());
-                        selected_sequence_id.set(item.clone());
-                        sequence_selected.set(true);
-
-                        let mut editor = editor_cloned.lock().unwrap();
-
-                        let camera = editor.camera.expect("Couldn't get camera");
-                        let viewport = viewport_cloned.lock().unwrap();
-
-                        let window_size = WindowSize {
-                            width: viewport.width as u32,
-                            height: viewport.height as u32,
-                        };
-
-                        saved_sequence.active_polygons.iter().for_each(|p| {
-                            let gpu_resources = editor
-                                .gpu_resources
-                                .as_ref()
-                                .expect("Couldn't get GPU Resources");
-
-                            let restored_polygon = Polygon::new(
-                                &window_size,
-                                &gpu_resources.device,
-                                &editor
-                                    .model_bind_group_layout
+                                let editor_state = state_cloned2.lock().unwrap();
+                                let saved_state = editor_state
+                                    .saved_state
                                     .as_ref()
-                                    .expect("Couldn't get model bind group layout"),
-                                &camera,
-                                vec![
-                                    Point { x: 0.0, y: 0.0 },
-                                    Point { x: 1.0, y: 0.0 },
-                                    Point { x: 1.0, y: 1.0 },
-                                    Point { x: 0.0, y: 1.0 },
-                                ],
-                                (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                Point { x: 600.0, y: 100.0 },
-                                0.0,
-                                0.0,
-                                [1.0, 1.0, 1.0, 1.0],
-                                Stroke {
-                                    thickness: 2.0,
-                                    fill: rgb_to_wgpu(0, 0, 0, 1.0),
-                                },
-                                0.0,
-                                p.name.clone(),
-                                Uuid::from_str(&p.id).expect("Couldn't convert string to uuid"),
-                            );
+                                    .expect("Couldn't get Saved State");
 
-                            // editor.add_polygon(restored_polygon);
-                            editor.polygons.push(restored_polygon);
-                        });
+                                let saved_sequence = saved_state
+                                    .sequences
+                                    .iter()
+                                    .find(|s| s.id == item.clone())
+                                    .expect("Couldn't find matching sequence");
 
-                        println!("Polygons restored!");
+                                selected_sequence_data.set(saved_sequence.clone());
+                                selected_sequence_id.set(item.clone());
+                                sequence_selected.set(true);
 
-                        editor.update_motion_paths(&saved_sequence);
+                                let mut editor = editor_cloned.lock().unwrap();
 
-                        println!("Motion Paths restored!");
+                                let camera = editor.camera.expect("Couldn't get camera");
+                                let viewport = viewport_cloned.lock().unwrap();
 
-                        // EventPropagation::Continue
-                    })
+                                let window_size = WindowSize {
+                                    width: viewport.width as u32,
+                                    height: viewport.height as u32,
+                                };
+
+                                saved_sequence.active_polygons.iter().for_each(|p| {
+                                    let gpu_resources = editor
+                                        .gpu_resources
+                                        .as_ref()
+                                        .expect("Couldn't get GPU Resources");
+
+                                    let restored_polygon = Polygon::new(
+                                        &window_size,
+                                        &gpu_resources.device,
+                                        &editor
+                                            .model_bind_group_layout
+                                            .as_ref()
+                                            .expect("Couldn't get model bind group layout"),
+                                        &camera,
+                                        vec![
+                                            Point { x: 0.0, y: 0.0 },
+                                            Point { x: 1.0, y: 0.0 },
+                                            Point { x: 1.0, y: 1.0 },
+                                            Point { x: 0.0, y: 1.0 },
+                                        ],
+                                        (p.dimensions.0 as f32, p.dimensions.1 as f32),
+                                        Point { x: 600.0, y: 100.0 },
+                                        0.0,
+                                        0.0,
+                                        [1.0, 1.0, 1.0, 1.0],
+                                        Stroke {
+                                            thickness: 2.0,
+                                            fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                                        },
+                                        0.0,
+                                        p.name.clone(),
+                                        Uuid::from_str(&p.id)
+                                            .expect("Couldn't convert string to uuid"),
+                                    );
+
+                                    // editor.add_polygon(restored_polygon);
+                                    editor.polygons.push(restored_polygon);
+                                });
+
+                                println!("Polygons restored!");
+
+                                editor.update_motion_paths(&saved_sequence);
+
+                                println!("Motion Paths restored!");
+
+                                // EventPropagation::Continue
+                            },
+                        ),
+                        simple_button("Duplicate".to_string(), move |_| {
+                            println!("Duplicating sequence...");
+
+                            let mut editor_state = state_cloned3.lock().unwrap();
+                            let mut new_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State")
+                                .clone();
+
+                            let mut dup_sequence = new_state
+                                .sequences
+                                .iter_mut()
+                                .find(|s| s.id == item_cloned.clone())
+                                .expect("Couldn't find matching sequence")
+                                .clone();
+
+                            let new_sequence_id = Uuid::new_v4().to_string();
+
+                            dup_sequence.id = new_sequence_id.clone();
+
+                            new_state.sequences.push(dup_sequence.clone());
+
+                            editor_state.saved_state = Some(new_state.clone());
+
+                            save_saved_state_raw(new_state.clone());
+
+                            sequences.update(|s| s.push_front(new_sequence_id.clone()));
+
+                            println!("Sequence duplicated!");
+                        }),
+                    ))
                 },
             )
             .style(|s| {
                 s.flex_col()
-                    .height_full()
-                    .width(110.0)
+                    .height(600.0)
+                    .width(260.0)
                     .padding_vert(15.0)
                     .padding_horiz(20.0)
+                    .background(Color::LIGHT_BLUE)
             })
         }),
     ))
     .style(|s| card_styles(s))
+    .style(|s| s.width(300.0))
 }
