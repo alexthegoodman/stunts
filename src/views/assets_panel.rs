@@ -14,7 +14,7 @@ use im::HashMap;
 use rand::Rng;
 use std::str::FromStr;
 use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
-use stunts_engine::polygon::{Polygon, PolygonConfig, Stroke};
+use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
@@ -38,6 +38,7 @@ pub fn assets_view(
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
     let state_cloned3 = Arc::clone(&editor_state);
+    let state_cloned4 = Arc::clone(&editor_state);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
@@ -77,6 +78,57 @@ pub fn assets_view(
 
     v_stack((
         label(move || format!("Sequences")).style(|s| s.margin_bottom(10)),
+        // simple_button("PROCEDURAL GENERATION".to_string(), move |_| {
+        //     println!("Generating procedural variants...");
+
+        //     let mut editor_state = state_cloned4.lock().unwrap();
+        //     let mut new_state = editor_state
+        //         .saved_state
+        //         .as_mut()
+        //         .expect("Couldn't get Saved State")
+        //         .clone();
+
+        //     let mut rng = rand::thread_rng();
+
+        //     let new_sequences = &mut Vec::new();
+        //     new_state.sequences.iter().for_each(|s| {
+        //         let new_sequence_id = Uuid::new_v4().to_string();
+
+        //         let new_polygons = &mut Vec::new();
+        //         s.active_polygons.iter().for_each(|p| {
+        //             let random_number_50 = rng.gen_range(0..=50);
+
+        //             let new_polygon = SavedPolygonConfig {
+        //                 id: p.id.clone(),
+        //                 name: p.name.clone(),
+        //                 dimensions: (
+        //                     p.dimensions.0 + random_number_50,
+        //                     p.dimensions.1 + random_number_50,
+        //                 ),
+        //             };
+        //             new_polygons.push(new_polygon);
+        //         });
+
+        //         let new_sequence = Sequence {
+        //             id: new_sequence_id.clone(),
+        //             active_polygons: new_polygons.to_vec(),
+        //             polygon_motion_paths: s.polygon_motion_paths.clone(),
+        //         };
+
+        //         new_sequences.push(new_sequence);
+        //     });
+
+        //     new_state.sequences.append(new_sequences);
+
+        //     editor_state.saved_state = Some(new_state.clone());
+
+        //     save_saved_state_raw(new_state);
+
+        //     // just restart app to see procedural variations :)
+        //     // sequences.update(|s| s.push_back(new_sequence_id.clone()));
+
+        //     // EventPropagation::Continue
+        // }),
         simple_button("New Sequence".to_string(), move |_| {
             println!("New Sequence...");
 
