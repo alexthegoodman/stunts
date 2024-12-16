@@ -10,6 +10,7 @@ use floem::views::{
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
+use im::HashMap;
 use rand::Rng;
 use std::str::FromStr;
 use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
@@ -40,6 +41,7 @@ pub fn assets_view(
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
+    let sequence_quick_access: RwSignal<HashMap<String, i32>> = create_rw_signal(HashMap::new());
 
     create_effect(move |_| {
         let editor_state = editor_state.lock().unwrap();
@@ -57,7 +59,20 @@ pub fn assets_view(
             .map(|s| s.id)
             .collect();
 
+        let mut x = 0;
+
+        let qa_sequences: HashMap<String, i32> = saved_state
+            .sequences
+            .clone()
+            .into_iter()
+            .map(|s| {
+                x = x + 1;
+                (s.id, x)
+            })
+            .collect();
+
         sequences.set(im_sequences);
+        sequence_quick_access.set(qa_sequences);
     });
 
     v_stack((
@@ -102,13 +117,21 @@ pub fn assets_view(
 
                     let item_cloned = item.clone();
 
+                    let sequence_quick_access = sequence_quick_access.get();
+                    let quick_access_info = sequence_quick_access
+                        .get(&item)
+                        .expect("Couldn't find matching qa info");
+
                     h_stack((
                         simple_button(
-                            item.clone()
-                                .split("-")
-                                .last()
-                                .expect("Couldn't get last piece")
-                                .to_string(),
+                            quick_access_info.to_string()
+                                + &" ".to_string()
+                                + &item
+                                    .clone()
+                                    .split("-")
+                                    .last()
+                                    .expect("Couldn't get last piece")
+                                    .to_string(),
                             move |_| {
                                 println!("Open Sequence...");
 
