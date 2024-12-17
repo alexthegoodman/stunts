@@ -109,10 +109,61 @@ pub fn assets_view(
         //             new_polygons.push(new_polygon);
         //         });
 
+        //         let new_motion_paths = &mut Vec::new();
+        //         s.polygon_motion_paths.iter().for_each(|m| {
+        //             let new_properties = &mut Vec::new();
+        //             m.properties.iter().for_each(|p| {
+        //                 let new_keyframes = &mut Vec::new();
+        //                 let mut x = 0;
+        //                 p.keyframes.iter().for_each(|k| {
+        //                     x = x + 1;
+        //                     let random_number_20 = rng.gen_range(0..=20);
+
+        //                     let new_value = if x != 3 && x != 4 {
+        //                         match k.value {
+        //                             KeyframeValue::Position(position) => KeyframeValue::Position([
+        //                                 position[0] + random_number_20,
+        //                                 position[1] + random_number_20,
+        //                             ]),
+        //                             _ => k.value.clone(),
+        //                         }
+        //                     } else {
+        //                         k.value.clone()
+        //                     };
+
+        //                     let new_keyframe = UIKeyframe {
+        //                         id: k.id.clone(),
+        //                         time: k.time.clone(),
+        //                         easing: k.easing.clone(),
+        //                         value: new_value,
+        //                     };
+        //                     new_keyframes.push(new_keyframe);
+        //                 });
+
+        //                 let new_property = AnimationProperty {
+        //                     name: p.name.clone(),
+        //                     property_path: p.property_path.clone(),
+        //                     children: p.children.clone(),
+        //                     depth: p.depth.clone(),
+        //                     keyframes: new_keyframes.to_vec(),
+        //                 };
+
+        //                 new_properties.push(new_property);
+        //             });
+
+        //             let new_motion_path = AnimationData {
+        //                 id: m.id.clone(),
+        //                 polygon_id: m.polygon_id.clone(),
+        //                 duration: m.duration.clone(),
+        //                 properties: new_properties.to_vec(),
+        //             };
+        //             new_motion_paths.push(new_motion_path);
+        //         });
+
         //         let new_sequence = Sequence {
         //             id: new_sequence_id.clone(),
         //             active_polygons: new_polygons.to_vec(),
-        //             polygon_motion_paths: s.polygon_motion_paths.clone(),
+        //             polygon_motion_paths: new_motion_paths.to_vec(),
         //         };
 
         //         new_sequences.push(new_sequence);
