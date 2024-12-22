@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use bytemuck::Contiguous;
-use floem::common::{card_styles, simple_button};
+use floem::common::{card_styles, nav_button, simple_button};
 use floem::event::{Event, EventListener, EventPropagation};
 use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::kurbo::Size;
@@ -52,8 +52,10 @@ use stunts_engine::animations::{
 use crate::helpers::utilities::save_saved_state_raw;
 
 use super::aside::tab_interface;
+use super::editor_settings::editor_settings;
 use super::inputs::styled_input;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
+use super::project_browser::project_browser;
 use super::properties_panel::properties_view;
 use super::sequence_panel::sequence_panel;
 
@@ -128,7 +130,7 @@ pub fn update_keyframe(
     save_saved_state_raw(new_saved_state);
 }
 
-pub fn app_view(
+pub fn project_view(
     editor_state: Arc<Mutex<EditorState>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     gpu_helper: Arc<Mutex<GpuHelper>>,
@@ -819,4 +821,192 @@ pub fn app_view(
             },
         ),
     ))
+}
+
+pub fn welcome_tab_interface(
+    editor_state: Arc<Mutex<EditorState>>,
+    editor: std::sync::Arc<Mutex<Editor>>,
+    gpu_helper: Arc<Mutex<GpuHelper>>,
+    viewport: std::sync::Arc<Mutex<Viewport>>,
+) -> impl View {
+    let editor_state_cloned = editor_state.clone();
+    let editor_cloned = editor.clone();
+    let gpu_helper_cloned = gpu_helper.clone();
+    let viewport_cloned  = viewport.clone();
+    let state_2 = Arc::clone(&editor_state);
+
+    let tabs: im::Vector<&str> = vec!["Projects", "Settings"].into_iter().collect();
+    let (tabs, _set_tabs) = create_signal(tabs);
+    let (active_tab, set_active_tab) = create_signal(0);
+
+    let list = scroll({
+        virtual_stack(
+            VirtualDirection::Vertical,
+            VirtualItemSize::Fixed(Box::new(|| 90.0)),
+            move || tabs.get(),
+            move |item| *item,
+            move |item| {
+                let index = tabs
+                    .get_untracked()
+                    .iter()
+                    .position(|it| *it == item)
+                    .unwrap();
+                let active = index == active_tab.get();
+                let icon_name = match item {
+                    "Projects" => "folder-plus",
+                    "Settings" => "gear",
+                    _ => "plus",
+                };
+                let destination_view = match item {
+                    "Projects" => "manage_projects",
+                    "Settings" => "editor_settings",
+                    _ => "plus",
+                };
+                stack((
+                    // label(move || item).style(|s| s.font_size(18.0)),
+                    // svg(create_icon("plus")).style(|s| s.width(24).height(24)),
+                    nav_button(
+                        item,
+                        icon_name,
+                        Some({
+                            let editor = editor.clone();
+
+                            move || {
+                                println!("Click...");
+                                set_active_tab.update(|v: &mut usize| {
+                                    *v = tabs
+                                        .get_untracked()
+                                        .iter()
+                                        .position(|it| *it == item)
+                                        .unwrap();
+                                });
+
+                                let mut editor = editor.lock().unwrap();
+
+                                // no need to set current_view_signal, alhtough it could live in app_view if needed
+
+                                // let mut renderer_state = editor_state
+                                //     .renderer_state
+                                //     .as_mut()
+                                //     .expect("Couldn't get RendererState")
+                                //     .lock()
+                                //     .unwrap();
+                                editor.current_view = destination_view.to_string();
+
+                                // EventPropagation::Continue
+                            }
+                        }),
+                        active,
+                    ),
+                ))
+                // .on_click()
+                .on_event(EventListener::KeyDown, move |e| {
+                    if let Event::KeyDown(key_event) = e {
+                        let active = active_tab.get();
+                        if key_event.modifiers.is_empty() {
+                            match key_event.key.logical_key {
+                                Key::Named(NamedKey::ArrowUp) => {
+                                    if active > 0 {
+                                        set_active_tab.update(|v| *v -= 1)
+                                    }
+                                    EventPropagation::Stop
+                                }
+                                Key::Named(NamedKey::ArrowDown) => {
+                                    if active < tabs.get().len() - 1 {
+                                        set_active_tab.update(|v| *v += 1)
+                                    }
+                                    EventPropagation::Stop
+                                }
+                                _ => EventPropagation::Continue,
+                            }
+                        } else {
+                            EventPropagation::Continue
+                        }
+                    } else {
+                        EventPropagation::Continue
+                    }
+                })
+                .keyboard_navigatable()
+                .style(move |s| {
+                    s.margin_bottom(15.0)
+                        .border_radius(15)
+                        .apply_if(index == active_tab.get(), |s| {
+                            s.border(1.0).border_color(Color::GRAY)
+                        })
+                })
+            },
+        )
+        .style(|s| {
+            s.flex_col()
+                .height_full()
+                .width(110.0)
+                .padding_vert(15.0)
+                .padding_horiz(20.0)
+        })
+    })
+    .scroll_style(|s| s.shrink_to_fit());
+
+    container((
+        list, // tab list
+        tab(
+            // active tab
+            move || active_tab.get(),
+            move || tabs.get(),
+            |it| *it,
+            move |it| match it {
+                "Projects" => project_browser(
+                    editor_state_cloned.clone(),
+                    editor_cloned.clone(),
+                    gpu_helper_cloned.clone(),
+                    viewport_cloned.clone(),
+                )
+                .into_any(),
+                "Settings" => editor_settings(gpu_helper.clone(), viewport.clone()).into_any(),
+                _ => label(|| "Not implemented".to_owned()).into_any(),
+            },
+        )
+        .style(|s| s.flex_col().items_start().margin_top(20.0)),
+    ))
+    .style(|s| s.flex_col().width_full().height_full())
+}
+
+pub fn selection_view(
+    editor_state: Arc<Mutex<EditorState>>,
+    editor: std::sync::Arc<Mutex<Editor>>,
+    gpu_helper: Arc<Mutex<GpuHelper>>,
+    viewport: std::sync::Arc<Mutex<Viewport>>,
+) -> impl IntoView {
+    container((welcome_tab_interface(
+        editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()
+    ),))
+}
+
+pub fn app_view(
+    editor_state: Arc<Mutex<EditorState>>,
+    editor: std::sync::Arc<Mutex<Editor>>,
+    gpu_helper: Arc<Mutex<GpuHelper>>,
+    viewport: std::sync::Arc<Mutex<Viewport>>,
+) -> impl IntoView {
+    let project_selected = create_rw_signal(Uuid::nil());
+
+    let editor_state_cloned = Arc::clone(&editor_state);
+
+    create_effect(move |_| {
+        let mut editor_state = editor_state_cloned.lock().unwrap();
+        editor_state.project_selected_signal = Some(project_selected);
+    });
+
+    dyn_container(
+        move || project_selected.get(),
+        move |project_selected_real| {
+            if project_selected_real != Uuid::nil() {
+                project_view(editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()).into_any()
+            } else {
+                selection_view(
+                    editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()
+                )
+                .into_any()
+            }
+        },
+    )
 }

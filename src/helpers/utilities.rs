@@ -40,6 +40,29 @@ pub fn load_ground_truth_state() -> Result<SavedState, Box<dyn std::error::Error
     Ok(state)
 }
 
+pub fn load_project_state(project_id: String) -> Result<SavedState, Box<dyn std::error::Error>> {
+    let sync_dir = get_ground_truth_dir().expect("Couldn't get StuntsGroundTruth directory");
+    let project_dir = sync_dir.join("stunts/projects").join(project_id);
+    let json_path = project_dir.join("project_data.json");
+
+    if !json_path.exists() {
+        // TODO: create json file if it doesn't exist
+        let json = SavedState {
+            sequences: Vec::new(),
+        };
+
+        let json = serde_json::to_string_pretty(&json).expect("Couldn't serialize saved state");
+
+        fs::write(&json_path, json).expect("Couldn't write saved state");
+    }
+
+    // Read and parse the JSON file
+    let json_content = fs::read_to_string(json_path)?;
+    let state: SavedState = serde_json::from_str(&json_content)?;
+
+    Ok(state)
+}
+
 pub fn save_saved_state(saved_state: MutexGuard<SavedState>) {
     let owned = saved_state.to_owned();
     save_saved_state_raw(owned);

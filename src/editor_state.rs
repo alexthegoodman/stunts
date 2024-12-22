@@ -80,6 +80,7 @@ pub struct EditorState {
     pub value_signals: Arc<Mutex<HashMap<String, RwSignal<String>>>>,
     pub current_modifiers: ModifiersState,
     pub saved_state: Option<SavedState>,
+    pub project_selected_signal: Option<RwSignal<Uuid>>,
 }
 
 pub struct RecordState {
@@ -101,6 +102,7 @@ impl EditorState {
             value_signals: Arc::new(Mutex::new(HashMap::new())),
             current_modifiers: ModifiersState::empty(),
             saved_state: None,
+            project_selected_signal: None,
         }
     }
 

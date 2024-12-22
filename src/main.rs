@@ -528,12 +528,12 @@ async fn main() {
     let state_4 = Arc::clone(&editor_state);
     let state_5 = Arc::clone(&editor_state);
 
-    // load saved state (no projects as Ground Truth)
-    println!("Loading saved state...");
-    let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
-    let mut state_guard = state_5.lock().unwrap();
-    state_guard.saved_state = Some(saved_state.clone());
-    drop(state_guard);
+    // // load saved state (no projects as Ground Truth)
+    // println!("Loading saved state...");
+    // let saved_state = load_ground_truth_state().expect("Couldn't get Saved State");
+    // let mut state_guard = state_5.lock().unwrap();
+    // state_guard.saved_state = Some(saved_state.clone());
+    // drop(state_guard);
 
     let (mut app, window_id) = app.window(
         move |_| {
