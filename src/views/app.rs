@@ -165,6 +165,7 @@ pub fn project_view(
         id: String::new(),
         active_polygons: Vec::new(),
         polygon_motion_paths: Vec::new(),
+        active_text_items: Vec::new()
     });
 
     // set

@@ -188,6 +188,7 @@ pub fn sequences_view(
                 id: new_sequence_id.clone(),
                 active_polygons: Vec::new(),
                 polygon_motion_paths: Vec::new(),
+                active_text_items: Vec::new(),
             };
 
             let mut editor_state = state_cloned.lock().unwrap();

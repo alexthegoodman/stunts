@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -12,6 +13,7 @@ use stunts_engine::animations::{
 };
 use stunts_engine::editor::{string_to_f32, Editor, InputValue, PolygonProperty};
 use stunts_engine::polygon::SavedPolygonConfig;
+use stunts_engine::text_due::SavedTextRendererConfig;
 use undo::Edit;
 use undo::Record;
 use uuid::Uuid;
@@ -106,13 +108,7 @@ impl EditorState {
         }
     }
 
-    pub fn add_saved_polygon(
-        &mut self,
-        selected_sequence_id: String,
-        savable_polygon: SavedPolygonConfig,
-    ) {
-        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
-
+    pub fn save_default_keyframes(&mut self, savable_item_id: String) -> AnimationData {
         let mut properties = Vec::new();
 
         let mut position_keyframes = Vec::new();
@@ -312,15 +308,48 @@ impl EditorState {
 
         let new_motion_path = AnimationData {
             id: Uuid::new_v4().to_string(),
-            polygon_id: savable_polygon.id.clone(),
+            polygon_id: savable_item_id.clone(),
             duration: Duration::from_secs(20),
             properties: properties,
         };
+
+        new_motion_path
+    }
+
+    pub fn add_saved_polygon(
+        &mut self,
+        selected_sequence_id: String,
+        savable_polygon: SavedPolygonConfig,
+    ) {
+        let new_motion_path = self.save_default_keyframes(savable_polygon.id.clone());
+
+        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
 
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
                 s.active_polygons.push(savable_polygon.clone());
                 s.polygon_motion_paths.push(new_motion_path.clone());
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
+
+        self.saved_state = Some(saved_state.clone());
+    }
+
+    pub fn add_saved_text_item(
+        &mut self,
+        selected_sequence_id: String,
+        savable_text_item: SavedTextRendererConfig,
+    ) {
+        let new_motion_path = self.save_default_keyframes(savable_text_item.id.clone());
+
+        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id {
+                s.active_text_items.push(savable_text_item.clone());
+                s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
             }
         });
 

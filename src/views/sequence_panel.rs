@@ -10,6 +10,7 @@ use floem::{views::label, IntoView};
 use rand::Rng;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
+use stunts_engine::text_due::{SavedTextRendererConfig, TextRendererConfig};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
@@ -27,9 +28,13 @@ pub fn sequence_panel(
     selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
     let state_cloned = Arc::clone(&editor_state);
+    let state_cloned_2 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
+    let editor_cloned_2 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
+    let gpu_cloned_2 = Arc::clone(&gpu_helper);
+    let viewport_cloned_2 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
 
@@ -122,7 +127,10 @@ pub fn sequence_panel(
             "Add Image",
             "square",
             Some(move || {
-                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                if let Some(path) = rfd::FileDialog::new()
+                    .add_filter("images", &["png", "jpg", "jpeg"])
+                    .pick_file()
+                {
                     selected_file.set(Some(path));
 
                     // add a rendererstate polygon + image pair? + add as image to saved state?
@@ -135,6 +143,65 @@ pub fn sequence_panel(
             "square",
             Some(move || {
                 // use text_due.rs to add text to wgpu scene
+                let mut editor = editor_cloned_2.lock().unwrap();
+
+                let mut rng = rand::thread_rng();
+
+                // Generate a random number between 0 and 800
+                let random_number_800 = rng.gen_range(0..=800);
+
+                // Generate a random number between 0 and 450
+                let random_number_450 = rng.gen_range(0..=450);
+
+                let text_config = TextRendererConfig {
+                    id: Uuid::new_v4(),
+                    name: "New Text Item".to_string(),
+                    text: "Hello world!".to_string(),
+                    dimensions: (100.0, 100.0),
+                    position: Point {
+                        x: random_number_800 as f32,
+                        y: random_number_450 as f32,
+                    },
+                };
+
+                let gpu_helper = gpu_cloned_2.lock().unwrap();
+                let device = &gpu_helper
+                    .gpu_resources
+                    .as_ref()
+                    .expect("Couldn't get gpu resources")
+                    .device;
+                let viewport = viewport_cloned_2.lock().unwrap();
+                let window_size = WindowSize {
+                    width: viewport.width as u32,
+                    height: viewport.height as u32,
+                };
+                let new_id = Uuid::new_v4();
+                let new_text = "Hello world!".to_string();
+                editor.add_text_item(
+                    &window_size,
+                    &device,
+                    text_config.clone(),
+                    new_text.clone(),
+                    new_id,
+                );
+
+                drop(viewport);
+                drop(gpu_helper);
+                drop(editor);
+
+                let mut editor_state = state_cloned_2.lock().unwrap();
+                editor_state.add_saved_text_item(
+                    selected_sequence_id.get(),
+                    SavedTextRendererConfig {
+                        id: text_config.id.to_string().clone(),
+                        name: text_config.name.clone(),
+                        text: new_text,
+                        dimensions: (
+                            text_config.dimensions.0 as i32,
+                            text_config.dimensions.1 as i32,
+                        ),
+                    },
+                );
             }),
             false,
         ),
