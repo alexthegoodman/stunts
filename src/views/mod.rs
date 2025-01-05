@@ -8,6 +8,7 @@ pub mod project_browser;
 pub mod properties_panel;
 pub mod scene;
 pub mod sequence_panel;
+pub mod sequence_timeline;
 pub mod sequences_panel;
 pub mod settings_panel;
 pub mod upload_field;
