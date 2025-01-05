@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use crossbeam::queue;
 use floem::common::{card_styles, option_button, simple_button};
 use floem::reactive::{create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
@@ -10,6 +11,7 @@ use floem::{views::label, IntoView};
 use rand::Rng;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
+use stunts_engine::st_image::{SavedStImageConfig, StImageConfig};
 use stunts_engine::text_due::{SavedTextRendererConfig, TextRendererConfig};
 use uuid::Uuid;
 
@@ -29,12 +31,16 @@ pub fn sequence_panel(
 ) -> impl IntoView {
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned_2 = Arc::clone(&editor_state);
+    let state_cloned_3 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
+    let editor_cloned_3 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
     let viewport_cloned_2 = Arc::clone(&viewport);
+    let gpu_cloned_3 = Arc::clone(&gpu_helper);
+    let viewport_cloned_3 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
 
@@ -133,9 +139,68 @@ pub fn sequence_panel(
                     .add_filter("images", &["png", "jpg", "jpeg"])
                     .pick_file()
                 {
-                    selected_file.set(Some(path));
+                    // selected_file.set(Some(path));
 
                     // add a rendererstate polygon + image pair? + add as image to saved state?
+
+                    let mut editor = editor_cloned_3.lock().unwrap();
+
+                    let mut rng = rand::thread_rng();
+                    let random_number_800 = rng.gen_range(0..=800);
+                    let random_number_450 = rng.gen_range(0..=450);
+
+                    let new_id = Uuid::new_v4();
+
+                    let image_config = StImageConfig {
+                        id: new_id.clone().to_string(),
+                        name: "New Text Item".to_string(),
+                        dimensions: (100, 100),
+                        position: Point {
+                            x: random_number_800 as f32,
+                            y: random_number_450 as f32,
+                        },
+                        path: path.to_str().expect("Couldn't get path string").to_string(),
+                    };
+
+                    let gpu_helper = gpu_cloned_3.lock().unwrap();
+                    let gpu_resources = gpu_helper
+                        .gpu_resources
+                        .as_ref()
+                        .expect("Couldn't get gpu resources");
+                    let device = &gpu_resources.device;
+                    let queue = &gpu_resources.queue;
+                    let viewport = viewport_cloned_3.lock().unwrap();
+                    let window_size = WindowSize {
+                        width: viewport.width as u32,
+                        height: viewport.height as u32,
+                    };
+
+                    editor.add_image_item(
+                        &window_size,
+                        &device,
+                        &queue,
+                        image_config.clone(),
+                        &path,
+                        new_id,
+                    );
+
+                    drop(viewport);
+                    drop(gpu_helper);
+                    drop(editor);
+
+                    let mut editor_state = state_cloned_3.lock().unwrap();
+                    editor_state.add_saved_image_item(
+                        selected_sequence_id.get(),
+                        SavedStImageConfig {
+                            id: image_config.id.to_string().clone(),
+                            name: image_config.name.clone(),
+                            path: path
+                                .to_str()
+                                .expect("Couldn't get path as string")
+                                .to_string(),
+                            dimensions: (image_config.dimensions.0, image_config.dimensions.1),
+                        },
+                    );
                 }
             }),
             false,
@@ -152,11 +217,12 @@ pub fn sequence_panel(
                 let random_number_450 = rng.gen_range(0..=450);
 
                 let new_id = Uuid::new_v4();
+                let new_text = "Hello world!".to_string();
 
                 let text_config = TextRendererConfig {
                     id: new_id.clone(),
                     name: "New Text Item".to_string(),
-                    text: "Hello world!".to_string(),
+                    text: new_text.clone(),
                     dimensions: (100.0, 100.0),
                     position: Point {
                         x: random_number_800 as f32,
@@ -176,7 +242,6 @@ pub fn sequence_panel(
                     height: viewport.height as u32,
                 };
 
-                let new_text = "Hello world!".to_string();
                 editor.add_text_item(
                     &window_size,
                     &device,

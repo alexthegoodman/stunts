@@ -13,6 +13,7 @@ use stunts_engine::animations::{
 };
 use stunts_engine::editor::{string_to_f32, Editor, InputValue, PolygonProperty};
 use stunts_engine::polygon::SavedPolygonConfig;
+use stunts_engine::st_image::SavedStImageConfig;
 use stunts_engine::text_due::SavedTextRendererConfig;
 use undo::Edit;
 use undo::Record;
@@ -349,6 +350,27 @@ impl EditorState {
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
                 s.active_text_items.push(savable_text_item.clone());
+                s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
+
+        self.saved_state = Some(saved_state.clone());
+    }
+
+    pub fn add_saved_image_item(
+        &mut self,
+        selected_sequence_id: String,
+        savable_image_item: SavedStImageConfig,
+    ) {
+        let new_motion_path = self.save_default_keyframes(savable_image_item.id.clone());
+
+        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id {
+                s.active_image_items.push(savable_image_item.clone());
                 s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
             }
         });
