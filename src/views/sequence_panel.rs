@@ -61,8 +61,10 @@ pub fn sequence_panel(
                 // Generate a random number between 0 and 450
                 let random_number_450 = rng.gen_range(0..=450);
 
+                let new_id = Uuid::new_v4();
+
                 let polygon_config = PolygonConfig {
-                    id: Uuid::new_v4(),
+                    id: new_id.clone(),
                     name: "Square".to_string(),
                     points: vec![
                         Point { x: 0.0, y: 0.0 },
@@ -94,7 +96,7 @@ pub fn sequence_panel(
                     height: viewport.height as u32,
                 };
                 let camera = editor.camera.expect("Couldn't get camera");
-                let new_id = Uuid::new_v4();
+
                 editor.add_polygon(
                     &window_size,
                     &device,
@@ -146,15 +148,13 @@ pub fn sequence_panel(
                 let mut editor = editor_cloned_2.lock().unwrap();
 
                 let mut rng = rand::thread_rng();
-
-                // Generate a random number between 0 and 800
                 let random_number_800 = rng.gen_range(0..=800);
-
-                // Generate a random number between 0 and 450
                 let random_number_450 = rng.gen_range(0..=450);
 
+                let new_id = Uuid::new_v4();
+
                 let text_config = TextRendererConfig {
-                    id: Uuid::new_v4(),
+                    id: new_id.clone(),
                     name: "New Text Item".to_string(),
                     text: "Hello world!".to_string(),
                     dimensions: (100.0, 100.0),
@@ -175,7 +175,7 @@ pub fn sequence_panel(
                     width: viewport.width as u32,
                     height: viewport.height as u32,
                 };
-                let new_id = Uuid::new_v4();
+
                 let new_text = "Hello world!".to_string();
                 editor.add_text_item(
                     &window_size,
