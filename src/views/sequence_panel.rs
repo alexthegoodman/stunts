@@ -1,7 +1,8 @@
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use floem::common::{card_styles, option_button, simple_button};
-use floem::reactive::SignalUpdate;
+use floem::reactive::{create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
@@ -29,6 +30,8 @@ pub fn sequence_panel(
     let editor_cloned = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
+
+    let selected_file = create_rw_signal(None::<PathBuf>);
 
     v_stack((
         label(move || format!("Assets / Motion")).style(|s| s.margin_bottom(10)),
@@ -115,6 +118,34 @@ pub fn sequence_panel(
             }),
             false,
         ),
+        option_button(
+            "Add Image",
+            "square",
+            Some(move || {
+                if let Some(path) = rfd::FileDialog::new().pick_file() {
+                    selected_file.set(Some(path));
+
+                    // add a rendererstate polygon + image pair? + add as image to saved state?
+                }
+            }),
+            false,
+        ),
+        option_button(
+            "Add Text",
+            "square",
+            Some(move || {
+                // use text_due.rs to add text to wgpu scene
+            }),
+            false,
+        ),
+        // option_button(
+        //     "Add Video",
+        //     "square",
+        //     Some(move || {
+        //         // import with decoder
+        //     }),
+        //     false,
+        // ),
     ))
     .style(|s| card_styles(s))
     .style(|s| s.width(300.0))

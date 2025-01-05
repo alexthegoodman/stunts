@@ -1,10 +1,13 @@
 pub mod app;
 pub mod aside;
-pub mod assets_panel;
 pub mod editor_settings;
+pub mod images_panel;
 pub mod inputs;
 pub mod keyframe_timeline;
 pub mod project_browser;
 pub mod properties_panel;
+pub mod scene;
 pub mod sequence_panel;
+pub mod sequences_panel;
 pub mod settings_panel;
+pub mod upload_field;

@@ -25,6 +25,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
+use tokio::task::spawn_local;
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
 // use winit::{event_loop, window};
@@ -118,6 +119,101 @@ pub fn styled_input(
                             println!("Content change detected: {:?}", key_event.key.logical_key);
                             let current_value = value.get();
                             on_event_stop(editor_state, current_value);
+                        }
+                    }
+                }
+            })
+            .placeholder(placeholder)
+            .style(|s| input_styles(s)),
+    ))
+    .style(|s| s.margin_bottom(10))
+}
+
+use tokio::sync::mpsc;
+use tokio::time::sleep;
+
+pub fn debounce_input(
+    label_text: String,
+    initial_value: &str,
+    placeholder: &str,
+    on_event_stop: Box<dyn Fn(MutexGuard<EditorState>, String) + 'static>,
+    mut editor_state: Arc<Mutex<EditorState>>,
+    name: String,
+) -> impl IntoView {
+    let value = create_rw_signal(initial_value.to_string());
+    let state_2 = Arc::clone(&editor_state);
+
+    // Create a channel for debouncing
+    let (tx, mut rx) = mpsc::channel::<String>(32);
+
+    // Spawn the debounce handler
+    let state_3 = Arc::clone(&state_2);
+    spawn_local(async move {
+        let mut last_value = None;
+        while let Some(current_value) = rx.recv().await {
+            // Store the latest value
+            last_value = Some(current_value);
+
+            // Wait for the debounce duration
+            sleep(Duration::from_millis(300)).await;
+
+            // Check if this is still the latest value
+            if let Some(value) = last_value.take() {
+                if let Ok(editor_state) = state_3.lock() {
+                    on_event_stop(editor_state, value);
+                }
+            }
+        }
+    });
+
+    create_effect({
+        let name = name.clone();
+        move |_| {
+            let mut editor_state = editor_state.lock().unwrap();
+            editor_state.register_signal(name.to_string(), value);
+        }
+    });
+
+    v_stack((
+        label(move || label_text.clone()).style(|s| s.font_size(10.0).margin_bottom(1.0)),
+        text_input(value)
+            .on_event_stop(EventListener::KeyUp, move |event: &Event| {
+                if let Event::KeyUp(key_event) = event {
+                    let editor_state = state_2.lock().unwrap();
+
+                    // Handle keyboard shortcuts first
+                    if editor_state.current_modifiers.control_key() {
+                        match key_event.key.logical_key {
+                            Key::Character(ref c) if c.to_lowercase() == "z" => return,
+                            Key::Character(ref c) if c.to_lowercase() == "y" => return,
+                            _ => {}
+                        }
+                    }
+
+                    match key_event.key.logical_key {
+                        // Ignore all control and navigation keys
+                        Key::Named(NamedKey::ArrowUp)
+                        | Key::Named(NamedKey::ArrowDown)
+                        | Key::Named(NamedKey::ArrowLeft)
+                        | Key::Named(NamedKey::ArrowRight)
+                        | Key::Named(NamedKey::Enter)
+                        | Key::Named(NamedKey::Tab)
+                        | Key::Named(NamedKey::Escape)
+                        | Key::Named(NamedKey::Home)
+                        | Key::Named(NamedKey::End)
+                        | Key::Named(NamedKey::PageUp)
+                        | Key::Named(NamedKey::PageDown)
+                        | Key::Named(NamedKey::Control)
+                        | Key::Named(NamedKey::Shift)
+                        | Key::Named(NamedKey::Alt)
+                        | Key::Named(NamedKey::Meta) => {
+                            return;
+                        }
+                        // Only trigger value update for actual content changes
+                        _ => {
+                            let current_value = value.get();
+                            // Instead of calling on_event_stop directly, send to channel
+                            let _ = tx.try_send(current_value);
                         }
                     }
                 }

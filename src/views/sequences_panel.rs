@@ -23,7 +23,7 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
-pub fn assets_view(
+pub fn sequences_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,
     editor_state: Arc<Mutex<EditorState>>,
     editor: std::sync::Arc<Mutex<Editor>>,

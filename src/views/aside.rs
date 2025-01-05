@@ -42,7 +42,7 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
-use super::assets_panel::assets_view;
+use super::sequences_panel::sequences_view;
 use super::settings_panel::settings_view;
 
 pub fn tab_interface(
@@ -159,7 +159,7 @@ pub fn tab_interface(
                             move || tabs.get(),
                             |it| *it,
                             move |it| match it {
-                                "Motion" => assets_view(
+                                "Assets" => sequences_view(
                                     gpu_helper.clone(),
                                     editor_state.clone(),
                                     editor.clone(),
