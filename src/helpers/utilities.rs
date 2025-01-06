@@ -1,6 +1,10 @@
 use std::{fs, path::PathBuf, sync::MutexGuard};
 
 use directories::{BaseDirs, UserDirs};
+use floem::reactive::RwSignal;
+use floem::reactive::SignalGet;
+use floem::reactive::SignalUpdate;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use uuid::Uuid;
@@ -119,10 +123,82 @@ pub struct AuthToken {
     pub expiry: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+// #[derive(Clone)]
+// pub struct AuthState {
+//     pub token: Option<AuthToken>,
+//     pub is_authenticated: bool,
+// }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Plan {
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SubscriptionDetails {
+    pub subscription_status: String,
+    pub current_period_end: Option<chrono::DateTime<chrono::Utc>>,
+    pub plan: Option<Plan>,
+    pub cancel_at_period_end: bool,
+}
+
+// Extend AuthState to include subscription details
 #[derive(Clone)]
 pub struct AuthState {
     pub token: Option<AuthToken>,
     pub is_authenticated: bool,
+    pub subscription: Option<SubscriptionDetails>,
+}
+
+impl AuthState {
+    pub fn can_create_projects(&self) -> bool {
+        if !self.is_authenticated {
+            return false;
+        }
+
+        match &self.subscription {
+            Some(sub) => matches!(sub.subscription_status.as_str(), "ACTIVE" | "TRIALING"),
+            None => false,
+        }
+    }
+}
+
+// Function to fetch subscription details
+pub fn fetch_subscription_details(
+    token: &str,
+) -> Result<SubscriptionDetails, Box<dyn std::error::Error>> {
+    let client = Client::new();
+
+    let response = client
+        .get("http://localhost:3000/api/subscriptions/details")
+        .header("Authorization", format!("Bearer {}", token))
+        .send()?;
+
+    if response.status().is_success() {
+        let details = response.json::<SubscriptionDetails>()?;
+        Ok(details)
+    } else {
+        Err(response.text()?.into())
+    }
+}
+
+// Function to check subscription status
+pub fn check_subscription(auth_state: RwSignal<AuthState>) {
+    if let Some(token) = auth_state.get().token.as_ref() {
+        match fetch_subscription_details(&token.token) {
+            Ok(subscription) => {
+                let mut current_state = auth_state.get();
+                current_state.subscription = Some(subscription);
+                auth_state.set(current_state);
+            }
+            Err(e) => {
+                println!("Failed to fetch subscription details: {}", e);
+                // Optionally handle error in UI
+            }
+        }
+    }
 }
 
 // Function to get the auth token file path

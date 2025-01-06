@@ -33,8 +33,8 @@ use floem::{GpuHelper, View, WindowHandle};
 use crate::editor_state::EditorState;
 use crate::helpers::projects::{get_projects, ProjectInfo};
 use crate::helpers::utilities::{
-    clear_auth_token, create_project_state, load_auth_token, load_project_state, save_auth_token,
-    AuthState, AuthToken,
+    check_subscription, clear_auth_token, create_project_state, load_auth_token,
+    load_project_state, save_auth_token, AuthState, AuthToken,
 };
 // use crate::helpers::projects::{get_projects, ProjectInfo};
 // use crate::helpers::websocket::WebSocketManager;
@@ -103,6 +103,7 @@ pub fn project_browser(
     let auth_state = create_rw_signal(AuthState {
         token: load_auth_token(),
         is_authenticated: load_auth_token().is_some(),
+        subscription: None,
     });
 
     // Login dialog state
@@ -111,6 +112,13 @@ pub fn project_browser(
     let password = create_rw_signal(String::new());
     let login_error = create_rw_signal(Option::<String>::None);
     let is_logging_in = create_rw_signal(false);
+
+    // Create effect to check subscription when authenticated
+    create_effect(move |_| {
+        if auth_state.get().is_authenticated {
+            check_subscription(auth_state);
+        }
+    });
 
     v_stack((
         dyn_container(
@@ -128,6 +136,32 @@ pub fn project_browser(
             },
         )
         .into_view(),
+        // Subscription status alert
+        dyn_container(
+            move || auth_state.get(),
+            move |state| match state.subscription {
+                Some(ref sub)
+                    if !matches!(sub.subscription_status.as_str(), "ACTIVE" | "TRIALING") =>
+                {
+                    alert(
+                        floem::common::AlertVariant::Warning,
+                        format!(
+                            "Your subscription is {}. Please upgrade to create projects.",
+                            sub.subscription_status.to_lowercase()
+                        ),
+                    )
+                    .style(|s| s.margin_bottom(16.0))
+                    .into_any()
+                }
+                None if state.is_authenticated => alert(
+                    floem::common::AlertVariant::Info,
+                    "Checking subscription status...".to_string(),
+                )
+                .style(|s| s.margin_bottom(16.0))
+                .into_any(),
+                _ => empty().into_any(),
+            },
+        ),
         // Authentication status and login button
         h_stack((dyn_container(
             move || auth_state.get().is_authenticated,
@@ -136,7 +170,7 @@ pub fn project_browser(
                     h_stack((
                         alert(
                             floem::common::AlertVariant::Warning,
-                            "Please login to create new projects.".to_string(),
+                            "Please login and subscribe to create new projects.".to_string(),
                         ),
                         button(label(|| "Login"))
                             .on_click(move |_| {
@@ -178,18 +212,19 @@ pub fn project_browser(
         // Project header with create button
         h_stack((
             label(|| "Select a Project").style(|s| s.margin_bottom(4.0)),
-            button(label(|| "New Project"))
+            button(label(|| "Create New"))
                 .on_click(move |_| {
-                    if auth_state.get().is_authenticated {
+                    if auth_state.get().can_create_projects() {
                         show_create_dialog.set(true);
                     }
                     EventPropagation::Stop
                 })
-                .disabled(move || !auth_state.get().is_authenticated)
+                .disabled(move || !auth_state.get().can_create_projects())
                 .style(move |s| {
+                    let can_create = auth_state.get().can_create_projects();
                     s.margin_left(8.0)
                         .padding(8.0)
-                        .background(if auth_state.get().is_authenticated {
+                        .background(if can_create {
                             Color::rgb(0.0, 122.0, 255.0)
                         } else {
                             Color::rgb(150.0, 150.0, 150.0)
@@ -440,6 +475,21 @@ pub fn project_browser(
 }
 
 // Function to update authentication state
+// pub fn set_authenticated(
+//     auth_state: RwSignal<AuthState>,
+//     token: String,
+//     expiry: Option<chrono::DateTime<chrono::Utc>>,
+// ) -> Result<(), Box<dyn std::error::Error>> {
+//     let auth_token = AuthToken { token, expiry };
+//     save_auth_token(&auth_token)?;
+
+//     auth_state.set(AuthState {
+//         token: Some(auth_token),
+//         is_authenticated: true,
+//     });
+
+//     Ok(())
+// }
 pub fn set_authenticated(
     auth_state: RwSignal<AuthState>,
     token: String,
@@ -451,6 +501,7 @@ pub fn set_authenticated(
     auth_state.set(AuthState {
         token: Some(auth_token),
         is_authenticated: true,
+        subscription: None, // Will be updated by the effect
     });
 
     Ok(())
@@ -463,6 +514,7 @@ pub fn logout(auth_state: RwSignal<AuthState>) -> Result<(), Box<dyn std::error:
     auth_state.set(AuthState {
         token: None,
         is_authenticated: false,
+        subscription: None,
     });
 
     Ok(())
