@@ -3,6 +3,7 @@ pub mod aside;
 pub mod editor_settings;
 pub mod images_panel;
 pub mod inputs;
+pub mod keyframe_panel;
 pub mod keyframe_timeline;
 pub mod project_browser;
 pub mod properties_panel;

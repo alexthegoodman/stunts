@@ -25,7 +25,9 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
-use stunts_engine::editor::{string_to_f32, Editor, OnMouseUp, Point, PolygonClickHandler, Viewport};
+use stunts_engine::editor::{
+    string_to_f32, Editor, OnMouseUp, Point, PolygonClickHandler, Viewport,
+};
 use stunts_engine::polygon::{PolygonConfig, Stroke};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
@@ -46,89 +48,20 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
-use stunts_engine::animations::{
-    Sequence, AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
-};
 use crate::helpers::utilities::save_saved_state_raw;
+use crate::views::keyframe_panel::update_keyframe;
+use stunts_engine::animations::{
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+};
 
 use super::aside::tab_interface;
 use super::editor_settings::editor_settings;
 use super::inputs::styled_input;
+use super::keyframe_panel::keyframe_properties_view;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::project_browser::project_browser;
 use super::properties_panel::properties_view;
 use super::sequence_panel::sequence_panel;
-
-pub fn update_keyframe(
-    mut editor_state: MutexGuard<EditorState>,
-    mut current_animation_data: AnimationData,
-    mut current_keyframe: &mut UIKeyframe,
-    mut current_sequence: Sequence,
-    selected_keyframes: RwSignal<Vec<UIKeyframe>>,
-    animation_data: RwSignal<Option<AnimationData>>,
-    selected_sequence_data: RwSignal<Sequence>,
-    selected_sequence_id: RwSignal<String>,
-    sequence_selected: RwSignal<bool>,
-) {
-    let mut new_keyframes = Vec::new();
-    new_keyframes.push(current_keyframe.to_owned());
-
-    selected_keyframes.set(new_keyframes);
-
-    // update animation data
-    current_animation_data.properties.iter_mut().for_each(|p| {
-        p.keyframes.iter_mut().for_each(|mut k| {
-            if k.id == current_keyframe.id {
-                *k = current_keyframe.to_owned();
-            }
-        });
-    });
-
-    animation_data.set(Some(current_animation_data));
-
-    // update sequence
-    current_sequence
-        .polygon_motion_paths
-        .iter_mut()
-        .for_each(|pm| {
-            pm.properties.iter_mut().for_each(|p| {
-                p.keyframes.iter_mut().for_each(|k| {
-                    if k.id == current_keyframe.id {
-                        *k = current_keyframe.to_owned();
-                    }
-                });
-            });
-        });
-
-    selected_sequence_data.set(current_sequence);
-
-    // sequence_selected.set(true);
-
-    // save to file
-    let last_saved_state = editor_state
-        .saved_state
-        .as_mut()
-        .expect("Couldn't get Saved State");
-
-    last_saved_state.sequences.iter_mut().for_each(|s| {
-        if s.id == selected_sequence_id.get() {
-            s.polygon_motion_paths.iter_mut().for_each(|pm| {
-                pm.properties.iter_mut().for_each(|p| {
-                    p.keyframes.iter_mut().for_each(|k| {
-                        if k.id == current_keyframe.id {
-                            *k = current_keyframe.to_owned();
-                        }
-                    });
-                });
-            });
-        }
-    });
-
-    // TODO: probably perf hit with larger files, or does it get released?
-    let new_saved_state = last_saved_state.to_owned();
-
-    save_saved_state_raw(new_saved_state);
-}
 
 pub fn project_view(
     editor_state: Arc<Mutex<EditorState>>,
@@ -161,18 +94,18 @@ pub fn project_view(
     // set in sequence_panel
     let sequence_selected = create_rw_signal(false);
     let selected_sequence_id = create_rw_signal(String::new());
-    let selected_sequence_data = create_rw_signal(Sequence {
+    let selected_sequence_data: RwSignal<Sequence> = create_rw_signal(Sequence {
         id: String::new(),
         active_polygons: Vec::new(),
         polygon_motion_paths: Vec::new(),
         active_text_items: Vec::new(),
-        active_image_items: Vec::new()
+        active_image_items: Vec::new(),
     });
 
     // set
-    let polygon_selected = create_rw_signal(false);
-    let selected_polygon_id = create_rw_signal(Uuid::nil());
-    let selected_polygon_data = create_rw_signal(PolygonConfig {
+    let polygon_selected: RwSignal<bool> = create_rw_signal(false);
+    let selected_polygon_id: RwSignal<Uuid> = create_rw_signal(Uuid::nil());
+    let selected_polygon_data: RwSignal<PolygonConfig> = create_rw_signal(PolygonConfig {
         id: Uuid::nil(),
         name: String::new(),
         points: Vec::new(),
@@ -297,55 +230,56 @@ pub fn project_view(
             let selected_polygon_data_ref = selected_polygon_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
 
-            Some(
-                Box::new(move |poly_index: usize, point: Point| {
-                    // cannot lock editor here! probably because called from Editor
-                    // {
-                    //     let mut editor = new_editor.lock().unwrap();
-                    //     // Update editor as needed
-                    // }
+            Some(Box::new(move |poly_index: usize, point: Point| {
+                // cannot lock editor here! probably because called from Editor
+                // {
+                //     let mut editor = new_editor.lock().unwrap();
+                //     // Update editor as needed
+                // }
 
-                    // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+                // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
 
-                    let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                    let mut current_keyframe = selected_keyframes.get();
+                let mut current_animation_data =
+                    animation_data.get().expect("Couldn't get Animation Data");
+                let mut current_keyframe = selected_keyframes.get();
 
-                    if let Some(current_keyframe) = current_keyframe.get_mut(0) {
-                        // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                        let mut current_sequence = selected_sequence_data.get();
-                        // let current_polygon = selected_polygon_data.read();
-                        // let current_polygon = current_polygon.borrow();
+                if let Some(current_keyframe) = current_keyframe.get_mut(0) {
+                    // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                    let mut current_sequence = selected_sequence_data.get();
+                    // let current_polygon = selected_polygon_data.read();
+                    // let current_polygon = current_polygon.borrow();
 
-                        // update keyframe
-                        current_keyframe.value = KeyframeValue::Position([point.x as i32, point.y as i32]);
+                    // update keyframe
+                    current_keyframe.value =
+                        KeyframeValue::Position([point.x as i32, point.y as i32]);
 
-                        let mut editor_state = editor_state.lock().unwrap();
+                    let mut editor_state = editor_state.lock().unwrap();
 
-                        update_keyframe(
-                            editor_state,
-                            current_animation_data,
-                            current_keyframe,
-                            current_sequence,
-                            selected_keyframes,
-                            animation_data,
-                            selected_sequence_data,
-                            selected_sequence_id,
-                            sequence_selected
-                        );
+                    update_keyframe(
+                        editor_state,
+                        current_animation_data,
+                        current_keyframe,
+                        current_sequence,
+                        selected_keyframes,
+                        animation_data,
+                        selected_sequence_data,
+                        selected_sequence_id,
+                        sequence_selected,
+                    );
 
-                        // drop(editor_state);
+                    // drop(editor_state);
 
-                        println!("Keyframe updated!");
-                    }                    
+                    println!("Keyframe updated!");
+                }
 
-                    // let mut editor = editor_cloned7.lock().unwrap();
-                    // editor.update_motion_paths(&selected_sequence_data.get());
+                // let mut editor = editor_cloned7.lock().unwrap();
+                // editor.update_motion_paths(&selected_sequence_data.get());
 
-                    // println!("Motion Paths updated!");
+                // println!("Motion Paths updated!");
 
-                    selected_sequence_data.get()
-                }) as Box<dyn FnMut(usize, Point) -> Sequence + Send>,
-            )
+                selected_sequence_data.get()
+            })
+                as Box<dyn FnMut(usize, Point) -> Sequence + Send>)
         }
     });
 
@@ -369,10 +303,14 @@ pub fn project_view(
             sequence_selected,
             selected_sequence_id,
             selected_sequence_data,
-            polygon_selected
+            polygon_selected,
         ),
         dyn_container(
-            move || sequence_selected.get()  && !polygon_selected.get() && selected_keyframes.get().len() == 0,
+            move || {
+                sequence_selected.get()
+                    && !polygon_selected.get()
+                    && selected_keyframes.get().len() == 0
+            },
             move |sequence_selected_real| {
                 if sequence_selected_real {
                     h_stack((
@@ -404,6 +342,11 @@ pub fn project_view(
                     let state_cloned7 = state_cloned7.clone();
                     let editor_cloned5 = editor_cloned5.clone();
                     let editor_cloned6 = editor_cloned6.clone();
+                    let gpu_cloned2 = gpu_cloned2.clone();
+                    let editor_cloned7 = editor_cloned7.clone();
+                    let viewport_cloned2 = viewport_cloned2.clone();
+                    let gpu_cloned3 = gpu_cloned2.clone();
+                    let viewport_cloned3 = viewport_cloned2.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -441,89 +384,23 @@ pub fn project_view(
                             move |polygon_selected_real| {
                                 if polygon_selected_real {
                                     let state_cloned5 = state_cloned6.clone();
-                                    let state_cloned6 = state_cloned7.clone();
+                                    let gpu_cloned2 = gpu_cloned2.clone();
+                                    let editor_cloned7 = editor_cloned7.clone();
+                                    let viewport_cloned2 = viewport_cloned2.clone();
 
                                     container(
                                         (v_stack((
                                             label(|| "Properties"),
-                                            simple_button("Back to Sequence".to_string(), move |_| {
-                                                polygon_selected.set(false);
-                                            }),
-                                            h_stack((
-                                                styled_input(
-                                                    "Width:".to_string(),
-                                                    &selected_polygon_data
-                                                        .read()
-                                                        .borrow()
-                                                        .dimensions
-                                                        .0
-                                                        .to_string(),
-                                                    "Enter width",
-                                                    Box::new({
-                                                        move |mut editor_state, value| {
-                                                            editor_state.update_width(&value).expect("Couldn't update width");
-                                                            // TODO: probably should update selected_polygon_data
-                                                            // need to update active_polygons in saved_data
-                                                            // TODO: on_debounce_stop?
-                                                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                                                            let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
-
-                                                            saved_state.sequences.iter_mut().for_each(|s| {
-                                                                if s.id == selected_sequence_id.get() {
-                                                                    s.active_polygons.iter_mut().for_each(|p| {
-                                                                        if p.id == selected_polygon_id.get().to_string() {
-                                                                            p.dimensions = (value as i32, p.dimensions.1);
-                                                                        }
-                                                                    });
-                                                                }
-                                                            });
-
-                                                            save_saved_state_raw(saved_state.clone());
-                                                        }
-                                                    }),
-                                                    state_cloned5,
-                                                    "width".to_string(),
-                                                )
-                                                .style(move |s| {
-                                                    s.width(halfs).margin_right(5.0)
-                                                }),
-                                                styled_input(
-                                                    "Height:".to_string(),
-                                                    &selected_polygon_data
-                                                        .read()
-                                                        .borrow()
-                                                        .dimensions
-                                                        .1
-                                                        .to_string(),
-                                                    "Enter height",
-                                                    Box::new({
-                                                        move |mut editor_state, value| {
-                                                            editor_state.update_height(&value).expect("Couldn't update height");
-                                                            // TODO: probably should update selected_polygon_data
-                                                            // need to update active_polygons in saved_data
-                                                            // TODO: on_debounce_stop?
-                                                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                                                            let mut saved_state = editor_state.saved_state.as_mut().expect("Couldn't get Saved State");
-
-                                                            saved_state.sequences.iter_mut().for_each(|s| {
-                                                                if s.id == selected_sequence_id.get() {
-                                                                    s.active_polygons.iter_mut().for_each(|p| {
-                                                                        if p.id == selected_polygon_id.get().to_string() {
-                                                                            p.dimensions = (p.dimensions.0, value as i32);
-                                                                        }
-                                                                    });
-                                                                }
-                                                            });
-
-                                                            save_saved_state_raw(saved_state.clone());
-                                                        }
-                                                    }),
-                                                    state_cloned6,
-                                                    "height".to_string(),
-                                                )
-                                                .style(move |s| s.width(halfs)),
-                                            ))
-                                            .style(move |s| s.width(aside_width)),
+                                            properties_view(
+                                                state_cloned5,
+                                                gpu_cloned2,
+                                                editor_cloned7,
+                                                viewport_cloned2,
+                                                polygon_selected,
+                                                selected_polygon_id,
+                                                selected_polygon_data,
+                                                selected_sequence_id,
+                                            ),
                                         ))
                                         .style(|s| card_styles(s))),
                                     )
@@ -541,251 +418,25 @@ pub fn project_view(
                                     let state_cloned4 = state_cloned4.clone();
                                     let editor_cloned5 = editor_cloned5.clone();
                                     let editor_cloned6 = editor_cloned6.clone();
+                                    let gpu_cloned3 = gpu_cloned3.clone();
+                                    let viewport_cloned3 = viewport_cloned3.clone();
 
-                                    match selected_keyframe.value {
-                                        KeyframeValue::Position(position) => container(
-                                            (v_stack((
-                                                label(|| "Keyframe"),
-                                                simple_button("Back to Properties".to_string(), move |_| {
-                                                    selected_keyframes.set(Vec::new());
-                                                }),
-                                                h_stack((
-                                                    styled_input(
-                                                        "X:".to_string(),
-                                                        &position[0].to_string(),
-                                                        "Enter X",
-                                                        Box::new({
-                                                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                                                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                                // then save merge animation_data with saved_data and save to file
-                                                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                                                                let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
-
-                                                                let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                                                                let mut current_keyframe = selected_keyframes.get();
-                                                                let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                                                                let mut current_sequence = selected_sequence_data.get();
-                                                                // let current_polygon = selected_polygon_data.read();
-                                                                // let current_polygon = current_polygon.borrow();
-
-                                                                // update keyframe
-                                                                current_keyframe.value = KeyframeValue::Position([value as i32, position[1]]);
-
-                                                                update_keyframe(
-                                                                    editor_state,
-                                                                    current_animation_data,
-                                                                    current_keyframe,
-                                                                    current_sequence,
-                                                                    selected_keyframes,
-                                                                    animation_data,
-                                                                    selected_sequence_data,
-                                                                    selected_sequence_id,
-                                                                    sequence_selected
-                                                                );
-
-                                                                println!("Keyframe updated!");
-
-                                                                let mut editor = editor_cloned5.lock().unwrap();
-                                                                editor.update_motion_paths(&selected_sequence_data.get());
-
-                                                                println!("Motion Paths updated!");
-                                                            }
-                                                        }),
-                                                        state_cloned3,
-                                                        "x".to_string(),
-                                                    )
-                                                    .style(move |s| {
-                                                        s.width(halfs).margin_right(5.0)
-                                                    }),
-                                                    styled_input(
-                                                        "Y:".to_string(),
-                                                        &position[1].to_string(),
-                                                        "Enter Y",
-                                                        Box::new({
-                                                            move |mut editor_state, value| {
-                                                                let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
-
-                                                                let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                                                                let mut current_keyframe = selected_keyframes.get();
-                                                                let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                                                                let mut current_sequence = selected_sequence_data.get();
-                                                                // let current_polygon = selected_polygon_data.read();
-                                                                // let current_polygon = current_polygon.borrow();
-
-                                                                // update keyframe
-                                                                current_keyframe.value = KeyframeValue::Position([position[0], value as i32]);
-
-                                                                update_keyframe(
-                                                                    editor_state,
-                                                                    current_animation_data,
-                                                                    current_keyframe,
-                                                                    current_sequence,
-                                                                    selected_keyframes,
-                                                                    animation_data,
-                                                                    selected_sequence_data,
-                                                                    selected_sequence_id,
-                                                                    sequence_selected
-                                                                );
-
-                                                                println!("Keyframe updated!");
-
-                                                                let mut editor = editor_cloned6.lock().unwrap();
-                                                                editor.update_motion_paths(&selected_sequence_data.get());
-
-                                                                println!("Motion Paths updated!");
-                                                            }
-                                                        }),
-                                                        state_cloned4,
-                                                        "y".to_string(),
-                                                    )
-                                                    .style(move |s| s.width(halfs)),
-                                                ))
-                                                .style(move |s| s.width(aside_width)),
-                                            ))
-                                            .style(|s| card_styles(s))),
-                                        )
-                                        .into_any(),
-                                        KeyframeValue::Rotation(rotation) => container(
-                                            (v_stack((label(|| "Keyframe"),
-                                            simple_button("Back to Properties".to_string(), move |_| {
-                                                selected_keyframes.set(Vec::new());
-                                            }),
-                                            styled_input(
-                                                "Rotation Degrees:".to_string(),
-                                                &rotation.to_string(),
-                                                "Enter Degrees",
-                                                Box::new({
-                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                        // then save merge animation_data with saved_data and save to file
-                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
-
-                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                                                        let mut current_keyframe = selected_keyframes.get();
-                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                                                        let mut current_sequence = selected_sequence_data.get();
-                                                        // let current_polygon = selected_polygon_data.read();
-                                                        // let current_polygon = current_polygon.borrow();
-
-                                                        // update keyframe
-                                                        current_keyframe.value = KeyframeValue::Rotation(value as i32);
-
-                                                        update_keyframe(
-                                                            editor_state,
-                                                            current_animation_data,
-                                                            current_keyframe,
-                                                            current_sequence,
-                                                            selected_keyframes,
-                                                            animation_data,
-                                                            selected_sequence_data,
-                                                            selected_sequence_id,
-                                                            sequence_selected
-                                                        );
-                                                    }
-                                                }),
-                                                state_cloned3,
-                                                "rotation".to_string(),
-                                            )))
-                                                .style(|s| card_styles(s))),
-                                        )
-                                        .into_any(),
-                                        KeyframeValue::Scale(scale) => container(
-                                            (v_stack((label(|| "Keyframe"),
-                                            simple_button("Back to Properties".to_string(), move |_| {
-                                                selected_keyframes.set(Vec::new());
-                                            }),
-                                            styled_input(
-                                                "Scale (100 default):".to_string(),
-                                                &scale.to_string(),
-                                                "Enter Scale",
-                                                Box::new({
-                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                        // then save merge animation_data with saved_data and save to file
-                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
-
-                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                                                        let mut current_keyframe = selected_keyframes.get();
-                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                                                        let mut current_sequence = selected_sequence_data.get();
-                                                        // let current_polygon = selected_polygon_data.read();
-                                                        // let current_polygon = current_polygon.borrow();
-
-                                                        // update keyframe
-                                                        current_keyframe.value = KeyframeValue::Scale(value as i32);
-
-                                                        update_keyframe(
-                                                            editor_state,
-                                                            current_animation_data,
-                                                            current_keyframe,
-                                                            current_sequence,
-                                                            selected_keyframes,
-                                                            animation_data,
-                                                            selected_sequence_data,
-                                                            selected_sequence_id,
-                                                            sequence_selected
-                                                        );
-                                                    }
-                                                }),
-                                                state_cloned3,
-                                                "scale".to_string(),
-                                            )))
-                                                .style(|s| card_styles(s))),
-                                        )
-                                        .into_any(),
-                                        KeyframeValue::Opacity(opacity) => container(
-                                            (v_stack((label(|| "Keyframe"),
-                                            simple_button("Back to Properties".to_string(), move |_| {
-                                                selected_keyframes.set(Vec::new());
-                                            }),
-                                            styled_input(
-                                                "Opacity (default 100):".to_string(),
-                                                &opacity.to_string(),
-                                                "Enter Opacity",
-                                                Box::new({
-                                                    move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                                                        // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                        // then save merge animation_data with saved_data and save to file
-                                                        // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                                                        let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
-
-                                                        let mut current_animation_data = animation_data.get().expect("Couldn't get Animation Data");
-                                                        let mut current_keyframe = selected_keyframes.get();
-                                                        let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                                                        let mut current_sequence = selected_sequence_data.get();
-                                                        // let current_polygon = selected_polygon_data.read();
-                                                        // let current_polygon = current_polygon.borrow();
-
-                                                        // update keyframe
-                                                        current_keyframe.value = KeyframeValue::Opacity(value as i32);
-
-                                                        update_keyframe(
-                                                            editor_state,
-                                                            current_animation_data,
-                                                            current_keyframe,
-                                                            current_sequence,
-                                                            selected_keyframes,
-                                                            animation_data,
-                                                            selected_sequence_data,
-                                                            selected_sequence_id,
-                                                            sequence_selected
-                                                        );
-                                                    }
-                                                }),
-                                                state_cloned3,
-                                                "opacity".to_string(),
-                                            )))
-                                                .style(|s| card_styles(s))),
-                                        )
-                                        .into_any(),
-                                        _ => empty().into_any(),
-                                    }
+                                    keyframe_properties_view(
+                                        state_cloned3,
+                                        gpu_cloned3,
+                                        editor_cloned5,
+                                        viewport_cloned3,
+                                        polygon_selected,
+                                        selected_polygon_id,
+                                        selected_polygon_data,
+                                        selected_sequence_id,
+                                        selected_keyframe,
+                                        selected_keyframes,
+                                        animation_data,
+                                        sequence_selected,
+                                        selected_sequence_data,
+                                    )
+                                    .into_any()
                                 } else {
                                     empty().into_any()
                                 }
@@ -797,7 +448,7 @@ pub fn project_view(
 
                                 if editor.is_playing {
                                     println!("Pause Sequence...");
-                                    
+
                                     editor.is_playing = false;
                                     editor.start_playing_time = None;
                                 } else {
@@ -806,15 +457,16 @@ pub fn project_view(
                                     let now = std::time::Instant::now();
                                     editor.start_playing_time = Some(now);
 
-                                    editor.current_sequence_data = Some(selected_sequence_data.get());
+                                    editor.current_sequence_data =
+                                        Some(selected_sequence_data.get());
                                     editor.is_playing = true;
                                 }
 
                                 // EventPropagation::Continue
                             }),
                             keyframe_timeline,
-                        )).style(|s| s.margin_top(425.0))
-                        
+                        ))
+                        .style(|s| s.margin_top(425.0)),
                     ))
                     .into_any()
                 } else {
@@ -834,7 +486,7 @@ pub fn welcome_tab_interface(
     let editor_state_cloned = editor_state.clone();
     let editor_cloned = editor.clone();
     let gpu_helper_cloned = gpu_helper.clone();
-    let viewport_cloned  = viewport.clone();
+    let viewport_cloned = viewport.clone();
     let state_2 = Arc::clone(&editor_state);
 
     let tabs: im::Vector<&str> = vec!["Projects", "Settings"].into_iter().collect();
@@ -979,7 +631,10 @@ pub fn selection_view(
     viewport: std::sync::Arc<Mutex<Viewport>>,
 ) -> impl IntoView {
     container((welcome_tab_interface(
-        editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()
+        editor_state.clone(),
+        editor.clone(),
+        gpu_helper.clone(),
+        viewport.clone(),
     ),))
 }
 
@@ -1002,10 +657,19 @@ pub fn app_view(
         move || project_selected.get(),
         move |project_selected_real| {
             if project_selected_real != Uuid::nil() {
-                project_view(editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()).into_any()
+                project_view(
+                    editor_state.clone(),
+                    editor.clone(),
+                    gpu_helper.clone(),
+                    viewport.clone(),
+                )
+                .into_any()
             } else {
                 selection_view(
-                    editor_state.clone(), editor.clone(), gpu_helper.clone(), viewport.clone()
+                    editor_state.clone(),
+                    editor.clone(),
+                    gpu_helper.clone(),
+                    viewport.clone(),
                 )
                 .into_any()
             }
