@@ -100,7 +100,8 @@ pub fn save_saved_state(saved_state: MutexGuard<SavedState>) {
 pub fn save_saved_state_raw(saved_state: SavedState) {
     let json = serde_json::to_string_pretty(&saved_state).expect("Couldn't serialize saved state");
     let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
-    let save_path = sync_dir.join("motion_path_data.json");
+    let project_dir = sync_dir.join("projects").join(saved_state.id.clone());
+    let save_path = project_dir.join("project_data.json");
 
     println!("Saving saved state... {}", save_path.display());
 
