@@ -204,6 +204,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     &[],
                 );
 
+                // draw static (internal) polygons
                 for (poly_index, polygon) in editor.static_polygons.iter().enumerate() {
                     polygon
                         .transform
@@ -217,6 +218,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
                 }
 
+                // draw polygons
                 for (poly_index, polygon) in editor.polygons.iter().enumerate() {
                     polygon
                         .transform
@@ -228,6 +230,34 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         wgpu::IndexFormat::Uint32,
                     );
                     render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
+                }
+
+                // draw text items
+                for (text_index, text_item) in editor.text_items.iter().enumerate() {
+                    text_item
+                        .transform
+                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    render_pass.set_bind_group(1, &text_item.bind_group, &[]);
+                    render_pass.set_vertex_buffer(0, text_item.vertex_buffer.slice(..));
+                    render_pass.set_index_buffer(
+                        text_item.index_buffer.slice(..),
+                        wgpu::IndexFormat::Uint16,
+                    );
+                    render_pass.draw_indexed(0..text_item.indices.len() as u32, 0, 0..1);
+                }
+
+                // draw image items
+                for (image_index, st_image) in editor.image_items.iter().enumerate() {
+                    st_image
+                        .transform
+                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    render_pass.set_bind_group(1, &st_image.bind_group, &[]);
+                    render_pass.set_vertex_buffer(0, st_image.vertex_buffer.slice(..));
+                    render_pass.set_index_buffer(
+                        st_image.index_buffer.slice(..),
+                        wgpu::IndexFormat::Uint16,
+                    );
+                    render_pass.draw_indexed(0..st_image.indices.len() as u32, 0, 0..1);
                 }
 
                 let viewport = editor.viewport.lock().unwrap();
