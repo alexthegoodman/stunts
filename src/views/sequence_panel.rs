@@ -10,7 +10,9 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use rand::Rng;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
-use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
+use stunts_engine::polygon::{
+    Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
+};
 use stunts_engine::st_image::{SavedStImageConfig, StImageConfig};
 use stunts_engine::text_due::{SavedTextRendererConfig, TextRendererConfig};
 use uuid::Uuid;
@@ -126,6 +128,26 @@ pub fn sequence_panel(
                             polygon_config.dimensions.0 as i32,
                             polygon_config.dimensions.1 as i32,
                         ),
+                        fill: [
+                            polygon_config.fill[0] as i32,
+                            polygon_config.fill[1] as i32,
+                            polygon_config.fill[2] as i32,
+                            polygon_config.fill[3] as i32,
+                        ],
+                        border_radius: polygon_config.border_radius as i32, // multiply by 100?
+                        position: SavedPoint {
+                            x: polygon_config.position.x as i32,
+                            y: polygon_config.position.y as i32,
+                        },
+                        stroke: SavedStroke {
+                            thickness: polygon_config.stroke.thickness as i32,
+                            fill: [
+                                polygon_config.stroke.fill[0] as i32,
+                                polygon_config.stroke.fill[1] as i32,
+                                polygon_config.stroke.fill[2] as i32,
+                                polygon_config.stroke.fill[3] as i32,
+                            ],
+                        },
                     },
                 );
             }),

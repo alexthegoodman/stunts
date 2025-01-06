@@ -4,6 +4,7 @@ use floem::common::small_button;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 use stunts_engine::editor::string_to_f32;
+use stunts_engine::editor::wgpu_to_human;
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Viewport;
 use stunts_engine::polygon::PolygonConfig;
@@ -37,6 +38,14 @@ pub fn properties_view(
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
+    let editor_state3 = Arc::clone(&editor_state);
+    let editor_state4 = Arc::clone(&editor_state);
+    let editor_state5 = Arc::clone(&editor_state);
+    let editor_state6 = Arc::clone(&editor_state);
+    let editor_state7 = Arc::clone(&editor_state);
+    let editor_state8 = Arc::clone(&editor_state);
+    let editor_state9 = Arc::clone(&editor_state);
+    let editor_state10 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -131,6 +140,138 @@ pub fn properties_view(
                 "height".to_string(),
             )
             .style(move |s| s.width(halfs)),
+            h_stack((
+                styled_input(
+                    "Red:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().fill[0]).to_string(),
+                    "0-255",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_red(&value);
+                        }
+                    }),
+                    editor_state3,
+                    "red".to_string(),
+                )
+                .style(move |s| s.width(thirds).margin_right(5.0)),
+                styled_input(
+                    "Green:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().fill[1]).to_string(),
+                    "0-255",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_green(&value);
+                        }
+                    }),
+                    editor_state4,
+                    "green".to_string(),
+                )
+                .style(move |s| s.width(thirds).margin_right(5.0)),
+                styled_input(
+                    "Blue:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().fill[2]).to_string(),
+                    "0-255",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_blue(&value);
+                        }
+                    }),
+                    editor_state5,
+                    "blue".to_string(),
+                )
+                .style(move |s| s.width(thirds)),
+            ))
+            .style(move |s| {
+                s.width(aside_width)
+                // .display(Display::Grid)
+                // .grid_template_columns(vec![TrackSizingFunction::Repeat(
+                //     // floem::taffy::GridTrackRepetition::Count(3),
+                //     GridTrackRepetition::AutoFill,
+                //     vec![MinMax::from(MinMax {
+                //         min: MinTrackSizingFunction::Fixed(LengthPercentage::Length(100.0)),
+                //         max: MaxTrackSizingFunction::Fraction(1.0),
+                //     })],
+                // )])
+            }),
+            styled_input(
+                "Border Radius:".to_string(),
+                &selected_polygon_data
+                    .read()
+                    .borrow()
+                    .border_radius
+                    .to_string(),
+                "Enter radius",
+                Box::new({
+                    move |mut editor_state, value| {
+                        editor_state.update_border_radius(&value);
+                    }
+                }),
+                editor_state6,
+                "border_radius".to_string(),
+            ),
+            label(|| "Stroke").style(|s| s.margin_bottom(5.0)),
+            h_stack((
+                styled_input(
+                    "Thickness:".to_string(),
+                    &selected_polygon_data
+                        .read()
+                        .borrow()
+                        .stroke
+                        .thickness
+                        .to_string(),
+                    "Enter thickness",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_stroke_thickness(&value);
+                        }
+                    }),
+                    editor_state7,
+                    "stroke_thickness".to_string(),
+                )
+                .style(move |s| s.width(quarters).margin_right(5.0)),
+                styled_input(
+                    "Red:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[0])
+                        .to_string(),
+                    "Enter red",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_stroke_red(&value);
+                        }
+                    }),
+                    editor_state10,
+                    "stroke_red".to_string(),
+                )
+                .style(move |s| s.width(quarters).margin_right(5.0)),
+                styled_input(
+                    "Green:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[1])
+                        .to_string(),
+                    "Enter green",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_stroke_green(&value);
+                        }
+                    }),
+                    editor_state8,
+                    "stroke_green".to_string(),
+                )
+                .style(move |s| s.width(quarters).margin_right(5.0)),
+                styled_input(
+                    "Blue:".to_string(),
+                    &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[2])
+                        .to_string(),
+                    "Enter blue",
+                    Box::new({
+                        move |mut editor_state, value| {
+                            editor_state.update_stroke_blue(&value);
+                        }
+                    }),
+                    editor_state9,
+                    "stroke_blue".to_string(),
+                )
+                .style(move |s| s.width(quarters)),
+            )),
         ))
         .style(move |s| s.width(aside_width)),
     ))
