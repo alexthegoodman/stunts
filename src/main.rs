@@ -12,7 +12,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseScrollDelta};
-use helpers::utilities::load_ground_truth_state;
+// use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
 use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader};

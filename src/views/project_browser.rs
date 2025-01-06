@@ -1,5 +1,6 @@
 use std::str::FromStr;
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 
 use floem::common::{alert, card_styles, create_icon, nav_button};
 use floem::event::{Event, EventListener, EventPropagation};
@@ -7,12 +8,14 @@ use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, create_signal, RwSignal, SignalRead};
 use floem::style::CursorStyle;
-use floem::taffy::AlignItems;
+use floem::taffy::{AlignItems, JustifyContent};
 use floem::text::Weight;
 use floem::views::{
-    container, dyn_container, dyn_stack, empty, h_stack, img, label, scroll, stack, svg, tab,
-    text_input, v_stack, virtual_list, virtual_stack, VirtualDirection, VirtualItemSize,
+    button, container, dyn_container, dyn_stack, empty, h_stack, img, label, scroll, stack, svg,
+    tab, text_input, v_stack, virtual_list, virtual_stack, VirtualDirection, VirtualItemSize,
 };
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use stunts_engine::editor::{Editor, Viewport};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
@@ -29,9 +32,25 @@ use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
 use crate::helpers::projects::{get_projects, ProjectInfo};
-use crate::helpers::utilities::load_project_state;
+use crate::helpers::utilities::{
+    clear_auth_token, create_project_state, load_auth_token, load_project_state, save_auth_token,
+    AuthState, AuthToken,
+};
 // use crate::helpers::projects::{get_projects, ProjectInfo};
 // use crate::helpers::websocket::WebSocketManager;
+
+#[derive(Serialize)]
+struct LoginRequest {
+    email: String,
+    password: String,
+}
+
+#[derive(Deserialize)]
+struct LoginResponse {
+    token: String,
+    #[serde(with = "chrono::serde::ts_seconds_option")]
+    expiry: Option<chrono::DateTime<chrono::Utc>>,
+}
 
 pub fn project_item(
     project_info: ProjectInfo,
@@ -43,10 +62,6 @@ pub fn project_item(
         svg(create_icon(icon_name))
             .style(|s| s.width(24).height(24).color(Color::BLACK))
             .style(|s| s.margin_right(7.0)),
-        // .on_event_stop(
-        //     floem::event::EventListener::PointerDown,
-        //     |_| { /* Disable dragging for this view */ },
-        // ),
         label(move || project_label.to_string()),
     ))
     .style(|s| {
@@ -64,10 +79,6 @@ pub fn project_item(
             })
             .active(|s| s.background(Color::rgb(237.0, 218.0, 164.0)))
     })
-    // .on_click(|_| {
-    //     println!("Layer selected");
-    //     EventPropagation::Stop
-    // })
 }
 
 pub fn project_browser(
@@ -76,13 +87,30 @@ pub fn project_browser(
     gpu_helper: Arc<Mutex<GpuHelper>>,
     viewport: std::sync::Arc<Mutex<Viewport>>,
 ) -> impl View {
-    // TODO: Alert for Start CommonOS File Manager to use Midpoint
     let projects = get_projects().expect("Couldn't get projects");
 
     let gpu_2 = Arc::clone(&gpu_helper);
 
+    // Existing Projects
     let project_list = create_rw_signal(projects);
     let loading_project = create_rw_signal(false);
+
+    // New Project
+    let show_create_dialog = create_rw_signal(false);
+    let new_project_name = create_rw_signal(String::new());
+
+    // Authenication
+    let auth_state = create_rw_signal(AuthState {
+        token: load_auth_token(),
+        is_authenticated: load_auth_token().is_some(),
+    });
+
+    // Login dialog state
+    let show_login_dialog = create_rw_signal(false);
+    let email = create_rw_signal(String::new());
+    let password = create_rw_signal(String::new());
+    let login_error = create_rw_signal(Option::<String>::None);
+    let is_logging_in = create_rw_signal(false);
 
     v_stack((
         dyn_container(
@@ -100,11 +128,241 @@ pub fn project_browser(
             },
         )
         .into_view(),
-        alert(
-            floem::common::AlertVariant::Info,
-            "Make sure CommonOS Files is running and you are signed in to assure you can generate concepts, models, and animations.".to_string(),
-        ).style(|s| s.margin_bottom(10.0)),
-        (label(|| "Select a Project").style(|s| s.margin_bottom(4.0))),
+        // Authentication status and login button
+        h_stack((dyn_container(
+            move || auth_state.get().is_authenticated,
+            move |is_authenticated| {
+                if !is_authenticated {
+                    h_stack((
+                        alert(
+                            floem::common::AlertVariant::Warning,
+                            "Please login to create new projects.".to_string(),
+                        ),
+                        button(label(|| "Login"))
+                            .on_click(move |_| {
+                                show_login_dialog.set(true);
+                                EventPropagation::Stop
+                            })
+                            .style(|s| {
+                                s.margin_left(8.0)
+                                    .padding(8.0)
+                                    .background(Color::rgb(0.0, 122.0, 255.0))
+                                    .color(Color::WHITE)
+                                    .border_radius(4.0)
+                            }),
+                    ))
+                    .style(|s| s.align_items(AlignItems::Center))
+                    .into_any()
+                } else {
+                    h_stack((
+                        label(|| "Logged in"),
+                        button(label(|| "Logout"))
+                            .on_click(move |_| {
+                                let _ = logout(auth_state);
+                                EventPropagation::Stop
+                            })
+                            .style(|s| {
+                                s.margin_left(8.0)
+                                    .padding(8.0)
+                                    .background(Color::rgb(220.0, 53.0, 69.0))
+                                    .color(Color::WHITE)
+                                    .border_radius(4.0)
+                            }),
+                    ))
+                    .style(|s| s.align_items(AlignItems::Center))
+                    .into_any()
+                }
+            },
+        ),))
+        .style(|s| s.margin_bottom(16.0)),
+        // Project header with create button
+        h_stack((
+            label(|| "Select a Project").style(|s| s.margin_bottom(4.0)),
+            button(label(|| "New Project"))
+                .on_click(move |_| {
+                    if auth_state.get().is_authenticated {
+                        show_create_dialog.set(true);
+                    }
+                    EventPropagation::Stop
+                })
+                .disabled(move || !auth_state.get().is_authenticated)
+                .style(move |s| {
+                    s.margin_left(8.0)
+                        .padding(8.0)
+                        .background(if auth_state.get().is_authenticated {
+                            Color::rgb(0.0, 122.0, 255.0)
+                        } else {
+                            Color::rgb(150.0, 150.0, 150.0)
+                        })
+                        .color(Color::WHITE)
+                        .border_radius(4.0)
+                }),
+        ))
+        .style(|s| s.justify_content(JustifyContent::SpaceBetween)),
+        // Create Project Dialog
+        dyn_container(
+            move || show_create_dialog.get(),
+            move |show| {
+                if show {
+                    v_stack((
+                        label(|| "Create New Project"),
+                        text_input(new_project_name)
+                            .placeholder("Project Name")
+                            .style(|s| s.margin_vert(8.0)),
+                        h_stack((
+                            button(label(|| "Cancel")).on_click(move |_| {
+                                show_create_dialog.set(false);
+                                new_project_name.set(String::new());
+                                EventPropagation::Stop
+                            }),
+                            button(label(|| "Create"))
+                                .on_click(move |_| {
+                                    let name = new_project_name.get();
+                                    if !name.is_empty() {
+                                        create_project_state(name.clone())
+                                            .expect("Couldn't create project state");
+
+                                        if let Ok(projects) = get_projects() {
+                                            project_list.set(projects);
+                                            show_create_dialog.set(false);
+                                            new_project_name.set(String::new());
+                                        }
+                                    }
+                                    EventPropagation::Stop
+                                })
+                                .style(|s| {
+                                    s.margin_left(8.0)
+                                        .background(Color::rgb(0.0, 122.0, 255.0))
+                                        .color(Color::WHITE)
+                                }),
+                        ))
+                        .style(|s| s.justify_content(JustifyContent::FlexEnd)),
+                    ))
+                    .style(|s| {
+                        s.padding(16.0)
+                            .background(Color::WHITE)
+                            .border_radius(8.0)
+                            .border(1.0)
+                            .border_color(Color::rgb(200.0, 200.0, 200.0))
+                    })
+                    .into_any()
+                } else {
+                    empty().into_any()
+                }
+            },
+        ),
+        // Login Dialog
+        dyn_container(
+            move || show_login_dialog.get(),
+            move |show| {
+                if show {
+                    v_stack((
+                        label(|| "Login").style(|s| s.font_size(18.0).margin_bottom(16.0)),
+                        // Error message if any
+                        dyn_container(
+                            move || login_error.get(),
+                            move |error| {
+                                if let Some(error_msg) = error {
+                                    alert(floem::common::AlertVariant::Error, error_msg)
+                                        .style(|s| s.margin_bottom(16.0))
+                                        .into_any()
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
+                        ),
+                        text_input(email)
+                            .placeholder("Email")
+                            .style(|s| s.margin_bottom(8.0)),
+                        text_input(password)
+                            .placeholder("Password")
+                            // .password(true) // TODO: password mask
+                            .style(|s| s.margin_bottom(16.0)),
+                        h_stack((
+                            button(label(|| "Cancel")).on_click(move |_| {
+                                show_login_dialog.set(false);
+                                email.set(String::new());
+                                password.set(String::new());
+                                login_error.set(None);
+                                EventPropagation::Stop
+                            }),
+                            button(label(move || {
+                                if is_logging_in.get() {
+                                    "Logging in..."
+                                } else {
+                                    "Login"
+                                }
+                            }))
+                            .disabled(move || is_logging_in.get())
+                            .on_click(move |_| {
+                                let email_val = email.get();
+                                let password_val = password.get();
+
+                                if email_val.is_empty() || password_val.is_empty() {
+                                    login_error.set(Some("Please fill in all fields".to_string()));
+                                    return EventPropagation::Stop;
+                                }
+
+                                is_logging_in.set(true);
+                                login_error.set(None);
+
+                                // Clone values for async block
+                                let email_clone = email_val.clone();
+                                let password_clone = password_val.clone();
+
+                                // spawn(async move {
+                                let result = login_user(email_clone, password_clone);
+
+                                match result {
+                                    Ok(response) => {
+                                        if let Err(e) = set_authenticated(
+                                            auth_state,
+                                            response.token,
+                                            response.expiry,
+                                        ) {
+                                            login_error.set(Some(format!(
+                                                "Error saving credentials: {}",
+                                                e
+                                            )));
+                                        } else {
+                                            show_login_dialog.set(false);
+                                            email.set(String::new());
+                                            password.set(String::new());
+                                        }
+                                    }
+                                    Err(e) => {
+                                        login_error.set(Some(format!("Login failed: {}", e)));
+                                    }
+                                }
+
+                                is_logging_in.set(false);
+                                // });
+
+                                EventPropagation::Stop
+                            })
+                            .style(|s| {
+                                s.margin_left(8.0)
+                                    .background(Color::rgb(0.0, 122.0, 255.0))
+                                    .color(Color::WHITE)
+                            }),
+                        ))
+                        .style(|s| s.justify_content(JustifyContent::FlexEnd)),
+                    ))
+                    .style(|s| {
+                        s.padding(16.0)
+                            .background(Color::WHITE)
+                            .border_radius(8.0)
+                            .border(1.0)
+                            .border_color(Color::rgb(200.0, 200.0, 200.0))
+                            .min_width(300.0)
+                    })
+                    .into_any()
+                } else {
+                    empty().into_any()
+                }
+            },
+        ),
+        // Browse Projects
         scroll(
             dyn_stack(
                 move || project_list.get(),
@@ -113,7 +371,7 @@ pub fn project_browser(
                     project_item(
                         project.clone(),
                         project_list,
-                        "Project".to_string(),
+                        project.name.clone() + &" " + &project.modified.to_string().clone(),
                         "sphere",
                     )
                     .on_click({
@@ -147,25 +405,19 @@ pub fn project_browser(
                             // retrieve saved state of project and set on helper
                             // restore the saved state to the rendererstate
                             println!("Loading saved state...");
-                            let saved_state = load_project_state(uuid.clone().to_string()).expect("Couldn't get Saved State");
+                            let saved_state = load_project_state(uuid.clone().to_string())
+                                .expect("Couldn't get Saved State");
                             editor_state.saved_state = Some(saved_state.clone());
 
                             // update the UI signal
                             let project_selected = editor_state
                                 .project_selected_signal
                                 .expect("Couldn't get project selection signal");
-                            
+
                             project_selected.set(uuid.clone());
 
                             drop(editor_state);
 
-                            // update renderer_state with project_selected (and current_view if necessary)
-                            // let mut renderer_state = editor
-                            //     .renderer_state
-                            //     .as_mut()
-                            //     .expect("Couldn't find RendererState")
-                            //     .lock()
-                            //     .unwrap();
                             let mut editor = editor.lock().unwrap();
 
                             editor.project_selected = Some(uuid.clone());
@@ -180,10 +432,64 @@ pub fn project_browser(
                     })
                 },
             )
-            // .style(|s| s.flex_col().column_gap(5).padding(10))
             .into_view(),
         ),
     ))
     .style(|s| card_styles(s))
     .style(|s| s.width(300.0))
+}
+
+// Function to update authentication state
+pub fn set_authenticated(
+    auth_state: RwSignal<AuthState>,
+    token: String,
+    expiry: Option<chrono::DateTime<chrono::Utc>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let auth_token = AuthToken { token, expiry };
+    save_auth_token(&auth_token)?;
+
+    auth_state.set(AuthState {
+        token: Some(auth_token),
+        is_authenticated: true,
+    });
+
+    Ok(())
+}
+
+// Function to handle logout
+pub fn logout(auth_state: RwSignal<AuthState>) -> Result<(), Box<dyn std::error::Error>> {
+    clear_auth_token()?;
+
+    auth_state.set(AuthState {
+        token: None,
+        is_authenticated: false,
+    });
+
+    Ok(())
+}
+
+fn login_user(
+    email: String,
+    password: String,
+) -> Result<LoginResponse, Box<dyn std::error::Error>> {
+    // use blocking to avoid spawning threads for now
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()?;
+
+    let response = client
+        .post("http://localhost:3000/api/auth/login")
+        .json(&LoginRequest { email, password })
+        .send()
+        .expect("Couldn't get login response");
+
+    if response.status().is_success() {
+        let login_response = response
+            .json::<LoginResponse>()
+            .expect("Couldn't get login json");
+        Ok(login_response)
+    } else {
+        let error_text = response.text().expect("Couldn't get login error text");
+        Err(error_text.into())
+    }
 }

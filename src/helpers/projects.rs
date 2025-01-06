@@ -1,3 +1,4 @@
+use super::saved_state::SavedState;
 use super::utilities::get_ground_truth_dir;
 use chrono::{DateTime, Local};
 use std::fs;
@@ -12,7 +13,7 @@ pub struct ProjectInfo {
 
 pub fn get_projects() -> Result<Vec<ProjectInfo>, Box<dyn std::error::Error>> {
     let sync_dir = get_ground_truth_dir().expect("Couldn't get CommonOS directory");
-    let projects_dir = sync_dir.join("stunts/projects");
+    let projects_dir = sync_dir.join("projects");
 
     let mut projects = Vec::new();
 

@@ -134,6 +134,8 @@ pub fn properties_view(
                         });
 
                         save_saved_state_raw(saved_state.clone());
+
+                        // TODO: editor_state.update_width?
                     }
                 }),
                 editor_state2,
@@ -148,6 +150,7 @@ pub fn properties_view(
                     Box::new({
                         move |mut editor_state, value| {
                             editor_state.update_red(&value);
+                            // TODO: update saved state?
                         }
                     }),
                     editor_state3,
