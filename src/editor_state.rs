@@ -446,6 +446,7 @@ impl EditorState {
 
         let new_motion_path = AnimationData {
             id: Uuid::new_v4().to_string(),
+            object_type: stunts_engine::animations::ObjectType::Polygon,
             polygon_id: savable_item_id.clone(),
             duration: Duration::from_secs(20),
             properties: properties,

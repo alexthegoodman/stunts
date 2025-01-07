@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use stunts_engine::{animations::Sequence, polygon::SavedPolygonConfig};
-
-use crate::views::sequence_timeline::SavedTimelineStateConfig;
+use stunts_engine::{
+    animations::Sequence, polygon::SavedPolygonConfig, timelines::SavedTimelineStateConfig,
+};
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct SavedState {

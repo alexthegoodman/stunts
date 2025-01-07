@@ -11,32 +11,15 @@ use floem::View;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
-
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct TimelineSequence {
-    pub id: String,
-    pub track_type: TrackType,
-    pub start_time_ms: i32, // in milliseconds
-    pub duration_ms: i32,   // in milliseconds
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub enum TrackType {
-    Audio,
-    Video,
-}
+use stunts_engine::timelines::SavedTimelineStateConfig;
+use stunts_engine::timelines::TimelineSequence;
+use stunts_engine::timelines::TrackType;
 
 #[derive(Clone)]
 pub struct TimelineState {
     pub timeline_sequences: RwSignal<Vec<TimelineSequence>>,
     pub dragging_timeline_sequence: RwSignal<Option<(String, i32)>>, // (id, original_start_time)
     pub pixels_per_ms: i32,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-pub struct SavedTimelineStateConfig {
-    pub timeline_sequences: Vec<TimelineSequence>,
-    // pub pixels_per_second: f32,
 }
 
 impl TimelineState {

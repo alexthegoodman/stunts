@@ -15,11 +15,11 @@ use rand::Rng;
 use std::str::FromStr;
 use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
+use stunts_engine::timelines::{TimelineSequence, TrackType};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
 use crate::helpers::utilities::save_saved_state_raw;
-use crate::views::sequence_timeline::{TimelineSequence, TrackType};
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
@@ -330,6 +330,16 @@ pub fn sequences_view(
         .style(|s| s.width(300.0)),
         v_stack((
             simple_button("Play Video".to_string(), move |_| {
+                let mut editor_state = state_cloned5.lock().unwrap();
+
+                let saved_state = editor_state
+                    .saved_state
+                    .as_ref()
+                    .expect("Couldn't get saved state");
+                let cloned_sequences = saved_state.sequences.clone();
+
+                drop(editor_state);
+
                 let mut editor = editor_cloned2.lock().unwrap();
 
                 if editor.video_is_playing {
@@ -337,13 +347,17 @@ pub fn sequences_view(
 
                     editor.video_is_playing = false;
                     editor.video_start_playing_time = None;
+                    editor.video_current_sequence_timeline = None;
+                    editor.video_current_sequences_data = None;
                 } else {
                     println!("Play Video...");
 
                     let now = std::time::Instant::now();
                     editor.video_start_playing_time = Some(now);
 
-                    // editor.video_current_sequence_data = Some(selected_sequence_data.get());
+                    editor.video_current_sequence_timeline =
+                        Some(sequence_timeline_signal.get().to_config());
+                    editor.video_current_sequences_data = Some(cloned_sequences);
                     editor.video_is_playing = true;
                 }
 

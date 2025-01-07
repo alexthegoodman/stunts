@@ -7,9 +7,8 @@ use floem::reactive::SignalUpdate;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use stunts_engine::timelines::SavedTimelineStateConfig;
 use uuid::Uuid;
-
-use crate::views::sequence_timeline::SavedTimelineStateConfig;
 
 use super::saved_state::SavedState;
 
