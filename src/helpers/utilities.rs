@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use uuid::Uuid;
 
+use crate::views::sequence_timeline::SavedTimelineStateConfig;
+
 use super::saved_state::SavedState;
 
 pub fn get_ground_truth_dir() -> Option<PathBuf> {
@@ -60,6 +62,9 @@ pub fn load_project_state(project_id: String) -> Result<SavedState, Box<dyn std:
             id: project_id,
             name: "New Project".to_string(),
             sequences: Vec::new(),
+            timeline_sequences: SavedTimelineStateConfig {
+                timeline_sequences: Vec::new(),
+            },
         };
 
         let json = serde_json::to_string_pretty(&json).expect("Couldn't serialize saved state");
@@ -88,6 +93,9 @@ pub fn create_project_state(name: String) -> Result<SavedState, Box<dyn std::err
         id: project_id,
         name: name.clone(),
         sequences: Vec::new(),
+        timeline_sequences: SavedTimelineStateConfig {
+            timeline_sequences: Vec::new(),
+        },
     };
 
     let json = serde_json::to_string_pretty(&initial_state)?;

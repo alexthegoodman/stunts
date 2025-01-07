@@ -19,6 +19,7 @@ use uuid::Uuid;
 
 use crate::editor_state::EditorState;
 use crate::helpers::utilities::save_saved_state_raw;
+use crate::views::sequence_timeline::{TimelineSequence, TrackType};
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
@@ -217,6 +218,7 @@ pub fn sequences_view(
                 move |item| {
                     let state_cloned2 = state_cloned2.clone();
                     let state_cloned3 = state_cloned3.clone();
+                    let state_cloned4 = state_cloned4.clone();
                     let editor_cloned = editor_cloned.clone();
                     let viewport_cloned = viewport_cloned.clone();
 
@@ -229,14 +231,7 @@ pub fn sequences_view(
 
                     h_stack((
                         simple_button(
-                            quick_access_info.to_string()
-                                + &" ".to_string()
-                                + &item
-                                    .clone()
-                                    .split("-")
-                                    .last()
-                                    .expect("Couldn't get last piece")
-                                    .to_string(),
+                            "Edit Sequence ".to_string() + &quick_access_info.to_string(),
                             move |_| {
                                 println!("Open Sequence...");
 
@@ -357,6 +352,55 @@ pub fn sequences_view(
                             sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
                             println!("Sequence duplicated!");
+                        }),
+                        simple_button("Add to Timeline".to_string(), move |_| {
+                            println!("Adding sequence to sequence timeline...");
+
+                            let mut editor_state = state_cloned4.lock().unwrap();
+
+                            let mut existing_timeline = editor_state
+                                .sequence_timeline_state
+                                .timeline_sequences
+                                .get();
+
+                            // Find the sequence that ends at the latest point in time
+                            let start_time = if existing_timeline.is_empty() {
+                                0
+                            } else {
+                                existing_timeline
+                                    .iter()
+                                    .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                    .max()
+                                    .unwrap_or(0)
+                            };
+
+                            existing_timeline.push(TimelineSequence {
+                                id: Uuid::new_v4().to_string(),
+                                track_type: TrackType::Video,
+                                start_time_ms: start_time,
+                                duration_ms: 20000,
+                            });
+
+                            editor_state
+                                .sequence_timeline_state
+                                .timeline_sequences
+                                .set(existing_timeline);
+
+                            let new_savable = editor_state.sequence_timeline_state.to_config();
+
+                            let mut new_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State")
+                                .clone();
+
+                            new_state.timeline_sequences = new_savable;
+
+                            editor_state.saved_state = Some(new_state.clone());
+
+                            save_saved_state_raw(new_state.clone());
+
+                            println!("Sequence added!");
                         }),
                     ))
                 },

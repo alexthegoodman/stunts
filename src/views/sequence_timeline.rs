@@ -13,15 +13,15 @@ use serde::Serialize;
 use std::sync::Arc;
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-struct TimelineSequence {
-    id: String,
-    track_type: TrackType,
-    start_time_ms: i32, // in milliseconds
-    duration_ms: i32,   // in milliseconds
+pub struct TimelineSequence {
+    pub id: String,
+    pub track_type: TrackType,
+    pub start_time_ms: i32, // in milliseconds
+    pub duration_ms: i32,   // in milliseconds
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
-enum TrackType {
+pub enum TrackType {
     Audio,
     Video,
 }
