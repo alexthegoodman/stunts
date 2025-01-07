@@ -24,6 +24,8 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
+use super::sequence_timeline::{build_timeline, TimelineState};
+
 pub fn sequences_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,
     editor_state: Arc<Mutex<EditorState>>,
@@ -34,19 +36,23 @@ pub fn sequences_view(
     sequence_selected: RwSignal<bool>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
+    let editor_cloned2 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
     let state_cloned3 = Arc::clone(&editor_state);
     let state_cloned4 = Arc::clone(&editor_state);
+    let state_cloned5 = Arc::clone(&editor_state);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
     let sequence_quick_access: RwSignal<HashMap<String, i32>> = create_rw_signal(HashMap::new());
 
+    let sequence_timeline_signal = create_rw_signal(TimelineState::new());
+
     create_effect(move |_| {
-        let editor_state = editor_state.lock().unwrap();
+        let mut editor_state = editor_state.lock().unwrap();
         let saved_state = editor_state
             .saved_state
             .as_ref()
@@ -75,346 +81,276 @@ pub fn sequences_view(
 
         sequences.set(im_sequences);
         sequence_quick_access.set(qa_sequences);
+
+        // editor_state.sequence_timeline_state = sequence_timeline_signal.get(); // is this even needed? perhaps it's not needed on editor_state
     });
 
-    v_stack((
-        label(move || format!("Sequences")).style(|s| s.margin_bottom(10)),
-        // simple_button("PROCEDURAL GENERATION".to_string(), move |_| {
-        //     println!("Generating procedural variants...");
+    h_stack((
+        v_stack((
+            label(move || format!("Sequences")).style(|s| s.margin_bottom(10)),
+            simple_button("New Sequence".to_string(), move |_| {
+                println!("New Sequence...");
 
-        //     let mut editor_state = state_cloned4.lock().unwrap();
-        //     let mut new_state = editor_state
-        //         .saved_state
-        //         .as_mut()
-        //         .expect("Couldn't get Saved State")
-        //         .clone();
+                let new_sequence_id = Uuid::new_v4().to_string();
+                let new_sequence = Sequence {
+                    id: new_sequence_id.clone(),
+                    active_polygons: Vec::new(),
+                    polygon_motion_paths: Vec::new(),
+                    active_text_items: Vec::new(),
+                    active_image_items: Vec::new(),
+                };
 
-        //     let mut rng = rand::thread_rng();
+                let mut editor_state = state_cloned.lock().unwrap();
+                let mut new_state = editor_state
+                    .saved_state
+                    .as_mut()
+                    .expect("Couldn't get Saved State")
+                    .clone();
+                new_state.sequences.push(new_sequence);
 
-        //     let new_sequences = &mut Vec::new();
-        //     new_state.sequences.iter().for_each(|s| {
-        //         let new_sequence_id = Uuid::new_v4().to_string();
+                editor_state.saved_state = Some(new_state.clone());
 
-        //         let new_polygons = &mut Vec::new();
-        //         s.active_polygons.iter().for_each(|p| {
-        //             let random_number_50 = rng.gen_range(0..=50);
+                save_saved_state_raw(new_state);
 
-        //             let new_polygon = SavedPolygonConfig {
-        //                 id: p.id.clone(),
-        //                 name: p.name.clone(),
-        //                 dimensions: (
-        //                     p.dimensions.0 + random_number_50,
-        //                     p.dimensions.1 + random_number_50,
-        //                 ),
-        //             };
-        //             new_polygons.push(new_polygon);
-        //         });
+                sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
-        //         let new_motion_paths = &mut Vec::new();
-        //         s.polygon_motion_paths.iter().for_each(|m| {
-        //             let new_properties = &mut Vec::new();
-        //             m.properties.iter().for_each(|p| {
-        //                 let new_keyframes = &mut Vec::new();
-        //                 let mut x = 0;
-        //                 p.keyframes.iter().for_each(|k| {
-        //                     x = x + 1;
-        //                     let random_number_20 = rng.gen_range(0..=20);
+                // EventPropagation::Continue
+            }),
+            scroll({
+                virtual_stack(
+                    VirtualDirection::Vertical,
+                    VirtualItemSize::Fixed(Box::new(|| 28.0)),
+                    move || sequences.get(),
+                    move |item| item.clone(),
+                    move |item| {
+                        let state_cloned2 = state_cloned2.clone();
+                        let state_cloned3 = state_cloned3.clone();
+                        let state_cloned4 = state_cloned4.clone();
+                        let editor_cloned = editor_cloned.clone();
+                        let viewport_cloned = viewport_cloned.clone();
 
-        //                     let new_value = if x != 3 && x != 4 {
-        //                         match k.value {
-        //                             KeyframeValue::Position(position) => KeyframeValue::Position([
-        //                                 position[0] + random_number_20,
-        //                                 position[1] + random_number_20,
-        //                             ]),
-        //                             _ => k.value.clone(),
-        //                         }
-        //                     } else {
-        //                         k.value.clone()
-        //                     };
+                        let item_cloned = item.clone();
 
-        //                     let new_keyframe = UIKeyframe {
-        //                         id: k.id.clone(),
-        //                         time: k.time.clone(),
-        //                         easing: k.easing.clone(),
-        //                         value: new_value,
-        //                     };
-        //                     new_keyframes.push(new_keyframe);
-        //                 });
+                        let sequence_quick_access = sequence_quick_access.get();
+                        let quick_access_info = sequence_quick_access
+                            .get(&item)
+                            .expect("Couldn't find matching qa info");
 
-        //                 let new_property = AnimationProperty {
-        //                     name: p.name.clone(),
-        //                     property_path: p.property_path.clone(),
-        //                     children: p.children.clone(),
-        //                     depth: p.depth.clone(),
-        //                     keyframes: new_keyframes.to_vec(),
-        //                 };
+                        h_stack((
+                            simple_button(
+                                "Edit Sequence ".to_string() + &quick_access_info.to_string(),
+                                move |_| {
+                                    println!("Open Sequence...");
 
-        //                 new_properties.push(new_property);
-        //             });
+                                    let editor_state = state_cloned2.lock().unwrap();
+                                    let saved_state = editor_state
+                                        .saved_state
+                                        .as_ref()
+                                        .expect("Couldn't get Saved State");
 
-        //             let new_motion_path = AnimationData {
-        //                 id: m.id.clone(),
-        //                 polygon_id: m.polygon_id.clone(),
-        //                 duration: m.duration.clone(),
-        //                 properties: new_properties.to_vec(),
-        //             };
-        //             new_motion_paths.push(new_motion_path);
-        //         });
+                                    let saved_sequence = saved_state
+                                        .sequences
+                                        .iter()
+                                        .find(|s| s.id == item.clone())
+                                        .expect("Couldn't find matching sequence");
 
-        //         let new_sequence = Sequence {
-        //             id: new_sequence_id.clone(),
-        //             active_polygons: new_polygons.to_vec(),
-        //             polygon_motion_paths: new_motion_paths.to_vec(),
-        //         };
+                                    selected_sequence_data.set(saved_sequence.clone());
+                                    selected_sequence_id.set(item.clone());
+                                    sequence_selected.set(true);
 
-        //         new_sequences.push(new_sequence);
-        //     });
+                                    let mut editor = editor_cloned.lock().unwrap();
 
-        //     new_state.sequences.append(new_sequences);
+                                    let camera = editor.camera.expect("Couldn't get camera");
+                                    let viewport = viewport_cloned.lock().unwrap();
 
-        //     editor_state.saved_state = Some(new_state.clone());
+                                    let window_size = WindowSize {
+                                        width: viewport.width as u32,
+                                        height: viewport.height as u32,
+                                    };
 
-        //     save_saved_state_raw(new_state);
+                                    let mut rng = rand::thread_rng();
 
-        //     // just restart app to see procedural variations :)
-        //     // sequences.update(|s| s.push_back(new_sequence_id.clone()));
+                                    editor.polygons = Vec::new();
 
-        //     // EventPropagation::Continue
-        // }),
-        simple_button("New Sequence".to_string(), move |_| {
-            println!("New Sequence...");
+                                    saved_sequence.active_polygons.iter().for_each(|p| {
+                                        let gpu_resources = editor
+                                            .gpu_resources
+                                            .as_ref()
+                                            .expect("Couldn't get GPU Resources");
 
-            let new_sequence_id = Uuid::new_v4().to_string();
-            let new_sequence = Sequence {
-                id: new_sequence_id.clone(),
-                active_polygons: Vec::new(),
-                polygon_motion_paths: Vec::new(),
-                active_text_items: Vec::new(),
-                active_image_items: Vec::new(),
-            };
+                                        // Generate a random number between 0 and 800
+                                        let random_number_800 = rng.gen_range(0..=800);
 
-            let mut editor_state = state_cloned.lock().unwrap();
-            let mut new_state = editor_state
-                .saved_state
-                .as_mut()
-                .expect("Couldn't get Saved State")
-                .clone();
-            new_state.sequences.push(new_sequence);
+                                        // Generate a random number between 0 and 450
+                                        let random_number_450 = rng.gen_range(0..=450);
 
-            editor_state.saved_state = Some(new_state.clone());
+                                        let restored_polygon = Polygon::new(
+                                            &window_size,
+                                            &gpu_resources.device,
+                                            &editor
+                                                .model_bind_group_layout
+                                                .as_ref()
+                                                .expect("Couldn't get model bind group layout"),
+                                            &camera,
+                                            vec![
+                                                Point { x: 0.0, y: 0.0 },
+                                                Point { x: 1.0, y: 0.0 },
+                                                Point { x: 1.0, y: 1.0 },
+                                                Point { x: 0.0, y: 1.0 },
+                                            ],
+                                            (p.dimensions.0 as f32, p.dimensions.1 as f32),
+                                            Point {
+                                                x: random_number_800 as f32,
+                                                y: random_number_450 as f32,
+                                            },
+                                            0.0,
+                                            0.0,
+                                            [1.0, 1.0, 1.0, 1.0],
+                                            Stroke {
+                                                thickness: 2.0,
+                                                fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                                            },
+                                            0.0,
+                                            p.name.clone(),
+                                            Uuid::from_str(&p.id)
+                                                .expect("Couldn't convert string to uuid"),
+                                        );
 
-            save_saved_state_raw(new_state);
+                                        // editor.add_polygon(restored_polygon);
+                                        editor.polygons.push(restored_polygon);
+                                    });
 
-            sequences.update(|s| s.push_back(new_sequence_id.clone()));
+                                    println!("Polygons restored!");
 
-            // EventPropagation::Continue
-        }),
-        scroll({
-            virtual_stack(
-                VirtualDirection::Vertical,
-                VirtualItemSize::Fixed(Box::new(|| 28.0)),
-                move || sequences.get(),
-                move |item| item.clone(),
-                move |item| {
-                    let state_cloned2 = state_cloned2.clone();
-                    let state_cloned3 = state_cloned3.clone();
-                    let state_cloned4 = state_cloned4.clone();
-                    let editor_cloned = editor_cloned.clone();
-                    let viewport_cloned = viewport_cloned.clone();
+                                    editor.update_motion_paths(&saved_sequence);
 
-                    let item_cloned = item.clone();
+                                    println!("Motion Paths restored!");
 
-                    let sequence_quick_access = sequence_quick_access.get();
-                    let quick_access_info = sequence_quick_access
-                        .get(&item)
-                        .expect("Couldn't find matching qa info");
+                                    // EventPropagation::Continue
+                                },
+                            ),
+                            simple_button("Duplicate".to_string(), move |_| {
+                                println!("Duplicating sequence...");
 
-                    h_stack((
-                        simple_button(
-                            "Edit Sequence ".to_string() + &quick_access_info.to_string(),
-                            move |_| {
-                                println!("Open Sequence...");
-
-                                let editor_state = state_cloned2.lock().unwrap();
-                                let saved_state = editor_state
+                                let mut editor_state = state_cloned3.lock().unwrap();
+                                let mut new_state = editor_state
                                     .saved_state
-                                    .as_ref()
-                                    .expect("Couldn't get Saved State");
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State")
+                                    .clone();
 
-                                let saved_sequence = saved_state
+                                let mut dup_sequence = new_state
                                     .sequences
-                                    .iter()
-                                    .find(|s| s.id == item.clone())
-                                    .expect("Couldn't find matching sequence");
+                                    .iter_mut()
+                                    .find(|s| s.id == item_cloned.clone())
+                                    .expect("Couldn't find matching sequence")
+                                    .clone();
 
-                                selected_sequence_data.set(saved_sequence.clone());
-                                selected_sequence_id.set(item.clone());
-                                sequence_selected.set(true);
+                                let new_sequence_id = Uuid::new_v4().to_string();
 
-                                let mut editor = editor_cloned.lock().unwrap();
+                                dup_sequence.id = new_sequence_id.clone();
 
-                                let camera = editor.camera.expect("Couldn't get camera");
-                                let viewport = viewport_cloned.lock().unwrap();
+                                new_state.sequences.push(dup_sequence.clone());
 
-                                let window_size = WindowSize {
-                                    width: viewport.width as u32,
-                                    height: viewport.height as u32,
+                                editor_state.saved_state = Some(new_state.clone());
+
+                                save_saved_state_raw(new_state.clone());
+
+                                sequences.update(|s| s.push_back(new_sequence_id.clone()));
+
+                                println!("Sequence duplicated!");
+                            }),
+                            simple_button("Add to Timeline".to_string(), move |_| {
+                                println!("Adding sequence to sequence timeline...");
+
+                                let mut editor_state = state_cloned4.lock().unwrap();
+
+                                // let mut existing_timeline = editor_state
+                                //     .sequence_timeline_state
+                                //     .timeline_sequences
+                                //     .get();
+
+                                let sequence_timeline_state = sequence_timeline_signal.get();
+
+                                let mut existing_timeline =
+                                    sequence_timeline_state.timeline_sequences.get();
+
+                                // Find the sequence that ends at the latest point in time
+                                let start_time = if existing_timeline.is_empty() {
+                                    0
+                                } else {
+                                    existing_timeline
+                                        .iter()
+                                        .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                        .max()
+                                        .unwrap_or(0)
                                 };
 
-                                let mut rng = rand::thread_rng();
-
-                                editor.polygons = Vec::new();
-
-                                saved_sequence.active_polygons.iter().for_each(|p| {
-                                    let gpu_resources = editor
-                                        .gpu_resources
-                                        .as_ref()
-                                        .expect("Couldn't get GPU Resources");
-
-                                    // Generate a random number between 0 and 800
-                                    let random_number_800 = rng.gen_range(0..=800);
-
-                                    // Generate a random number between 0 and 450
-                                    let random_number_450 = rng.gen_range(0..=450);
-
-                                    let restored_polygon = Polygon::new(
-                                        &window_size,
-                                        &gpu_resources.device,
-                                        &editor
-                                            .model_bind_group_layout
-                                            .as_ref()
-                                            .expect("Couldn't get model bind group layout"),
-                                        &camera,
-                                        vec![
-                                            Point { x: 0.0, y: 0.0 },
-                                            Point { x: 1.0, y: 0.0 },
-                                            Point { x: 1.0, y: 1.0 },
-                                            Point { x: 0.0, y: 1.0 },
-                                        ],
-                                        (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                        Point {
-                                            x: random_number_800 as f32,
-                                            y: random_number_450 as f32,
-                                        },
-                                        0.0,
-                                        0.0,
-                                        [1.0, 1.0, 1.0, 1.0],
-                                        Stroke {
-                                            thickness: 2.0,
-                                            fill: rgb_to_wgpu(0, 0, 0, 1.0),
-                                        },
-                                        0.0,
-                                        p.name.clone(),
-                                        Uuid::from_str(&p.id)
-                                            .expect("Couldn't convert string to uuid"),
-                                    );
-
-                                    // editor.add_polygon(restored_polygon);
-                                    editor.polygons.push(restored_polygon);
+                                existing_timeline.push(TimelineSequence {
+                                    id: Uuid::new_v4().to_string(),
+                                    track_type: TrackType::Video,
+                                    start_time_ms: start_time,
+                                    duration_ms: 20000,
                                 });
 
-                                println!("Polygons restored!");
+                                sequence_timeline_state
+                                    .timeline_sequences
+                                    .set(existing_timeline);
 
-                                editor.update_motion_paths(&saved_sequence);
+                                let new_savable = sequence_timeline_state.to_config();
 
-                                println!("Motion Paths restored!");
+                                let mut new_state = editor_state
+                                    .saved_state
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State")
+                                    .clone();
 
-                                // EventPropagation::Continue
-                            },
-                        ),
-                        simple_button("Duplicate".to_string(), move |_| {
-                            println!("Duplicating sequence...");
+                                new_state.timeline_sequences = new_savable;
 
-                            let mut editor_state = state_cloned3.lock().unwrap();
-                            let mut new_state = editor_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State")
-                                .clone();
+                                editor_state.saved_state = Some(new_state.clone());
 
-                            let mut dup_sequence = new_state
-                                .sequences
-                                .iter_mut()
-                                .find(|s| s.id == item_cloned.clone())
-                                .expect("Couldn't find matching sequence")
-                                .clone();
+                                save_saved_state_raw(new_state.clone());
 
-                            let new_sequence_id = Uuid::new_v4().to_string();
-
-                            dup_sequence.id = new_sequence_id.clone();
-
-                            new_state.sequences.push(dup_sequence.clone());
-
-                            editor_state.saved_state = Some(new_state.clone());
-
-                            save_saved_state_raw(new_state.clone());
-
-                            sequences.update(|s| s.push_back(new_sequence_id.clone()));
-
-                            println!("Sequence duplicated!");
-                        }),
-                        simple_button("Add to Timeline".to_string(), move |_| {
-                            println!("Adding sequence to sequence timeline...");
-
-                            let mut editor_state = state_cloned4.lock().unwrap();
-
-                            let mut existing_timeline = editor_state
-                                .sequence_timeline_state
-                                .timeline_sequences
-                                .get();
-
-                            // Find the sequence that ends at the latest point in time
-                            let start_time = if existing_timeline.is_empty() {
-                                0
-                            } else {
-                                existing_timeline
-                                    .iter()
-                                    .map(|seq| seq.start_time_ms + seq.duration_ms)
-                                    .max()
-                                    .unwrap_or(0)
-                            };
-
-                            existing_timeline.push(TimelineSequence {
-                                id: Uuid::new_v4().to_string(),
-                                track_type: TrackType::Video,
-                                start_time_ms: start_time,
-                                duration_ms: 20000,
-                            });
-
-                            editor_state
-                                .sequence_timeline_state
-                                .timeline_sequences
-                                .set(existing_timeline);
-
-                            let new_savable = editor_state.sequence_timeline_state.to_config();
-
-                            let mut new_state = editor_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State")
-                                .clone();
-
-                            new_state.timeline_sequences = new_savable;
-
-                            editor_state.saved_state = Some(new_state.clone());
-
-                            save_saved_state_raw(new_state.clone());
-
-                            println!("Sequence added!");
-                        }),
-                    ))
-                },
-            )
-            .style(|s| {
-                s.flex_col()
-                    .width(260.0)
-                    .padding_vert(15.0)
-                    .padding_horiz(20.0)
-                    .background(Color::LIGHT_BLUE)
+                                println!("Sequence added!");
+                            }),
+                        ))
+                    },
+                )
+                .style(|s| {
+                    s.flex_col()
+                        .width(260.0)
+                        .padding_vert(15.0)
+                        .padding_horiz(20.0)
+                        .background(Color::LIGHT_BLUE)
+                })
             })
-        })
-        .style(|s| s.height(400.0)),
+            .style(|s| s.height(400.0)),
+        ))
+        .style(|s| card_styles(s))
+        .style(|s| s.width(300.0)),
+        v_stack((
+            simple_button("Play Video".to_string(), move |_| {
+                let mut editor = editor_cloned2.lock().unwrap();
+
+                if editor.video_is_playing {
+                    println!("Pause Video...");
+
+                    editor.video_is_playing = false;
+                    editor.video_start_playing_time = None;
+                } else {
+                    println!("Play Video...");
+
+                    let now = std::time::Instant::now();
+                    editor.video_start_playing_time = Some(now);
+
+                    // editor.video_current_sequence_data = Some(selected_sequence_data.get());
+                    editor.video_is_playing = true;
+                }
+
+                // EventPropagation::Continue
+            }),
+            build_timeline(sequence_timeline_signal.get()),
+        ))
+        .style(|s| s.margin_top(425.0)),
     ))
-    .style(|s| card_styles(s))
-    .style(|s| s.width(300.0))
 }

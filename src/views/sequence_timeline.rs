@@ -26,6 +26,7 @@ pub enum TrackType {
     Video,
 }
 
+#[derive(Clone)]
 pub struct TimelineState {
     pub timeline_sequences: RwSignal<Vec<TimelineSequence>>,
     pub dragging_timeline_sequence: RwSignal<Option<(String, i32)>>, // (id, original_start_time)
@@ -79,7 +80,7 @@ impl TimelineState {
     }
 }
 
-fn build_timeline(state: Arc<TimelineState>) -> impl View {
+pub fn build_timeline(state: TimelineState) -> impl View {
     // TODO: many tracks
     v_stack((
         // Audio track
@@ -99,7 +100,7 @@ fn build_timeline(state: Arc<TimelineState>) -> impl View {
     ))
 }
 
-fn timeline_sequence_track(state: Arc<TimelineState>, track_type: TrackType) -> impl View {
+pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> impl View {
     let state_2 = state.clone();
 
     dyn_stack(
