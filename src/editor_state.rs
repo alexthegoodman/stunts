@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 use crate::helpers::saved_state::SavedState;
 use crate::helpers::utilities::save_saved_state_raw;
+use crate::views::sequence_timeline::TimelineState;
 
 #[derive(Debug)]
 pub struct PolygonEdit {
@@ -216,6 +217,7 @@ pub struct EditorState {
     pub current_modifiers: ModifiersState,
     pub saved_state: Option<SavedState>,
     pub project_selected_signal: Option<RwSignal<Uuid>>,
+    pub sequence_timeline_state: TimelineState,
 }
 
 pub struct RecordState {
@@ -225,6 +227,8 @@ pub struct RecordState {
 
 impl EditorState {
     pub fn new(editor: Arc<Mutex<Editor>>, record: Arc<Mutex<Record<PolygonEdit>>>) -> Self {
+        let sequence_timeline_state = TimelineState::new();
+
         Self {
             editor: Arc::clone(&editor),
             record: Arc::clone(&record),
@@ -238,6 +242,7 @@ impl EditorState {
             current_modifiers: ModifiersState::empty(),
             saved_state: None,
             project_selected_signal: None,
+            sequence_timeline_state,
         }
     }
 

@@ -8,56 +8,73 @@ use floem::style::CursorStyle;
 use floem::views::*;
 use floem::IntoView;
 use floem::View;
+use serde::Deserialize;
+use serde::Serialize;
 use std::sync::Arc;
 
-#[derive(Clone, Debug)]
-struct Sequence {
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+struct TimelineSequence {
     id: String,
     track_type: TrackType,
-    start_time: f32, // in seconds
-    duration: f32,   // in seconds
-                     // Add other sequence properties here
+    start_time_ms: i32, // in milliseconds
+    duration_ms: i32,   // in milliseconds
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 enum TrackType {
     Audio,
     Video,
 }
 
-struct TimelineState {
-    sequences: RwSignal<Vec<Sequence>>,
-    dragging_sequence: RwSignal<Option<(String, f32)>>, // (id, original_start_time)
-    pixels_per_second: f32,
+pub struct TimelineState {
+    pub timeline_sequences: RwSignal<Vec<TimelineSequence>>,
+    pub dragging_timeline_sequence: RwSignal<Option<(String, i32)>>, // (id, original_start_time)
+    pub pixels_per_ms: i32,
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+pub struct SavedTimelineStateConfig {
+    pub timeline_sequences: Vec<TimelineSequence>,
+    // pub pixels_per_second: f32,
 }
 
 impl TimelineState {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
-            sequences: RwSignal::new(Vec::new()),
-            dragging_sequence: RwSignal::new(None),
-            pixels_per_second: 100.0, // Adjust based on zoom level
+            timeline_sequences: RwSignal::new(Vec::new()),
+            dragging_timeline_sequence: RwSignal::new(None),
+            pixels_per_ms: 1, // Adjust based on zoom level
         }
     }
 
-    fn move_sequence(&self, id: &str, new_start_time: f32) {
-        if let Some(seq) = self.sequences.get().iter().find(|s| s.id == id) {
-            let old_start = seq.start_time;
+    pub fn move_timeline_sequence(&self, id: &str, new_start_time: i32) {
+        if let Some(seq) = self.timeline_sequences.get().iter().find(|s| s.id == id) {
+            let old_start = seq.start_time_ms;
             // seq.start_time = new_start_time; // TODO: need to set?
 
-            // Shift other sequences in the same track if needed
+            // Shift other timeline_sequences in the same track if needed
             let track_type = seq.track_type.clone();
-            let mut sequences: Vec<Sequence> = self.sequences.get();
-            let mapped = sequences
+            let mut timeline_sequences: Vec<TimelineSequence> = self.timeline_sequences.get();
+            let mapped = timeline_sequences
                 .iter()
-                .filter(|s| s.track_type == track_type && s.id != id && s.start_time >= old_start)
+                .filter(|s| {
+                    s.track_type == track_type && s.id != id && s.start_time_ms >= old_start
+                })
                 .map(|s| {
                     let mut se = s.clone();
-                    se.start_time += new_start_time - old_start;
+                    se.start_time_ms += new_start_time - old_start;
                     se
                 })
                 .collect();
-            self.sequences.set(mapped);
+            self.timeline_sequences.set(mapped);
+        }
+    }
+
+    pub fn to_config(&self) -> SavedTimelineStateConfig {
+        let existing_sequences = self.timeline_sequences.get();
+
+        SavedTimelineStateConfig {
+            timeline_sequences: existing_sequences,
         }
     }
 }
@@ -69,32 +86,32 @@ fn build_timeline(state: Arc<TimelineState>) -> impl View {
         container(stack((
             // Background
             container((empty())).style(|s| s.width_full().height(50)),
-            // Sequences
-            sequence_track(state.clone(), TrackType::Audio),
+            // TimelineSequences
+            timeline_sequence_track(state.clone(), TrackType::Audio),
         ))),
         // Video track
         container(stack((
             // background
             container((empty())).style(|s| s.width_full().height(50)),
-            // sequences
-            sequence_track(state.clone(), TrackType::Video),
+            // timeline_sequences
+            timeline_sequence_track(state.clone(), TrackType::Video),
         ))),
     ))
 }
 
-fn sequence_track(state: Arc<TimelineState>, track_type: TrackType) -> impl View {
+fn timeline_sequence_track(state: Arc<TimelineState>, track_type: TrackType) -> impl View {
     let state_2 = state.clone();
 
     dyn_stack(
-        move || state_2.sequences.get(),
-        move |sequence| sequence.id.clone(),
+        move || state_2.timeline_sequences.get(),
+        move |timeline_sequence| timeline_sequence.id.clone(),
         {
             let state = state.clone();
 
-            move |seq: Sequence| {
+            move |seq: TimelineSequence| {
                 let seq_id = seq.id.clone();
-                let left = seq.start_time * state.pixels_per_second;
-                let width = seq.duration * state.pixels_per_second;
+                let left = seq.start_time_ms * state.pixels_per_ms;
+                let width = seq.duration_ms * state.pixels_per_ms;
 
                 if (seq.track_type != track_type) {
                     return container((empty())).into_view();
@@ -118,8 +135,8 @@ fn sequence_track(state: Arc<TimelineState>, track_type: TrackType) -> impl View
 
                         move |evt| {
                             state
-                                .dragging_sequence
-                                .set(Some((seq_id.clone(), left / state.pixels_per_second)));
+                                .dragging_timeline_sequence
+                                .set(Some((seq_id.clone(), left / state.pixels_per_ms)));
                             EventPropagation::Continue
                         }
                     })
@@ -127,17 +144,17 @@ fn sequence_track(state: Arc<TimelineState>, track_type: TrackType) -> impl View
                         let state = state.clone();
 
                         move |evt| {
-                            if let Some((id, _)) = state.dragging_sequence.get().take() {
+                            if let Some((id, _)) = state.dragging_timeline_sequence.get().take() {
                                 let scale_factor = 1.25; // hardcode test // TODO: fix
                                 let position = Vector2::new(
-                                    evt.point().expect("Couldn't get point").x as f32
-                                        / scale_factor,
-                                    evt.point().expect("Couldn't get point").y as f32
-                                        / scale_factor,
+                                    (evt.point().expect("Couldn't get point").x as f32
+                                        / scale_factor) as i32,
+                                    (evt.point().expect("Couldn't get point").y as f32
+                                        / scale_factor) as i32,
                                 );
 
-                                let new_time = position.x / state.pixels_per_second;
-                                state.move_sequence(&id, new_time);
+                                let new_time = position.x / state.pixels_per_ms;
+                                state.move_timeline_sequence(&id, new_time);
                             }
                             EventPropagation::Continue
                         }
