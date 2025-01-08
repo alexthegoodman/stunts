@@ -1,0 +1,135 @@
+Copyright (c) 2011, Thomas Junold <hallo@buerofueraufmerksamkeit.de>, 
+with Reserved Font Name "Actor".
+
+Copyright (c) 2011 Angel Koziupa (sudtipos@sudtipos.com),
+Copyright (c) 2011 Alejandro Paul (sudtipos@sudtipos.com), 
+with Reserved Font Name "Aladin"
+
+Copyright (c) 2012, Impallari Type (www.impallari.com).
+
+Copyright 2020 The Ballet Project Authors (https://github.com/Omnibus-Type/Ballet)
+
+Copyright (c) 2011 by Sorkin Type Co (www.sorkintype.com),
+with Reserved Font Name "Basic".
+
+Copyright 2023 The Bungee Project Authors (https://github.com/djrrb/Bungee)
+
+Copyright 2004-2021 The Caramel Royale Project Authors (https://github.com/googlefonts/caramel)
+
+Copyright 2004-2021 The Cherish Project Authors (https://github.com/googlefonts/cherish)
+
+Copyright (c) 2010, 2011 Vernon Adams (vern@newtypography.co.uk),
+with Reserved Font Name "Coda" and "Coda Caption".
+
+Copyright 2016 The David Libre Project Authors (https://github.com/meirsadan/david-libre), with reserved font name "Hadash", "Gentium" and 'SIL'.
+
+Copyright (c) 2011, Santiago Orozco (hi@typemade.mx),
+with Reserved Font Name "Dorsa"
+
+Copyright (c) 2011 by Sorkin Type Co (www.sorkintype.com),
+with Reserved Font Name "Duru".
+
+Copyright (c) 2011 by Brian J. Bonislawsky DBA Astigmatic (AOETI)
+(astigma@astigmatic.com), with Reserved Font Names "Dynalight"
+
+Copyright (c) 2011, Typomondo,
+with Reserved Font Name  "Eater".
+
+Copyright 2020 The Epilogue Project Authors (https://github.com/Etcetera-Type-Co/Epilogue)
+
+Copyright 2017 The Exo Project Authors (https://github.com/NDISCOVER/Exo-1.0)
+
+Copyright 2011 The Explora Project Authors (https://github.com/googlefonts/explora)
+
+Copyright (c) 2011, Cyreal (www.cyreal.org),
+with Reserved Font Name "Federo".
+
+Copyright 2022 The Figtree Project Authors (https://github.com/erikdkennedy/figtree)
+
+Copyright (c) 2011, Sideshow (a DBA of Font Diner, Inc) (www.fontdiner.com),
+with Reserved Font Name "Flavors".
+
+Copyright 2015 Jeremie Hornus, Yoann Minet, Juan Bruce Copyright (c) 2010, Pablo Impallari (www.impallari.com|impallari@gmail.com). Copyright (c) 2010, 2011, Alexei Vanyashin (www.cyreal.org|a@cyreal.org), with Reserved Font Name Lobster.
+
+Copyright 2022 The Gantari Project Authors (https://github.com/Lafontype/Gantari)
+
+Copyright (c) 2000-2010, Ben Weiner (ben@readingtype.org.uk), 
+with Reserved Font Name Geo.
+
+Copyright 2016-2020 The Glory Project Authors (https://github.com/googlefonts/glory)
+
+Copyright (c) 2011 by Brenda Gallo (gbrenda1987@gmail.com), with Reserved Font Name "Happy Monkey".
+
+Copyright (c) 2011, BrownFox (gayaneh.b@gmail.com|www.brownfox.org), 
+with Reserved Font Names "Henny Penny"
+
+Copyright (c) 2011, Cyreal (www.cyreal.org),
+with Reserved Font Name "Iceberg".
+
+Copyright (c) 2011, Constanza Artigas Preller (artigasconstanza@gmail.com),
+ with Reserved Font Name "Inika"
+
+Copyright 2017 The Inria Sans Project Authors (https://github.com/BlackFoundryCom/InriaFonts)
+
+Copyright 2023 The Jaro Project Authors (https://github.com/googlefonts/googlefonts-project-template)
+
+Copyright (c) 2011-2012, Sorkin Type Co (www.sorkintype.com) with Reserved Font Name 'Kavoon'
+
+Copyright (c) 2014, Erin McLaughlin (hello@erinmclaughlin.com). Digitized data copyright 2010, Google Corporation.
+
+Copyright 2016 The Kokoro Project Authors.
+
+Copyright 2011 The Lemon Project Authors (https://github.com/etunni/lemon) with Reserved Font Name "Lemon"
+
+Copyright 2018 The Lexend Project Authors (https://github.com/googlefonts/lexend), with Reserved Font Name “RevReading Lexend”.
+
+Copyright 1997 - 2011, John Vargas Beltrn (www.johnvargasbeltran.com|john.vargasbeltran@gmail.com),
+with Reserved Font Name Macondo.
+
+Copyright (c) 2015, Cadson Demak (info@cadsondemak.com)
+
+Copyright (c) 2015 Dan Reynolds. Copyright (c) 2010-2015, Sorkin Type Co (www.sorkintype.com) with Reserved Font Name 'Merriweather'
+
+Copyright 2011 The Maven Pro Project Authors (http://www.vissol.co.uk/mavenpro/), with Reserved Font Name "Maven Pro".
+
+Copyright 2010 The Neuton Project Authors (http://www.21326.info/), with Reserved Font Name "Neuton".
+
+Copyright (c) 2010-2011, Nathan Willis (nwillis@glyphography.com), with Reserved Font Name "News Cycle."
+
+Copyright (c) 2011 by Jovanny Lemonad (http://www.jovanny.ru)
+
+Copyright (c) 2011, Dario Manuel Muhafara (http://www.tipo.net.ar), 
+with Reserved Font Names "Overlock" "Overlock SC"
+
+Copyright (c) 2012, vernon adams (vern@newtypography.co.uk), with Reserved Font Names 'Oxygen'
+
+Copyright (c) 2011, Jonas Hecksher, Playtypes, e-types AS (lasse@e-types.com), with Reserved Font Name 'Play', 'Playtype', 'Playtype Sans'.
+
+Copyright 2011 The Quicksand Project Authors (https://github.com/andrew-paglinawan/QuicksandFamily), with Reserved Font Name “Quicksand”.
+
+Copyright 2011 The Radley Project Authors (https://github.com/googlefonts/RadleyFont)
+
+Copyright 2022 The Rethink Sans Project Authors (https://github.com/hans-thiessen/Rethink-Sans)
+
+Copyright 2019 The Rosario Project Authors (https://github.com/Omnibus-Type/Rosario)
+
+Copyright (c) 2012, Brian J. Bonislawsky DBA Astigmatic (AOETI) (astigma@astigmatic.com), with Reserved Font Names 'Sacramento'
+
+Copyright (c) 2011 by John Vargas Beltrán (john.vargasbeltran@gmail.com), 
+with Reserved Font Name Salsa.
+
+Copyright 2015 Dalton Maag Ltd (info@daltonmaag.com)
+
+Copyright 2023 The Teachers Project Authors (https://github.com/chankfonts/Teachers-fonts)
+
+Copyright (c) 2012, Sergey Steblina (sergey@steblina.com), Jovanny Lemonad (lemonad@jovanny.ru), with Reserved Font Name 'Underdog'
+
+Copyright 2019 The Vibes Project Authors (https://github.com/bluemix/vibes-typeface)
+
+Copyright 2023 The Vina Sans Project Authors (https://github.com/nguyentype/vinasans)
+
+Copyright 2004-2021 The Water Brush Project Authors (https://github.com/googlefonts/water-brush)
+
+Copyright 2013 The WindSong Project Authors (https://github.com/googlefonts/windsong)
+
+Copyright 2024 The Zain Project Authors (https://github.com/googlefonts/zain)
