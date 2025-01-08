@@ -82,7 +82,36 @@ pub fn sequences_view(
         sequences.set(im_sequences);
         sequence_quick_access.set(qa_sequences);
 
-        // editor_state.sequence_timeline_state = sequence_timeline_signal.get(); // is this even needed? perhaps it's not needed on editor_state
+        // initialize TimelineState based on stored config if exists or saved sequences if not
+        if saved_state.timeline_state.timeline_sequences.len() > 0 {
+            let new_timeline_state = TimelineState::new();
+
+            new_timeline_state
+                .timeline_sequences
+                .set(saved_state.timeline_state.timeline_sequences.clone());
+
+            sequence_timeline_signal.set(new_timeline_state);
+        } else {
+            let new_timeline_state = TimelineState::new();
+            let timeline_sequences: Vec<TimelineSequence> = saved_state
+                .sequences
+                .clone()
+                .into_iter()
+                .enumerate() // Add enumerate() to get the index
+                .map(|(index, s)| TimelineSequence {
+                    id: s.id,
+                    track_type: TrackType::Video,
+                    duration_ms: 20000,
+                    start_time_ms: index as i32 * 20000, // Multiply index by 20000
+                })
+                .collect();
+
+            new_timeline_state
+                .timeline_sequences
+                .set(timeline_sequences);
+
+            sequence_timeline_signal.set(new_timeline_state);
+        }
     });
 
     h_stack((
@@ -305,7 +334,7 @@ pub fn sequences_view(
                                     .expect("Couldn't get Saved State")
                                     .clone();
 
-                                new_state.timeline_sequences = new_savable;
+                                new_state.timeline_state = new_savable;
 
                                 editor_state.saved_state = Some(new_state.clone());
 

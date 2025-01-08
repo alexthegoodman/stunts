@@ -61,7 +61,7 @@ pub fn load_project_state(project_id: String) -> Result<SavedState, Box<dyn std:
             id: project_id,
             name: "New Project".to_string(),
             sequences: Vec::new(),
-            timeline_sequences: SavedTimelineStateConfig {
+            timeline_state: SavedTimelineStateConfig {
                 timeline_sequences: Vec::new(),
             },
         };
@@ -92,7 +92,7 @@ pub fn create_project_state(name: String) -> Result<SavedState, Box<dyn std::err
         id: project_id,
         name: name.clone(),
         sequences: Vec::new(),
-        timeline_sequences: SavedTimelineStateConfig {
+        timeline_state: SavedTimelineStateConfig {
             timeline_sequences: Vec::new(),
         },
     };
