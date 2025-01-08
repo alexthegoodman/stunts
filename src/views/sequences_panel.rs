@@ -208,10 +208,10 @@ pub fn sequences_view(
                                             .expect("Couldn't get GPU Resources");
 
                                         // Generate a random number between 0 and 800
-                                        let random_number_800 = rng.gen_range(0..=800);
+                                        // let random_number_800 = rng.gen_range(0..=800);
 
                                         // Generate a random number between 0 and 450
-                                        let random_number_450 = rng.gen_range(0..=450);
+                                        // let random_number_450 = rng.gen_range(0..=450);
 
                                         let restored_polygon = Polygon::new(
                                             &window_size,
@@ -221,6 +221,7 @@ pub fn sequences_view(
                                                 .as_ref()
                                                 .expect("Couldn't get model bind group layout"),
                                             &camera,
+                                            // TODO: restoring triangles or non rectangles?
                                             vec![
                                                 Point { x: 0.0, y: 0.0 },
                                                 Point { x: 1.0, y: 0.0 },
@@ -229,15 +230,28 @@ pub fn sequences_view(
                                             ],
                                             (p.dimensions.0 as f32, p.dimensions.1 as f32),
                                             Point {
-                                                x: random_number_800 as f32,
-                                                y: random_number_450 as f32,
+                                                // x: random_number_800 as f32,
+                                                // y: random_number_450 as f32,
+                                                x: p.position.x as f32,
+                                                y: p.position.y as f32,
                                             },
+                                            // TODO: restore rotation?
                                             0.0,
-                                            0.0,
-                                            [1.0, 1.0, 1.0, 1.0],
+                                            p.border_radius as f32,
+                                            [
+                                                p.fill[0] as f32,
+                                                p.fill[1] as f32,
+                                                p.fill[2] as f32,
+                                                p.fill[3] as f32,
+                                            ],
                                             Stroke {
-                                                thickness: 2.0,
-                                                fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                                                thickness: p.stroke.thickness as f32,
+                                                fill: [
+                                                    p.stroke.fill[0] as f32,
+                                                    p.stroke.fill[1] as f32,
+                                                    p.stroke.fill[2] as f32,
+                                                    p.stroke.fill[3] as f32,
+                                                ],
                                             },
                                             0.0,
                                             p.name.clone(),
