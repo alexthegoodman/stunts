@@ -349,16 +349,23 @@ pub fn sequences_view(
                     editor.video_start_playing_time = None;
                     editor.video_current_sequence_timeline = None;
                     editor.video_current_sequences_data = None;
+                    editor.is_playing = false;
+                    editor.start_playing_time = None;
                 } else {
                     println!("Play Video...");
 
                     let now = std::time::Instant::now();
-                    editor.video_start_playing_time = Some(now);
+                    editor.video_start_playing_time = Some(now.clone());
 
                     editor.video_current_sequence_timeline =
                         Some(sequence_timeline_signal.get().to_config());
                     editor.video_current_sequences_data = Some(cloned_sequences);
+
                     editor.video_is_playing = true;
+
+                    // also set motion path playing
+                    editor.start_playing_time = Some(now);
+                    editor.is_playing = true;
                 }
 
                 // EventPropagation::Continue
