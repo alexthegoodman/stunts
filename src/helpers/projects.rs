@@ -15,6 +15,10 @@ pub fn get_projects() -> Result<Vec<ProjectInfo>, Box<dyn std::error::Error>> {
     let sync_dir = get_ground_truth_dir().expect("Couldn't get CommonOS directory");
     let projects_dir = sync_dir.join("projects");
 
+    fs::create_dir_all(&projects_dir)
+        .ok()
+        .expect("Couldn't check or create Stunts Projects directory");
+
     let mut projects = Vec::new();
 
     for entry in fs::read_dir(&projects_dir)? {

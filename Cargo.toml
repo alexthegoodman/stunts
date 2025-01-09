@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 bytemuck = "1.19.0"
 wgpu = "22.1.0"
-floem = { path = "D:/projects/common/common-floem" }
+floem = { path = "D:/projects/common/common-floem", features = ["tokio"] }
 floem_renderer = { path = "D:/projects/common/common-floem/renderer", version = "0.1.0" }
 crossbeam = "0.8.4"
 stunts-engine = { path = "D:/projects/common/stunts-engine" }
@@ -26,4 +26,4 @@ directories = "5.0.1"
 rand = "0.8.5"
 chrono = { version = "0.4.38", features = ["serde"] }
 rfd = "0.15.2"
-reqwest = { version = "0.12.12", features = ["json", "blocking"] }
+reqwest = { version = "0.12.12", features = ["json"] }

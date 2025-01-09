@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use floem::common::{alert, card_styles, create_icon, nav_button};
 use floem::event::{Event, EventListener, EventPropagation};
+use floem::ext_event::create_signal_from_tokio_channel;
 use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, create_signal, RwSignal, SignalRead};
@@ -33,8 +34,8 @@ use floem::{GpuHelper, View, WindowHandle};
 use crate::editor_state::EditorState;
 use crate::helpers::projects::{get_projects, ProjectInfo};
 use crate::helpers::utilities::{
-    check_subscription, clear_auth_token, create_project_state, load_auth_token,
-    load_project_state, save_auth_token, AuthState, AuthToken,
+    clear_auth_token, create_project_state, fetch_subscription_details, load_auth_token,
+    load_project_state, save_auth_token, AuthState, AuthToken, SubscriptionDetails,
 };
 // use crate::helpers::projects::{get_projects, ProjectInfo};
 // use crate::helpers::websocket::WebSocketManager;
@@ -45,12 +46,12 @@ struct LoginRequest {
     password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct LoginResponse {
     jwtData: JwtData,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct JwtData {
     token: String,
     #[serde(with = "chrono::serde::ts_seconds_option")]
@@ -118,10 +119,79 @@ pub fn project_browser(
     let login_error = create_rw_signal(Option::<String>::None);
     let is_logging_in = create_rw_signal(false);
 
-    // Create effect to check subscription when authenticated
+    // create channel
+    let (login_tx, login_rx) =
+        tokio::sync::mpsc::unbounded_channel::<Result<LoginResponse, String>>();
+    let login_result = create_signal_from_tokio_channel(login_rx);
+
+    create_effect(move |_| {
+        if let Some(result) = login_result.get() {
+            match result {
+                Ok(response) => {
+                    if let Err(e) = set_authenticated(
+                        auth_state,
+                        response.jwtData.token,
+                        response.jwtData.expiry,
+                    ) {
+                        login_error.set(Some(format!("Error saving credentials: {}", e)));
+                    } else {
+                        show_login_dialog.set(false);
+                        email.set(String::new());
+                        password.set(String::new());
+                    }
+                }
+                Err(e) => {
+                    login_error.set(Some(format!("Login failed: {}", e)));
+                }
+            }
+            is_logging_in.set(false);
+        }
+    });
+
+    // // Create effect to check subscription when authenticated
+    // create_effect(move |_| {
+    //     if auth_state.get().is_authenticated {
+    //         check_subscription(auth_state);
+    //     }
+    // });
+
+    // Set up subscription checking channel and signal
+    let (subscription_tx, subscription_rx) =
+        tokio::sync::mpsc::unbounded_channel::<Result<SubscriptionDetails, String>>();
+    let subscription_result = create_signal_from_tokio_channel(subscription_rx);
+
+    // Effect to watch authentication and trigger subscription check
     create_effect(move |_| {
         if auth_state.get().is_authenticated {
-            check_subscription(auth_state);
+            if let Some(token) = auth_state.get().token.as_ref() {
+                let tx = subscription_tx.clone();
+                let token = token.token.clone();
+
+                tokio::spawn(async move {
+                    match fetch_subscription_details(&token).await {
+                        Ok(subscription) => tx.send(Ok(subscription)),
+                        Err(e) => tx.send(Err(e.to_string())),
+                    }
+                    .expect("Channel send failed");
+                });
+            }
+        }
+    });
+
+    // Effect to handle subscription updates
+    create_effect(move |_| {
+        if let Some(result) = subscription_result.get() {
+            match result {
+                Ok(subscription) => {
+                    let mut current_state = auth_state.get();
+                    current_state.subscription = Some(subscription);
+                    auth_state.set(current_state);
+                }
+                Err(e) => {
+                    println!("Failed to fetch subscription details: {}", e);
+                    // Optionally handle error in UI
+                }
+            }
         }
     });
 
@@ -176,7 +246,8 @@ pub fn project_browser(
                         alert(
                             floem::common::AlertVariant::Warning,
                             "Please login and subscribe to create new projects.".to_string(),
-                        ),
+                        )
+                        .style(|s| s.width(200.0)),
                         button(label(|| "Login"))
                             .on_click(move |_| {
                                 show_login_dialog.set(true);
@@ -334,51 +405,34 @@ pub fn project_browser(
                                 }
                             }))
                             .disabled(move || is_logging_in.get())
-                            .on_click(move |_| {
-                                let email_val = email.get();
-                                let password_val = password.get();
+                            .on_click({
+                                let login_tx = login_tx.clone();
 
-                                if email_val.is_empty() || password_val.is_empty() {
-                                    login_error.set(Some("Please fill in all fields".to_string()));
-                                    return EventPropagation::Stop;
-                                }
+                                move |_| {
+                                    let email_val = email.get();
+                                    let password_val = password.get();
 
-                                is_logging_in.set(true);
-                                login_error.set(None);
+                                    if email_val.is_empty() || password_val.is_empty() {
+                                        login_error
+                                            .set(Some("Please fill in all fields".to_string()));
+                                        return EventPropagation::Stop;
+                                    }
 
-                                // Clone values for async block
-                                let email_clone = email_val.clone();
-                                let password_clone = password_val.clone();
+                                    is_logging_in.set(true);
+                                    login_error.set(None);
 
-                                // spawn(async move {
-                                let result = login_user(email_clone, password_clone);
+                                    let tx = login_tx.clone();
 
-                                match result {
-                                    Ok(response) => {
-                                        if let Err(e) = set_authenticated(
-                                            auth_state,
-                                            response.jwtData.token,
-                                            response.jwtData.expiry,
-                                        ) {
-                                            login_error.set(Some(format!(
-                                                "Error saving credentials: {}",
-                                                e
-                                            )));
-                                        } else {
-                                            show_login_dialog.set(false);
-                                            email.set(String::new());
-                                            password.set(String::new());
+                                    tokio::spawn(async move {
+                                        match login_user(email_val, password_val).await {
+                                            Ok(response) => tx.send(Ok(response)),
+                                            Err(e) => tx.send(Err(e.to_string())),
                                         }
-                                    }
-                                    Err(e) => {
-                                        login_error.set(Some(format!("Login failed: {}", e)));
-                                    }
+                                        .expect("Channel send failed");
+                                    });
+
+                                    EventPropagation::Stop
                                 }
-
-                                is_logging_in.set(false);
-                                // });
-
-                                EventPropagation::Stop
                             })
                             .style(|s| {
                                 s.margin_left(8.0)
@@ -525,12 +579,37 @@ pub fn logout(auth_state: RwSignal<AuthState>) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-fn login_user(
+// fn login_user(
+//     email: String,
+//     password: String,
+// ) -> Result<LoginResponse, Box<dyn std::error::Error>> {
+//     // use blocking to avoid spawning threads for now
+//     let client = reqwest::blocking::Client::builder()
+//         .timeout(Duration::from_secs(10))
+//         .build()?;
+
+//     let response = client
+//         .post("http://localhost:3000/api/auth/login")
+//         .json(&LoginRequest { email, password })
+//         .send()
+//         .expect("Couldn't get login response");
+
+//     if response.status().is_success() {
+//         let login_response = response
+//             .json::<LoginResponse>()
+//             .expect("Couldn't get login json");
+//         Ok(login_response)
+//     } else {
+//         let error_text = response.text().expect("Couldn't get login error text");
+//         Err(error_text.into())
+//     }
+// }
+
+async fn login_user(
     email: String,
     password: String,
 ) -> Result<LoginResponse, Box<dyn std::error::Error>> {
-    // use blocking to avoid spawning threads for now
-    let client = reqwest::blocking::Client::builder()
+    let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .build()?;
 
@@ -538,15 +617,13 @@ fn login_user(
         .post("http://localhost:3000/api/auth/login")
         .json(&LoginRequest { email, password })
         .send()
-        .expect("Couldn't get login response");
+        .await?;
 
     if response.status().is_success() {
-        let login_response = response
-            .json::<LoginResponse>()
-            .expect("Couldn't get login json");
+        let login_response = response.json::<LoginResponse>().await?;
         Ok(login_response)
     } else {
-        let error_text = response.text().expect("Couldn't get login error text");
+        let error_text = response.text().await?;
         Err(error_text.into())
     }
 }

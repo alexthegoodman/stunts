@@ -4,7 +4,7 @@ use directories::{BaseDirs, UserDirs};
 use floem::reactive::RwSignal;
 use floem::reactive::SignalGet;
 use floem::reactive::SignalUpdate;
-use reqwest::blocking::Client;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use stunts_engine::timelines::SavedTimelineStateConfig;
@@ -173,40 +173,41 @@ impl AuthState {
 }
 
 // Function to fetch subscription details
-pub fn fetch_subscription_details(
+pub async fn fetch_subscription_details(
     token: &str,
 ) -> Result<SubscriptionDetails, Box<dyn std::error::Error>> {
     let client = Client::new();
 
     let response = client
-        .get("http://localhost:3000/api/subscriptions/details")
+        .get("http://localhost:3000/api/subscription/details")
         .header("Authorization", format!("Bearer {}", token))
-        .send()?;
+        .send()
+        .await?;
 
     if response.status().is_success() {
-        let details = response.json::<SubscriptionDetails>()?;
+        let details = response.json::<SubscriptionDetails>().await?;
         Ok(details)
     } else {
-        Err(response.text()?.into())
+        Err(response.text().await?.into())
     }
 }
 
-// Function to check subscription status
-pub fn check_subscription(auth_state: RwSignal<AuthState>) {
-    if let Some(token) = auth_state.get().token.as_ref() {
-        match fetch_subscription_details(&token.token) {
-            Ok(subscription) => {
-                let mut current_state = auth_state.get();
-                current_state.subscription = Some(subscription);
-                auth_state.set(current_state);
-            }
-            Err(e) => {
-                println!("Failed to fetch subscription details: {}", e);
-                // Optionally handle error in UI
-            }
-        }
-    }
-}
+// // Function to check subscription status
+// pub fn check_subscription(auth_state: RwSignal<AuthState>) {
+//     if let Some(token) = auth_state.get().token.as_ref() {
+//         match fetch_subscription_details(&token.token) {
+//             Ok(subscription) => {
+//                 let mut current_state = auth_state.get();
+//                 current_state.subscription = Some(subscription);
+//                 auth_state.set(current_state);
+//             }
+//             Err(e) => {
+//                 println!("Failed to fetch subscription details: {}", e);
+//                 // Optionally handle error in UI
+//             }
+//         }
+//     }
+// }
 
 // Function to get the auth token file path
 pub fn get_auth_token_path() -> PathBuf {
