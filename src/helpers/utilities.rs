@@ -144,6 +144,7 @@ pub struct Plan {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SubscriptionDetails {
     pub subscription_status: String,
     pub current_period_end: Option<chrono::DateTime<chrono::Utc>>,

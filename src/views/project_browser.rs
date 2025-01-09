@@ -162,8 +162,9 @@ pub fn project_browser(
 
     // Effect to watch authentication and trigger subscription check
     create_effect(move |_| {
-        if auth_state.get().is_authenticated {
+        if auth_state.get().is_authenticated && subscription_result.get().is_none() {
             if let Some(token) = auth_state.get().token.as_ref() {
+                println!("Spawning...");
                 let tx = subscription_tx.clone();
                 let token = token.token.clone();
 
@@ -180,16 +181,19 @@ pub fn project_browser(
 
     // Effect to handle subscription updates
     create_effect(move |_| {
-        if let Some(result) = subscription_result.get() {
-            match result {
-                Ok(subscription) => {
-                    let mut current_state = auth_state.get();
-                    current_state.subscription = Some(subscription);
-                    auth_state.set(current_state);
-                }
-                Err(e) => {
-                    println!("Failed to fetch subscription details: {}", e);
-                    // Optionally handle error in UI
+        if auth_state.get().subscription.is_none() {
+            if let Some(result) = subscription_result.get() {
+                match result {
+                    Ok(subscription) => {
+                        println!("Setting...");
+                        let mut current_state = auth_state.get();
+                        current_state.subscription = Some(subscription);
+                        auth_state.set(current_state);
+                    }
+                    Err(e) => {
+                        println!("Failed to fetch subscription details: {}", e);
+                        // Optionally handle error in UI
+                    }
                 }
             }
         }
@@ -275,7 +279,7 @@ pub fn project_browser(
                                 s.margin_left(8.0)
                                     .padding(8.0)
                                     .background(Color::rgb(220.0, 53.0, 69.0))
-                                    .color(Color::WHITE)
+                                    .color(Color::BLACK)
                                     .border_radius(4.0)
                             }),
                     ))
