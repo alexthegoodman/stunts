@@ -47,6 +47,11 @@ struct LoginRequest {
 
 #[derive(Deserialize)]
 struct LoginResponse {
+    jwtData: JwtData,
+}
+
+#[derive(Deserialize)]
+struct JwtData {
     token: String,
     #[serde(with = "chrono::serde::ts_seconds_option")]
     expiry: Option<chrono::DateTime<chrono::Utc>>,
@@ -352,8 +357,8 @@ pub fn project_browser(
                                     Ok(response) => {
                                         if let Err(e) = set_authenticated(
                                             auth_state,
-                                            response.token,
-                                            response.expiry,
+                                            response.jwtData.token,
+                                            response.jwtData.expiry,
                                         ) {
                                             login_error.set(Some(format!(
                                                 "Error saving credentials: {}",
