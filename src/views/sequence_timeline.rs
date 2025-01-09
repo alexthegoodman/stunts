@@ -6,6 +6,7 @@ use floem::reactive::RwSignal;
 use floem::reactive::SignalGet;
 use floem::reactive::SignalUpdate;
 use floem::style::CursorStyle;
+use floem::taffy::Position;
 use floem::views::*;
 use floem::IntoView;
 use floem::View;
@@ -71,24 +72,28 @@ pub fn build_timeline(state: TimelineState) -> impl View {
         container(stack((
             // Background
             container((empty())).style(|s| {
-                s.width(800.0)
-                    .height(50)
+                s.width(700.0)
+                    .height(60)
                     .background(Color::rgb8(100, 150, 200))
+                    .z_index(1)
             }),
             // TimelineSequences
             timeline_sequence_track(state.clone(), TrackType::Audio),
-        ))),
+        )))
+        .style(|s| s.position(Position::Relative)),
         // Video track
         container(stack((
             // background
             container((empty())).style(|s| {
-                s.width(800.0)
-                    .height(50)
+                s.width(700.0)
+                    .height(60)
                     .background(Color::rgb8(200, 150, 100))
+                    .z_index(1)
             }),
             // timeline_sequences
             timeline_sequence_track(state.clone(), TrackType::Video),
-        ))),
+        )))
+        .style(|s| s.position(Position::Relative)),
     ))
 }
 
@@ -138,6 +143,7 @@ pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> i
                             //     rgb(0xE24A90)
                             // })
                             .cursor(CursorStyle::Pointer)
+                            .z_index(5)
                     })
                     .on_event(EventListener::DragStart, {
                         let state = state.clone();
@@ -172,4 +178,5 @@ pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> i
             }
         },
     )
+    .style(|s| s.absolute().margin_left(0.0))
 }

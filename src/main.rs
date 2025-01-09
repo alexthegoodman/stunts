@@ -655,18 +655,57 @@ async fn main() {
                     .as_ref()
                     .expect("Couldn't get camera binding");
 
+                // let model_bind_group_layout = gpu_resources.device.create_bind_group_layout(
+                //     &wgpu::BindGroupLayoutDescriptor {
+                //         entries: &[wgpu::BindGroupLayoutEntry {
+                //             binding: 0,
+                //             visibility: wgpu::ShaderStages::VERTEX,
+                //             ty: wgpu::BindingType::Buffer {
+                //                 ty: wgpu::BufferBindingType::Uniform,
+                //                 has_dynamic_offset: false,
+                //                 min_binding_size: None,
+                //             },
+                //             count: None,
+                //         }],
+                //         label: Some("model_bind_group_layout"),
+                //     },
+                // );
+
                 let model_bind_group_layout = gpu_resources.device.create_bind_group_layout(
                     &wgpu::BindGroupLayoutDescriptor {
-                        entries: &[wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStages::VERTEX,
-                            ty: wgpu::BindingType::Buffer {
-                                ty: wgpu::BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
+                        entries: &[
+                            // Existing uniform buffer binding
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 0,
+                                visibility: wgpu::ShaderStages::VERTEX,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Uniform,
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: None,
                             },
-                            count: None,
-                        }],
+                            // Texture binding
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 1,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Texture {
+                                    sample_type: wgpu::TextureSampleType::Float {
+                                        filterable: true,
+                                    },
+                                    view_dimension: wgpu::TextureViewDimension::D2,
+                                    multisampled: false,
+                                },
+                                count: None,
+                            },
+                            // Sampler binding
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 2,
+                                visibility: wgpu::ShaderStages::FRAGMENT,
+                                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                                count: None,
+                            },
+                        ],
                         label: Some("model_bind_group_layout"),
                     },
                 );
@@ -823,6 +862,7 @@ async fn main() {
                 let canvas_polygon = Polygon::new(
                     &window_size,
                     &gpu_resources.device,
+                    &gpu_resources.queue,
                     &model_bind_group_layout,
                     &camera,
                     vec![

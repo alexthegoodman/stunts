@@ -178,9 +178,24 @@ pub fn sequences_view(
                             .get(&item)
                             .expect("Couldn't find matching qa info");
 
+                        let small_labels: Vec<String> = item
+                            .split("-")
+                            .into_iter()
+                            .map(|id| id.to_string())
+                            .collect();
+
+                        let mut small_label = "".to_string();
+                        let mut y = 0;
+                        for label in small_labels {
+                            if y == 0 {
+                                small_label += &label;
+                                y = y + 1;
+                            }
+                        }
+
                         h_stack((
                             simple_button(
-                                "Edit Sequence ".to_string() + &quick_access_info.to_string(),
+                                "Edit ".to_string() + &small_label.to_string(),
                                 move |_| {
                                     println!("Open Sequence...");
 
@@ -229,6 +244,7 @@ pub fn sequences_view(
                                         let restored_polygon = Polygon::new(
                                             &window_size,
                                             &gpu_resources.device,
+                                            &gpu_resources.queue,
                                             &editor
                                                 .model_bind_group_layout
                                                 .as_ref()

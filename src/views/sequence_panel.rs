@@ -8,6 +8,7 @@ use floem::reactive::{RwSignal, SignalGet};
 use floem::views::{v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
+use floem_renderer::gpu_resources;
 use rand::Rng;
 use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
@@ -93,11 +94,12 @@ pub fn sequence_panel(
                     },
                 };
                 let gpu_helper = gpu_cloned.lock().unwrap();
-                let device = &gpu_helper
+                let gpu_resources = gpu_helper
                     .gpu_resources
                     .as_ref()
-                    .expect("Couldn't get gpu resources")
-                    .device;
+                    .expect("Couldn't get gpu resources");
+                let device = &gpu_resources.device;
+                let queue = &gpu_resources.queue;
                 let viewport = viewport_cloned.lock().unwrap();
                 let window_size = WindowSize {
                     width: viewport.width as u32,
@@ -108,6 +110,7 @@ pub fn sequence_panel(
                 editor.add_polygon(
                     &window_size,
                     &device,
+                    &queue,
                     &camera,
                     polygon_config.clone(),
                     "Polygon".to_string(),
