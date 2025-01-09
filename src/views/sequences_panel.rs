@@ -139,7 +139,20 @@ pub fn sequences_view(
 
                 editor_state.saved_state = Some(new_state.clone());
 
-                save_saved_state_raw(new_state);
+                save_saved_state_raw(new_state.clone());
+
+                let mut x = 0;
+                let qa_sequences: HashMap<String, i32> = new_state
+                    .sequences
+                    .clone()
+                    .into_iter()
+                    .map(|s| {
+                        x = x + 1;
+                        (s.id, x)
+                    })
+                    .collect();
+
+                sequence_quick_access.set(qa_sequences);
 
                 sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
@@ -415,6 +428,6 @@ pub fn sequences_view(
             }),
             build_timeline(sequence_timeline_signal.get()),
         ))
-        .style(|s| s.margin_top(425.0)),
+        .style(|s| s.margin_top(425.0).margin_left(25.0)),
     ))
 }

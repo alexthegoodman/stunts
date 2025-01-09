@@ -159,7 +159,7 @@ pub fn tab_interface(
                             move || tabs.get(),
                             |it| *it,
                             move |it| match it {
-                                "Assets" => sequences_view(
+                                "Motion" => sequences_view(
                                     gpu_helper.clone(),
                                     editor_state.clone(),
                                     editor.clone(),

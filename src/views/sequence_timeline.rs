@@ -1,6 +1,7 @@
 use cgmath::Vector2;
 use floem::event::EventListener;
 use floem::event::EventPropagation;
+use floem::peniko::Color;
 use floem::reactive::RwSignal;
 use floem::reactive::SignalGet;
 use floem::reactive::SignalUpdate;
@@ -69,14 +70,22 @@ pub fn build_timeline(state: TimelineState) -> impl View {
         // Audio track
         container(stack((
             // Background
-            container((empty())).style(|s| s.width_full().height(50)),
+            container((empty())).style(|s| {
+                s.width(800.0)
+                    .height(50)
+                    .background(Color::rgb8(100, 150, 200))
+            }),
             // TimelineSequences
             timeline_sequence_track(state.clone(), TrackType::Audio),
         ))),
         // Video track
         container(stack((
             // background
-            container((empty())).style(|s| s.width_full().height(50)),
+            container((empty())).style(|s| {
+                s.width(800.0)
+                    .height(50)
+                    .background(Color::rgb8(200, 150, 100))
+            }),
             // timeline_sequences
             timeline_sequence_track(state.clone(), TrackType::Video),
         ))),
@@ -101,7 +110,23 @@ pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> i
                     return container((empty())).into_view();
                 }
 
-                container(label(move || seq.id.clone()).style(|s| s.padding(5)))
+                let small_labels: Vec<String> = seq
+                    .id
+                    .split("-")
+                    .into_iter()
+                    .map(|id| id.to_string())
+                    .collect();
+
+                let mut small_label = "".to_string();
+                let mut y = 0;
+                for label in small_labels {
+                    if y == 0 {
+                        small_label += &label;
+                        y = y + 1;
+                    }
+                }
+
+                container(label(move || small_label.clone()).style(|s| s.padding(5)))
                     .style(move |s| {
                         s.absolute()
                             .margin_left(left)

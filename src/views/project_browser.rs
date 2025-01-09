@@ -469,7 +469,7 @@ pub fn project_browser(
                     project_item(
                         project.clone(),
                         project_list,
-                        project.name.clone() + &" " + &project.modified.to_string().clone(),
+                        project.modified.to_string().clone(),
                         "sphere",
                     )
                     .on_click({
