@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use floem::common::{card_styles, option_button, simple_button, small_button};
@@ -15,6 +16,8 @@ use rand::Rng;
 use std::str::FromStr;
 use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
+use stunts_engine::st_image::{StImage, StImageConfig};
+use stunts_engine::text_due::{TextRenderer, TextRendererConfig};
 use stunts_engine::timelines::{TimelineSequence, TrackType};
 use uuid::Uuid;
 
@@ -292,7 +295,85 @@ pub fn sequences_view(
                                         editor.polygons.push(restored_polygon);
                                     });
 
-                                    println!("Polygons restored!");
+                                    saved_sequence.active_text_items.iter().for_each(|t| {
+                                        let gpu_resources = editor
+                                            .gpu_resources
+                                            .as_ref()
+                                            .expect("Couldn't get GPU Resources");
+
+                                        // TODO: save and restore chosen font
+
+                                        let restored_text = TextRenderer::new(
+                                            &gpu_resources.device,
+                                            editor
+                                                .model_bind_group_layout
+                                                .as_ref()
+                                                .expect("Couldn't get model bind group layout"),
+                                            editor
+                                                .font_manager
+                                                .get_font_by_name("Aleo")
+                                                .expect("Couldn't get Aleo font"),
+                                            &window_size,
+                                            t.text.clone(),
+                                            TextRendererConfig {
+                                                id: Uuid::from_str(&t.id)
+                                                    .expect("Couldn't convert uuid"),
+                                                name: t.name.clone(),
+                                                text: t.text.clone(),
+                                                dimensions: (
+                                                    t.dimensions.0 as f32,
+                                                    t.dimensions.1 as f32,
+                                                ),
+                                                position: Point {
+                                                    x: t.position.x as f32,
+                                                    y: t.position.y as f32,
+                                                },
+                                            },
+                                            Uuid::from_str(&t.id)
+                                                .expect("Couldn't convert string to uuid"),
+                                        );
+
+                                        // editor.add_polygon(restored_polygon);
+                                        editor.text_items.push(restored_text);
+                                    });
+
+                                    saved_sequence.active_image_items.iter().for_each(|i| {
+                                        let gpu_resources = editor
+                                            .gpu_resources
+                                            .as_ref()
+                                            .expect("Couldn't get GPU Resources");
+
+                                        let image_config = StImageConfig {
+                                            id: i.id.clone(),
+                                            name: i.name.clone(),
+                                            dimensions: i.dimensions.clone(),
+                                            path: i.path.clone(),
+                                            position: Point {
+                                                x: i.position.x as f32,
+                                                y: i.position.y as f32,
+                                            },
+                                        };
+
+                                        let restored_image = StImage::new(
+                                            &gpu_resources.device,
+                                            &gpu_resources.queue,
+                                            // string to Path
+                                            Path::new(&i.path),
+                                            image_config,
+                                            &window_size,
+                                            editor
+                                                .model_bind_group_layout
+                                                .as_ref()
+                                                .expect("Couldn't get model bind group layout"),
+                                            0.0,
+                                            i.id.clone(),
+                                        );
+
+                                        // editor.add_polygon(restored_polygon);
+                                        editor.image_items.push(restored_image);
+                                    });
+
+                                    println!("Objects restored!");
 
                                     editor.update_motion_paths(&saved_sequence);
 

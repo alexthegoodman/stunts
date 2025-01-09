@@ -224,6 +224,10 @@ pub fn sequence_panel(
                                 .expect("Couldn't get path as string")
                                 .to_string(),
                             dimensions: (image_config.dimensions.0, image_config.dimensions.1),
+                            position: SavedPoint {
+                                x: random_number_800,
+                                y: random_number_450,
+                            },
                         },
                     );
                 }
@@ -290,6 +294,10 @@ pub fn sequence_panel(
                             text_config.dimensions.0 as i32,
                             text_config.dimensions.1 as i32,
                         ),
+                        position: SavedPoint {
+                            x: random_number_800,
+                            y: random_number_450,
+                        },
                     },
                 );
             }),
