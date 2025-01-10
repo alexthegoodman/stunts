@@ -28,7 +28,7 @@ use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
     string_to_f32, Editor, OnMouseUp, Point, PolygonClickHandler, Viewport,
 };
-use stunts_engine::polygon::{PolygonConfig, Stroke};
+use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
 // use winit::{event_loop, window};
@@ -48,10 +48,11 @@ use floem::{Application, CustomRenderCallback};
 use floem::{GpuHelper, View, WindowHandle};
 
 use crate::editor_state::EditorState;
+use crate::helpers::saved_state::SavedState;
 use crate::helpers::utilities::save_saved_state_raw;
 use crate::views::keyframe_panel::update_keyframe;
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, Sequence, UIKeyframe,
 };
 
 use super::aside::tab_interface;
@@ -62,6 +63,37 @@ use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::project_browser::project_browser;
 use super::properties_panel::properties_view;
 use super::sequence_panel::sequence_panel;
+
+fn find_object_type(last_saved_state: &SavedState, object_id: &Uuid) -> Option<ObjectType> {
+    // Check active polygons
+    if last_saved_state.sequences.iter().any(|s| {
+        s.active_polygons
+            .iter()
+            .any(|ap| ap.id == object_id.to_string())
+    }) {
+        return Some(ObjectType::Polygon);
+    }
+
+    // Check active images
+    if last_saved_state.sequences.iter().any(|s| {
+        s.active_image_items
+            .iter()
+            .any(|ai| ai.id == object_id.to_string())
+    }) {
+        return Some(ObjectType::ImageItem);
+    }
+
+    // Check active text
+    if last_saved_state.sequences.iter().any(|s| {
+        s.active_text_items
+            .iter()
+            .any(|at| at.id == object_id.to_string())
+    }) {
+        return Some(ObjectType::TextItem);
+    }
+
+    None
+}
 
 pub fn project_view(
     editor_state: Arc<Mutex<EditorState>>,
@@ -230,7 +262,7 @@ pub fn project_view(
             let selected_polygon_data_ref = selected_polygon_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
 
-            Some(Box::new(move |poly_index: usize, point: Point| {
+            Some(Box::new(move |object_id: Uuid, point: Point| {
                 // cannot lock editor here! probably because called from Editor
                 // {
                 //     let mut editor = new_editor.lock().unwrap();
@@ -255,6 +287,61 @@ pub fn project_view(
 
                     let mut editor_state = editor_state.lock().unwrap();
 
+                    let last_saved_state = editor_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get Saved State");
+
+                    let object_type = find_object_type(&last_saved_state, &object_id);
+
+                    last_saved_state.sequences.iter_mut().for_each(|s| {
+                        if s.id == selected_sequence_id.get() {
+                            if let Some(object_type) = object_type.clone() {
+                                match object_type {
+                                    ObjectType::Polygon => {
+                                        s.active_polygons.iter_mut().for_each(|ap| {
+                                            if ap.id == object_id.to_string() {
+                                                ap.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                    ObjectType::TextItem => {
+                                        s.active_text_items.iter_mut().for_each(|tr| {
+                                            if tr.id == object_id.to_string() {
+                                                tr.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                    ObjectType::ImageItem => {
+                                        s.active_image_items.iter_mut().for_each(|si| {
+                                            if si.id == object_id.to_string() {
+                                                si.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // TODO: probably perf hit with larger files, or does it get released?
+                    let new_saved_state = last_saved_state.to_owned();
+
+                    save_saved_state_raw(new_saved_state);
+
+                    // drop(editor_state);
+
+                    println!("Position updated!");
+
                     update_keyframe(
                         editor_state,
                         current_animation_data,
@@ -267,8 +354,6 @@ pub fn project_view(
                         sequence_selected,
                     );
 
-                    // drop(editor_state);
-
                     println!("Keyframe updated!");
                 }
 
@@ -279,7 +364,7 @@ pub fn project_view(
 
                 selected_sequence_data.get()
             })
-                as Box<dyn FnMut(usize, Point) -> Sequence + Send>)
+                as Box<dyn FnMut(Uuid, Point) -> Sequence + Send>)
         }
     });
 
