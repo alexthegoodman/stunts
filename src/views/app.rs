@@ -26,9 +26,12 @@ use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
-    string_to_f32, Editor, OnMouseUp, Point, PolygonClickHandler, Viewport,
+    string_to_f32, Editor, ImageItemClickHandler, OnMouseUp, Point, PolygonClickHandler,
+    TextItemClickHandler, Viewport,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
+use stunts_engine::st_image::StImageConfig;
+use stunts_engine::text_due::TextRendererConfig;
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
 // use winit::{event_loop, window};
@@ -151,12 +154,41 @@ pub fn project_view(
         },
     });
 
+    let image_selected: RwSignal<bool> = create_rw_signal(false);
+    let selected_image_id: RwSignal<Uuid> = create_rw_signal(Uuid::nil());
+    let selected_image_data: RwSignal<StImageConfig> = create_rw_signal(StImageConfig {
+        id: String::new(),
+        name: String::new(),
+        path: String::new(),
+        dimensions: (100, 100),
+        position: Point { x: 0.0, y: 0.0 },
+    });
+
+    let text_selected: RwSignal<bool> = create_rw_signal(false);
+    let selected_text_id: RwSignal<Uuid> = create_rw_signal(Uuid::nil());
+    let selected_text_data: RwSignal<TextRendererConfig> = create_rw_signal(TextRendererConfig {
+        id: Uuid::nil(),
+        name: String::new(),
+        text: String::new(),
+        dimensions: (100.0, 100.0),
+        position: Point { x: 0.0, y: 0.0 },
+    });
+
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
     let selected_keyframes: RwSignal<Vec<UIKeyframe>> = create_rw_signal(Vec::new());
+
+    let image_selected_ref = Arc::new(Mutex::new(image_selected));
+    let selected_image_id_ref = Arc::new(Mutex::new(selected_image_id));
+    let selected_image_data_ref = Arc::new(Mutex::new(selected_image_data));
+
+    let text_selected_ref = Arc::new(Mutex::new(text_selected));
+    let selected_text_id_ref = Arc::new(Mutex::new(selected_text_id));
+    let selected_text_data_ref = Arc::new(Mutex::new(selected_text_data));
 
     let polygon_selected_ref = Arc::new(Mutex::new(polygon_selected));
     let selected_polygon_id_ref = Arc::new(Mutex::new(selected_polygon_id));
     let selected_polygon_data_ref = Arc::new(Mutex::new(selected_polygon_data));
+
     let animation_data_ref = Arc::new(Mutex::new(animation_data));
 
     let editor_cloned2 = editor_cloned2.clone();
@@ -244,6 +276,168 @@ pub fn project_view(
                         drop(editor_state);
                     }
                 }) as Box<dyn FnMut(Uuid, PolygonConfig) + Send>,
+            )
+        }
+    });
+
+    let handle_image_click: Arc<ImageItemClickHandler> = Arc::new({
+        let editor_state = editor_state.clone();
+        let image_selected_ref = Arc::clone(&image_selected_ref);
+        let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
+        let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+
+        move || {
+            let editor_state = editor_state.clone();
+            let image_selected_ref = image_selected_ref.clone();
+            let selected_image_id_ref = selected_image_id_ref.clone();
+            let selected_image_data_ref = selected_image_data_ref.clone();
+            let animation_data_ref = animation_data_ref.clone();
+
+            Some(Box::new(move |image_id: Uuid, image_data: StImageConfig| {
+                // cannot lock editor here! probably because called from Editor
+                // {
+                //     let mut editor = new_editor.lock().unwrap();
+                //     // Update editor as needed
+                // }
+
+                if let Ok(mut image_selected) = image_selected_ref.lock() {
+                    image_selected.update(|c| {
+                        *c = true;
+                    });
+                }
+                if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+                    selected_image_id.update(|c| {
+                        *c = image_id;
+                    });
+
+                    let mut editor_state = editor_state.lock().unwrap();
+
+                    editor_state.selected_image_id = image_id;
+                    editor_state.image_selected = true;
+
+                    drop(editor_state);
+                }
+                if let Ok(mut selected_image_data) = selected_image_data_ref.lock() {
+                    selected_image_data.update(|c| {
+                        *c = image_data;
+                    });
+                }
+                if let Ok(mut animation_data) = animation_data_ref.lock() {
+                    let editor_state = editor_state.lock().unwrap();
+                    let saved_state = editor_state
+                        .saved_state
+                        .as_ref()
+                        .expect("Couldn't get Saved State");
+
+                    // let saved_sequence = saved_state
+                    //     .sequences
+                    //     .iter()
+                    //     .find(|s| {
+                    //         s.enter_motion_paths
+                    //             .iter()
+                    //             .any(|m| m.image_id == image_id.to_string())
+                    //     })
+                    //     .expect("Couldn't find matching sequence");
+                    let saved_animation_data = saved_state
+                        .sequences
+                        .iter()
+                        .flat_map(|s| s.polygon_motion_paths.iter())
+                        .find(|p| p.id == image_id.to_string());
+
+                    if let Some(image_animation_data) = saved_animation_data {
+                        animation_data.update(|c| {
+                            *c = Some(image_animation_data.clone());
+                        });
+                    } else {
+                        // image is not saved animation data
+                        // image_index,time,width,height,x,y,rotation,scale,perspective_x,perspective_y,opacity
+                    }
+
+                    drop(editor_state);
+                }
+            }) as Box<dyn FnMut(Uuid, StImageConfig) + Send>)
+        }
+    });
+
+    let handle_text_click: Arc<TextItemClickHandler> = Arc::new({
+        let editor_state = editor_state.clone();
+        let text_selected_ref = Arc::clone(&text_selected_ref);
+        let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
+        let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+
+        move || {
+            let editor_state = editor_state.clone();
+            let text_selected_ref = text_selected_ref.clone();
+            let selected_text_id_ref = selected_text_id_ref.clone();
+            let selected_text_data_ref = selected_text_data_ref.clone();
+            let animation_data_ref = animation_data_ref.clone();
+
+            Some(
+                Box::new(move |text_id: Uuid, text_data: TextRendererConfig| {
+                    // cannot lock editor here! probably because called from Editor
+                    // {
+                    //     let mut editor = new_editor.lock().unwrap();
+                    //     // Update editor as needed
+                    // }
+
+                    if let Ok(mut text_selected) = text_selected_ref.lock() {
+                        text_selected.update(|c| {
+                            *c = true;
+                        });
+                    }
+                    if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+                        selected_text_id.update(|c| {
+                            *c = text_id;
+                        });
+
+                        let mut editor_state = editor_state.lock().unwrap();
+
+                        editor_state.selected_text_id = text_id;
+                        editor_state.text_selected = true;
+
+                        drop(editor_state);
+                    }
+                    if let Ok(mut selected_text_data) = selected_text_data_ref.lock() {
+                        selected_text_data.update(|c| {
+                            *c = text_data;
+                        });
+                    }
+                    if let Ok(mut animation_data) = animation_data_ref.lock() {
+                        let editor_state = editor_state.lock().unwrap();
+                        let saved_state = editor_state
+                            .saved_state
+                            .as_ref()
+                            .expect("Couldn't get Saved State");
+
+                        // let saved_sequence = saved_state
+                        //     .sequences
+                        //     .iter()
+                        //     .find(|s| {
+                        //         s.enter_motion_paths
+                        //             .iter()
+                        //             .any(|m| m.text_id == text_id.to_string())
+                        //     })
+                        //     .expect("Couldn't find matching sequence");
+                        let saved_animation_data = saved_state
+                            .sequences
+                            .iter()
+                            .flat_map(|s| s.polygon_motion_paths.iter())
+                            .find(|p| p.id == text_id.to_string());
+
+                        if let Some(text_animation_data) = saved_animation_data {
+                            animation_data.update(|c| {
+                                *c = Some(text_animation_data.clone());
+                            });
+                        } else {
+                            // text is not saved animation data
+                            // text_index,time,width,height,x,y,rotation,scale,perspective_x,perspective_y,opacity
+                        }
+
+                        drop(editor_state);
+                    }
+                }) as Box<dyn FnMut(Uuid, TextRendererConfig) + Send>,
             )
         }
     });
@@ -371,10 +565,14 @@ pub fn project_view(
     // Use create_effect to set the handler only once
     create_effect({
         let handle_polygon_click = Arc::clone(&handle_polygon_click);
+        let handle_image_click = Arc::clone(&handle_image_click);
+        let handle_text_click = Arc::clone(&handle_text_click);
         let editor_cloned3 = Arc::clone(&editor_cloned3);
         move |_| {
             let mut editor = editor_cloned3.lock().unwrap();
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
+            editor.handle_text_click = Some(Arc::clone(&handle_text_click));
+            editor.handle_image_click = Some(Arc::clone(&handle_image_click));
             editor.on_mouse_up = Some(Arc::clone(&on_mouse_up));
         }
     });
@@ -475,7 +673,7 @@ pub fn project_view(
 
                                     container(
                                         (v_stack((
-                                            label(|| "Properties"),
+                                            label(|| "Polygon Properties"),
                                             properties_view(
                                                 state_cloned5,
                                                 gpu_cloned2,
@@ -486,6 +684,68 @@ pub fn project_view(
                                                 selected_polygon_data,
                                                 selected_sequence_id,
                                             ),
+                                        ))
+                                        .style(|s| card_styles(s))),
+                                    )
+                                    .into_any()
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
+                        ),
+                        dyn_container(
+                            move || text_selected.get() && selected_keyframes.get().len() == 0,
+                            move |text_selected_real| {
+                                if text_selected_real {
+                                    // let state_cloned5 = state_cloned6.clone();
+                                    // let gpu_cloned2 = gpu_cloned2.clone();
+                                    // let editor_cloned7 = editor_cloned7.clone();
+                                    // let viewport_cloned2 = viewport_cloned2.clone();
+
+                                    container(
+                                        (v_stack((
+                                            label(|| "Text Properties"),
+                                            // properties_view(
+                                            //     state_cloned5,
+                                            //     gpu_cloned2,
+                                            //     editor_cloned7,
+                                            //     viewport_cloned2,
+                                            //     polygon_selected,
+                                            //     selected_polygon_id,
+                                            //     selected_polygon_data,
+                                            //     selected_sequence_id,
+                                            // ),
+                                        ))
+                                        .style(|s| card_styles(s))),
+                                    )
+                                    .into_any()
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
+                        ),
+                        dyn_container(
+                            move || image_selected.get() && selected_keyframes.get().len() == 0,
+                            move |image_selected_real| {
+                                if image_selected_real {
+                                    // let state_cloned5 = state_cloned6.clone();
+                                    // let gpu_cloned2 = gpu_cloned2.clone();
+                                    // let editor_cloned7 = editor_cloned7.clone();
+                                    // let viewport_cloned2 = viewport_cloned2.clone();
+
+                                    container(
+                                        (v_stack((
+                                            label(|| "Image Properties"),
+                                            // properties_view(
+                                            //     state_cloned5,
+                                            //     gpu_cloned2,
+                                            //     editor_cloned7,
+                                            //     viewport_cloned2,
+                                            //     polygon_selected,
+                                            //     selected_polygon_id,
+                                            //     selected_polygon_data,
+                                            //     selected_sequence_id,
+                                            // ),
                                         ))
                                         .style(|s| card_styles(s))),
                                     )
