@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use crossbeam::queue;
 use floem::common::{card_styles, option_button, simple_button, toggle_button};
+use floem::peniko::Color;
 use floem::reactive::{create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
 use floem::taffy::{AlignItems, FlexDirection, FlexWrap};
@@ -59,7 +60,8 @@ pub fn sequence_panel(
         v_stack((
             simple_button("Generate Animation".to_string(), move |_| {
                 // TODO: hook into CommonMotion2D
-            }),
+            })
+            .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE)),
             // maybe not needed after all
             // h_stack((
             //     toggle_button(

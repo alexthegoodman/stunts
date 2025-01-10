@@ -305,6 +305,11 @@ pub fn sequences_view(
 
                                         // TODO: save and restore chosen font
 
+                                        let position = Point {
+                                            x: 600.0 + t.position.x as f32,
+                                            y: 50.0 + t.position.y as f32,
+                                        };
+
                                         let mut restored_text = TextRenderer::new(
                                             &gpu_resources.device,
                                             editor
@@ -326,10 +331,7 @@ pub fn sequences_view(
                                                     t.dimensions.0 as f32,
                                                     t.dimensions.1 as f32,
                                                 ),
-                                                position: Point {
-                                                    x: t.position.x as f32,
-                                                    y: t.position.y as f32,
-                                                },
+                                                position,
                                             },
                                             Uuid::from_str(&t.id)
                                                 .expect("Couldn't convert string to uuid"),
@@ -352,15 +354,17 @@ pub fn sequences_view(
                                             .as_ref()
                                             .expect("Couldn't get GPU Resources");
 
+                                        let position = Point {
+                                            x: 600.0 + i.position.x as f32,
+                                            y: 50.0 + i.position.y as f32,
+                                        };
+
                                         let image_config = StImageConfig {
                                             id: i.id.clone(),
                                             name: i.name.clone(),
                                             dimensions: i.dimensions.clone(),
                                             path: i.path.clone(),
-                                            position: Point {
-                                                x: i.position.x as f32,
-                                                y: i.position.y as f32,
-                                            },
+                                            position,
                                         };
 
                                         let restored_image = StImage::new(
