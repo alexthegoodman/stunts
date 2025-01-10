@@ -285,7 +285,7 @@ pub fn sequences_view(
                                                     p.stroke.fill[3] as f32,
                                                 ],
                                             },
-                                            0.0,
+                                            -2.0,
                                             p.name.clone(),
                                             Uuid::from_str(&p.id)
                                                 .expect("Couldn't convert string to uuid"),
@@ -293,6 +293,8 @@ pub fn sequences_view(
 
                                         // editor.add_polygon(restored_polygon);
                                         editor.polygons.push(restored_polygon);
+
+                                        println!("Polygon restored...");
                                     });
 
                                     saved_sequence.active_text_items.iter().for_each(|t| {
@@ -303,7 +305,7 @@ pub fn sequences_view(
 
                                         // TODO: save and restore chosen font
 
-                                        let restored_text = TextRenderer::new(
+                                        let mut restored_text = TextRenderer::new(
                                             &gpu_resources.device,
                                             editor
                                                 .model_bind_group_layout
@@ -333,8 +335,15 @@ pub fn sequences_view(
                                                 .expect("Couldn't convert string to uuid"),
                                         );
 
+                                        restored_text.render_text(
+                                            &gpu_resources.device,
+                                            &gpu_resources.queue,
+                                        );
+
                                         // editor.add_polygon(restored_polygon);
                                         editor.text_items.push(restored_text);
+
+                                        println!("Text restored...");
                                     });
 
                                     saved_sequence.active_image_items.iter().for_each(|i| {
@@ -365,12 +374,14 @@ pub fn sequences_view(
                                                 .model_bind_group_layout
                                                 .as_ref()
                                                 .expect("Couldn't get model bind group layout"),
-                                            0.0,
+                                            -2.0,
                                             i.id.clone(),
                                         );
 
                                         // editor.add_polygon(restored_polygon);
                                         editor.image_items.push(restored_image);
+
+                                        println!("Image restored...");
                                     });
 
                                     println!("Objects restored!");

@@ -242,7 +242,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     render_pass.set_vertex_buffer(0, text_item.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
                         text_item.index_buffer.slice(..),
-                        wgpu::IndexFormat::Uint16,
+                        wgpu::IndexFormat::Uint32,
                     );
                     render_pass.draw_indexed(0..text_item.indices.len() as u32, 0, 0..1);
                 }
@@ -256,7 +256,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     render_pass.set_vertex_buffer(0, st_image.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
                         st_image.index_buffer.slice(..),
-                        wgpu::IndexFormat::Uint16,
+                        wgpu::IndexFormat::Uint32,
                     );
                     render_pass.draw_indexed(0..st_image.indices.len() as u32, 0, 0..1);
                 }
@@ -792,7 +792,7 @@ async fn main() {
                 //     .surface
                 //     .get_capabilities(&gpu_resources.adapter);
                 // let swapchain_format = swapchain_capabilities.formats[0]; // Choosing the first available format
-                let swapchain_format = wgpu::TextureFormat::Bgra8UnormSrgb; // hardcode for now
+                let swapchain_format = wgpu::TextureFormat::Bgra8UnormSrgb; // hardcode for now - actually must match common-floem's
 
                 // Configure the render pipeline
                 let render_pipeline =

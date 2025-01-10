@@ -530,6 +530,7 @@ pub fn project_browser(
                     })
                 },
             )
+            .style(|s| s.width(260.0))
             .into_view(),
         ),
     ))
