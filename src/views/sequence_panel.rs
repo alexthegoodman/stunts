@@ -160,7 +160,7 @@ pub fn sequence_panel(
             ),
             option_button(
                 "Add Image",
-                "square",
+                "image",
                 Some(move || {
                     if let Some(path) = rfd::FileDialog::new()
                         .add_filter("images", &["png", "jpg", "jpeg"])
@@ -238,7 +238,7 @@ pub fn sequence_panel(
             ),
             option_button(
                 "Add Text",
-                "square",
+                "text",
                 Some(move || {
                     // use text_due.rs to add text to wgpu scene
                     let mut editor = editor_cloned_2.lock().unwrap();
@@ -307,7 +307,7 @@ pub fn sequence_panel(
             ),
             // option_button(
             //     "Add Video",
-            //     "square",
+            //     "video",
             //     Some(move || {
             //         // import with decoder
             //     }),
