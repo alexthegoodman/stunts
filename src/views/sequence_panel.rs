@@ -5,7 +5,8 @@ use crossbeam::queue;
 use floem::common::{card_styles, option_button, simple_button};
 use floem::reactive::{create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
-use floem::views::{v_stack, Decorators};
+use floem::taffy::{FlexDirection, FlexWrap};
+use floem::views::{stack, v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
@@ -47,7 +48,7 @@ pub fn sequence_panel(
 
     let selected_file = create_rw_signal(None::<PathBuf>);
 
-    v_stack((
+    stack((
         label(move || format!("Assets / Motion")).style(|s| s.margin_bottom(10)),
         simple_button("Back to Sequence List".to_string(), move |_| {
             sequence_selected.set(false);
@@ -178,7 +179,7 @@ pub fn sequence_panel(
 
                     let image_config = StImageConfig {
                         id: new_id.clone().to_string(),
-                        name: "New Text Item".to_string(),
+                        name: "New Image Item".to_string(),
                         dimensions: (100, 100),
                         position: Point {
                             x: random_number_800 as f32,
@@ -312,6 +313,12 @@ pub fn sequence_panel(
         //     false,
         // ),
     ))
+    .style(|s| {
+        s.flex()
+            .flex_direction(FlexDirection::Row)
+            .flex_wrap(FlexWrap::Wrap)
+            .gap(5.0)
+    })
     .style(|s| card_styles(s))
     .style(|s| s.width(300.0))
 }
