@@ -280,10 +280,9 @@ pub fn properties_view(
         ))
         .style(move |s| s.width(aside_width)),
     ))
-    .style(|s| card_styles(s))
+    // .style(|s| card_styles(s))
     .style(|s| {
-        s.width(300)
-            // .absolute()
+        s.width(260.0)
             .height(800.0)
             .margin_left(0.0)
             .margin_top(20)

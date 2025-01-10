@@ -351,8 +351,8 @@ pub fn project_view(
                             *c = false;
                         });
                     }
-                    if let Ok(mut image_selected) = image_selected_ref.lock() {
-                        image_selected.update(|c| {
+                    if let Ok(mut text_selected) = text_selected_ref.lock() {
+                        text_selected.update(|c| {
                             *c = false;
                         });
                     }
@@ -366,8 +366,8 @@ pub fn project_view(
                             *c = Uuid::nil();
                         });
                     }
-                    if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
-                        selected_image_id.update(|c| {
+                    if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+                        selected_text_id.update(|c| {
                             *c = Uuid::nil();
                         });
                     }
@@ -555,59 +555,48 @@ pub fn project_view(
                     .expect("Couldn't get current Animation Data");
                 let mut current_keyframe = selected_keyframes.get();
 
-                if let Some(current_keyframe) = current_keyframe.get_mut(0) {
-                    // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                    let mut current_sequence = selected_sequence_data.get();
-                    // let current_polygon = selected_polygon_data.read();
-                    // let current_polygon = current_polygon.borrow();
+                let mut editor_state = editor_state.lock().unwrap();
 
-                    // update keyframe
-                    current_keyframe.value =
-                        KeyframeValue::Position([point.x as i32, point.y as i32]);
+                let last_saved_state = editor_state
+                    .saved_state
+                    .as_mut()
+                    .expect("Couldn't get Saved State");
 
-                    let mut editor_state = editor_state.lock().unwrap();
+                let object_type = find_object_type(&last_saved_state, &object_id);
 
-                    let last_saved_state = editor_state
-                        .saved_state
-                        .as_mut()
-                        .expect("Couldn't get Saved State");
-
-                    let object_type = find_object_type(&last_saved_state, &object_id);
-
+                if let Some(object_type) = object_type.clone() {
                     last_saved_state.sequences.iter_mut().for_each(|s| {
                         if s.id == selected_sequence_id.get() {
-                            if let Some(object_type) = object_type.clone() {
-                                match object_type {
-                                    ObjectType::Polygon => {
-                                        s.active_polygons.iter_mut().for_each(|ap| {
-                                            if ap.id == object_id.to_string() {
-                                                ap.position = SavedPoint {
-                                                    x: point.x as i32,
-                                                    y: point.y as i32,
-                                                }
+                            match object_type {
+                                ObjectType::Polygon => {
+                                    s.active_polygons.iter_mut().for_each(|ap| {
+                                        if ap.id == object_id.to_string() {
+                                            ap.position = SavedPoint {
+                                                x: point.x as i32,
+                                                y: point.y as i32,
                                             }
-                                        });
-                                    }
-                                    ObjectType::TextItem => {
-                                        s.active_text_items.iter_mut().for_each(|tr| {
-                                            if tr.id == object_id.to_string() {
-                                                tr.position = SavedPoint {
-                                                    x: point.x as i32,
-                                                    y: point.y as i32,
-                                                }
+                                        }
+                                    });
+                                }
+                                ObjectType::TextItem => {
+                                    s.active_text_items.iter_mut().for_each(|tr| {
+                                        if tr.id == object_id.to_string() {
+                                            tr.position = SavedPoint {
+                                                x: point.x as i32,
+                                                y: point.y as i32,
                                             }
-                                        });
-                                    }
-                                    ObjectType::ImageItem => {
-                                        s.active_image_items.iter_mut().for_each(|si| {
-                                            if si.id == object_id.to_string() {
-                                                si.position = SavedPoint {
-                                                    x: point.x as i32,
-                                                    y: point.y as i32,
-                                                }
+                                        }
+                                    });
+                                }
+                                ObjectType::ImageItem => {
+                                    s.active_image_items.iter_mut().for_each(|si| {
+                                        if si.id == object_id.to_string() {
+                                            si.position = SavedPoint {
+                                                x: point.x as i32,
+                                                y: point.y as i32,
                                             }
-                                        });
-                                    }
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -621,6 +610,17 @@ pub fn project_view(
                     // drop(editor_state);
 
                     println!("Position updated!");
+                }
+
+                if let Some(current_keyframe) = current_keyframe.get_mut(0) {
+                    // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                    let mut current_sequence = selected_sequence_data.get();
+                    // let current_polygon = selected_polygon_data.read();
+                    // let current_polygon = current_polygon.borrow();
+
+                    // update keyframe
+                    current_keyframe.value =
+                        KeyframeValue::Position([point.x as i32, point.y as i32]);
 
                     update_keyframe(
                         editor_state,
@@ -680,6 +680,8 @@ pub fn project_view(
             move || {
                 sequence_selected.get()
                     && !polygon_selected.get()
+                    && !text_selected.get()
+                    && !image_selected.get()
                     && selected_keyframes.get().len() == 0
             },
             move |sequence_selected_real| {
