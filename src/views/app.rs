@@ -557,61 +557,6 @@ pub fn project_view(
 
                 let mut editor_state = editor_state.lock().unwrap();
 
-                let last_saved_state = editor_state
-                    .saved_state
-                    .as_mut()
-                    .expect("Couldn't get Saved State");
-
-                let object_type = find_object_type(&last_saved_state, &object_id);
-
-                if let Some(object_type) = object_type.clone() {
-                    last_saved_state.sequences.iter_mut().for_each(|s| {
-                        if s.id == selected_sequence_id.get() {
-                            match object_type {
-                                ObjectType::Polygon => {
-                                    s.active_polygons.iter_mut().for_each(|ap| {
-                                        if ap.id == object_id.to_string() {
-                                            ap.position = SavedPoint {
-                                                x: point.x as i32,
-                                                y: point.y as i32,
-                                            }
-                                        }
-                                    });
-                                }
-                                ObjectType::TextItem => {
-                                    s.active_text_items.iter_mut().for_each(|tr| {
-                                        if tr.id == object_id.to_string() {
-                                            tr.position = SavedPoint {
-                                                x: point.x as i32,
-                                                y: point.y as i32,
-                                            }
-                                        }
-                                    });
-                                }
-                                ObjectType::ImageItem => {
-                                    s.active_image_items.iter_mut().for_each(|si| {
-                                        if si.id == object_id.to_string() {
-                                            si.position = SavedPoint {
-                                                x: point.x as i32,
-                                                y: point.y as i32,
-                                            }
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    });
-
-                    // TODO: probably perf hit with larger files, or does it get released?
-                    let new_saved_state = last_saved_state.to_owned();
-
-                    save_saved_state_raw(new_saved_state);
-
-                    // drop(editor_state);
-
-                    println!("Position updated!");
-                }
-
                 if let Some(current_keyframe) = current_keyframe.get_mut(0) {
                     // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
                     let mut current_sequence = selected_sequence_data.get();
@@ -635,6 +580,61 @@ pub fn project_view(
                     );
 
                     println!("Keyframe updated!");
+                } else {
+                    let last_saved_state = editor_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get Saved State");
+
+                    let object_type = find_object_type(&last_saved_state, &object_id);
+
+                    if let Some(object_type) = object_type.clone() {
+                        last_saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id.get() {
+                                match object_type {
+                                    ObjectType::Polygon => {
+                                        s.active_polygons.iter_mut().for_each(|ap| {
+                                            if ap.id == object_id.to_string() {
+                                                ap.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                    ObjectType::TextItem => {
+                                        s.active_text_items.iter_mut().for_each(|tr| {
+                                            if tr.id == object_id.to_string() {
+                                                tr.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                    ObjectType::ImageItem => {
+                                        s.active_image_items.iter_mut().for_each(|si| {
+                                            if si.id == object_id.to_string() {
+                                                si.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
+
+                        // TODO: probably perf hit with larger files, or does it get released?
+                        let new_saved_state = last_saved_state.to_owned();
+
+                        save_saved_state_raw(new_saved_state);
+
+                        // drop(editor_state);
+
+                        println!("Position updated!");
+                    }
                 }
 
                 // let mut editor = editor_cloned7.lock().unwrap();
