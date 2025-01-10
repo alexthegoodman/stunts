@@ -2,11 +2,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crossbeam::queue;
-use floem::common::{card_styles, option_button, simple_button};
+use floem::common::{card_styles, option_button, simple_button, toggle_button};
 use floem::reactive::{create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
 use floem::taffy::{AlignItems, FlexDirection, FlexWrap};
-use floem::views::{stack, v_stack, Decorators};
+use floem::views::{h_stack, stack, v_stack, Decorators};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
@@ -36,6 +36,8 @@ pub fn sequence_panel(
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned_2 = Arc::clone(&editor_state);
     let state_cloned_3 = Arc::clone(&editor_state);
+    let state_cloned_4 = Arc::clone(&editor_state);
+    let state_cloned_5 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
@@ -47,12 +49,56 @@ pub fn sequence_panel(
     let viewport_cloned_3 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
+    let local_mode = create_rw_signal("layout".to_string());
 
     v_stack((
-        label(move || format!("Assets / Motion")).style(|s| s.margin_bottom(10)),
+        label(move || format!("Create Sequence")).style(|s| s.margin_bottom(10)),
         simple_button("Back to Sequence List".to_string(), move |_| {
             sequence_selected.set(false);
         }),
+        v_stack((
+            simple_button("Generate Animation".to_string(), move |_| {
+                // TODO: hook into CommonMotion2D
+            }),
+            // maybe not needed after all
+            // h_stack((
+            //     toggle_button(
+            //         "Layout",
+            //         "translate",
+            //         "layout".to_string(),
+            //         {
+            //             let state_cloned_4 = state_cloned_4.clone();
+
+            //             move |_| {
+            //                 let mut state_helper = state_cloned_4.lock().unwrap();
+
+            //                 local_mode.set("layout".to_string());
+            //                 state_helper.active_sequence_mode.set("layout".to_string());
+            //             }
+            //         },
+            //         local_mode,
+            //     )
+            //     .style(|s| s.margin_right(4.0)),
+            //     toggle_button(
+            //         "Keyframes",
+            //         "scale",
+            //         "keyframes".to_string(),
+            //         {
+            //             let state_cloned_5 = state_cloned_5.clone();
+
+            //             move |_| {
+            //                 let mut state_helper = state_cloned_5.lock().unwrap();
+
+            //                 local_mode.set("keyframes".to_string());
+            //                 state_helper
+            //                     .active_sequence_mode
+            //                     .set("keyframes".to_string());
+            //             }
+            //         },
+            //         local_mode,
+            //     ),
+            // )),
+        )),
         stack((
             option_button(
                 "Add Square",

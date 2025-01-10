@@ -9,7 +9,7 @@ use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, create_signal, RwSignal, SignalRead};
 use floem::style::CursorStyle;
-use floem::taffy::{AlignItems, JustifyContent};
+use floem::taffy::{AlignItems, FlexDirection, JustifyContent};
 use floem::text::Weight;
 use floem::views::{
     button, container, dyn_container, dyn_stack, empty, h_stack, img, label, scroll, stack, svg,
@@ -530,7 +530,12 @@ pub fn project_browser(
                     })
                 },
             )
-            .style(|s| s.width(260.0))
+            .style(|s| {
+                s.width(260.0)
+                    .flex()
+                    .flex_direction(FlexDirection::Column)
+                    .gap(2.0)
+            })
             .into_view(),
         ),
     ))

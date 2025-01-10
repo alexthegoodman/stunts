@@ -9,7 +9,7 @@ use std::time::Duration;
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, UIKeyframe,
+    AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, UIKeyframe,
 };
 use stunts_engine::editor::{string_to_f32, wgpu_to_human, Editor, InputValue, PolygonProperty};
 use stunts_engine::polygon::SavedPolygonConfig;
@@ -221,6 +221,7 @@ pub struct EditorState {
     pub current_modifiers: ModifiersState,
     pub saved_state: Option<SavedState>,
     pub project_selected_signal: Option<RwSignal<Uuid>>,
+    pub active_sequence_mode: RwSignal<String>,
     pub sequence_timeline_state: TimelineState,
 }
 
@@ -251,10 +252,15 @@ impl EditorState {
             saved_state: None,
             project_selected_signal: None,
             sequence_timeline_state,
+            active_sequence_mode: RwSignal::new("layout".to_string()),
         }
     }
 
-    pub fn save_default_keyframes(&mut self, savable_item_id: String) -> AnimationData {
+    pub fn save_default_keyframes(
+        &mut self,
+        savable_item_id: String,
+        object_type: ObjectType,
+    ) -> AnimationData {
         let mut properties = Vec::new();
 
         let mut position_keyframes = Vec::new();
@@ -454,7 +460,7 @@ impl EditorState {
 
         let new_motion_path = AnimationData {
             id: Uuid::new_v4().to_string(),
-            object_type: stunts_engine::animations::ObjectType::Polygon,
+            object_type,
             polygon_id: savable_item_id.clone(),
             duration: Duration::from_secs(20),
             properties: properties,
@@ -468,7 +474,8 @@ impl EditorState {
         selected_sequence_id: String,
         savable_polygon: SavedPolygonConfig,
     ) {
-        let new_motion_path = self.save_default_keyframes(savable_polygon.id.clone());
+        let new_motion_path =
+            self.save_default_keyframes(savable_polygon.id.clone(), ObjectType::Polygon);
 
         let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
 
@@ -489,7 +496,8 @@ impl EditorState {
         selected_sequence_id: String,
         savable_text_item: SavedTextRendererConfig,
     ) {
-        let new_motion_path = self.save_default_keyframes(savable_text_item.id.clone());
+        let new_motion_path =
+            self.save_default_keyframes(savable_text_item.id.clone(), ObjectType::TextItem);
 
         let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
 
@@ -510,7 +518,8 @@ impl EditorState {
         selected_sequence_id: String,
         savable_image_item: SavedStImageConfig,
     ) {
-        let new_motion_path = self.save_default_keyframes(savable_image_item.id.clone());
+        let new_motion_path =
+            self.save_default_keyframes(savable_image_item.id.clone(), ObjectType::ImageItem);
 
         let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
 

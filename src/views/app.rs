@@ -201,15 +201,27 @@ pub fn project_view(
     let handle_polygon_click: Arc<PolygonClickHandler> = Arc::new({
         let editor_state = editor_state.clone();
         let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let text_selected_ref = Arc::clone(&text_selected_ref);
+        let image_selected_ref = Arc::clone(&image_selected_ref);
         let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
         let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
+        let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
+        let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
+        let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
             let polygon_selected_ref = polygon_selected_ref.clone();
+            let text_selected_ref = text_selected_ref.clone();
+            let image_selected_ref = image_selected_ref.clone();
             let selected_polygon_id_ref = selected_polygon_id_ref.clone();
             let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let selected_text_id_ref = selected_text_id_ref.clone();
+            let selected_text_data_ref = selected_text_data_ref.clone();
+            let selected_image_id_ref = selected_image_id_ref.clone();
+            let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
 
             Some(
@@ -224,16 +236,41 @@ pub fn project_view(
                         polygon_selected.update(|c| {
                             *c = true;
                         });
+                        if let Ok(mut text_selected) = text_selected_ref.lock() {
+                            text_selected.update(|c| {
+                                *c = false;
+                            });
+                        }
+                        if let Ok(mut image_selected) = image_selected_ref.lock() {
+                            image_selected.update(|c| {
+                                *c = false;
+                            });
+                        }
                     }
                     if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
                         selected_polygon_id.update(|c| {
                             *c = polygon_id;
                         });
+                        if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+                            selected_text_id.update(|c| {
+                                *c = Uuid::nil();
+                            });
+                        }
+                        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+                            selected_image_id.update(|c| {
+                                *c = Uuid::nil();
+                            });
+                        }
 
                         let mut editor_state = editor_state.lock().unwrap();
 
                         editor_state.selected_polygon_id = polygon_id;
                         editor_state.polygon_selected = true;
+
+                        editor_state.selected_text_id = Uuid::nil();
+                        editor_state.text_selected = false;
+                        editor_state.selected_image_id = Uuid::nil();
+                        editor_state.image_selected = false;
 
                         drop(editor_state);
                     }
@@ -241,6 +278,7 @@ pub fn project_view(
                         selected_polygon_data.update(|c| {
                             *c = polygon_data;
                         });
+                        // no need to update stale data for other object types as it will be overwritten later
                     }
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
@@ -249,15 +287,6 @@ pub fn project_view(
                             .as_ref()
                             .expect("Couldn't get Saved State");
 
-                        // let saved_sequence = saved_state
-                        //     .sequences
-                        //     .iter()
-                        //     .find(|s| {
-                        //         s.enter_motion_paths
-                        //             .iter()
-                        //             .any(|m| m.polygon_id == polygon_id.to_string())
-                        //     })
-                        //     .expect("Couldn't find matching sequence");
                         let saved_animation_data = saved_state
                             .sequences
                             .iter()
@@ -282,14 +311,26 @@ pub fn project_view(
 
     let handle_image_click: Arc<ImageItemClickHandler> = Arc::new({
         let editor_state = editor_state.clone();
+        let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let text_selected_ref = Arc::clone(&text_selected_ref);
         let image_selected_ref = Arc::clone(&image_selected_ref);
+        let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
+        let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
+        let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
         let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
         let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
+            let polygon_selected_ref = polygon_selected_ref.clone();
+            let text_selected_ref = text_selected_ref.clone();
             let image_selected_ref = image_selected_ref.clone();
+            let selected_polygon_id_ref = selected_polygon_id_ref.clone();
+            let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let selected_text_id_ref = selected_text_id_ref.clone();
+            let selected_text_data_ref = selected_text_data_ref.clone();
             let selected_image_id_ref = selected_image_id_ref.clone();
             let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
@@ -305,16 +346,41 @@ pub fn project_view(
                     image_selected.update(|c| {
                         *c = true;
                     });
+                    if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+                        polygon_selected.update(|c| {
+                            *c = false;
+                        });
+                    }
+                    if let Ok(mut image_selected) = image_selected_ref.lock() {
+                        image_selected.update(|c| {
+                            *c = false;
+                        });
+                    }
                 }
                 if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
                     selected_image_id.update(|c| {
                         *c = image_id;
                     });
+                    if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+                        selected_polygon_id.update(|c| {
+                            *c = Uuid::nil();
+                        });
+                    }
+                    if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+                        selected_image_id.update(|c| {
+                            *c = Uuid::nil();
+                        });
+                    }
 
                     let mut editor_state = editor_state.lock().unwrap();
 
                     editor_state.selected_image_id = image_id;
                     editor_state.image_selected = true;
+
+                    editor_state.selected_text_id = Uuid::nil();
+                    editor_state.text_selected = false;
+                    editor_state.selected_polygon_id = Uuid::nil();
+                    editor_state.polygon_selected = false;
 
                     drop(editor_state);
                 }
@@ -330,20 +396,11 @@ pub fn project_view(
                         .as_ref()
                         .expect("Couldn't get Saved State");
 
-                    // let saved_sequence = saved_state
-                    //     .sequences
-                    //     .iter()
-                    //     .find(|s| {
-                    //         s.enter_motion_paths
-                    //             .iter()
-                    //             .any(|m| m.image_id == image_id.to_string())
-                    //     })
-                    //     .expect("Couldn't find matching sequence");
                     let saved_animation_data = saved_state
                         .sequences
                         .iter()
                         .flat_map(|s| s.polygon_motion_paths.iter())
-                        .find(|p| p.id == image_id.to_string());
+                        .find(|p| p.polygon_id == image_id.to_string());
 
                     if let Some(image_animation_data) = saved_animation_data {
                         animation_data.update(|c| {
@@ -362,16 +419,28 @@ pub fn project_view(
 
     let handle_text_click: Arc<TextItemClickHandler> = Arc::new({
         let editor_state = editor_state.clone();
+        let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
         let text_selected_ref = Arc::clone(&text_selected_ref);
+        let image_selected_ref = Arc::clone(&image_selected_ref);
+        let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
+        let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
         let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
         let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
+        let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
+        let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
+            let polygon_selected_ref = polygon_selected_ref.clone();
             let text_selected_ref = text_selected_ref.clone();
+            let image_selected_ref = image_selected_ref.clone();
+            let selected_polygon_id_ref = selected_polygon_id_ref.clone();
+            let selected_polygon_data_ref = selected_polygon_data_ref.clone();
             let selected_text_id_ref = selected_text_id_ref.clone();
             let selected_text_data_ref = selected_text_data_ref.clone();
+            let selected_image_id_ref = selected_image_id_ref.clone();
+            let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
 
             Some(
@@ -386,16 +455,41 @@ pub fn project_view(
                         text_selected.update(|c| {
                             *c = true;
                         });
+                        if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+                            polygon_selected.update(|c| {
+                                *c = false;
+                            });
+                        }
+                        if let Ok(mut image_selected) = image_selected_ref.lock() {
+                            image_selected.update(|c| {
+                                *c = false;
+                            });
+                        }
                     }
                     if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
                         selected_text_id.update(|c| {
                             *c = text_id;
                         });
+                        if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+                            selected_polygon_id.update(|c| {
+                                *c = Uuid::nil();
+                            });
+                        }
+                        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+                            selected_image_id.update(|c| {
+                                *c = Uuid::nil();
+                            });
+                        }
 
                         let mut editor_state = editor_state.lock().unwrap();
 
                         editor_state.selected_text_id = text_id;
                         editor_state.text_selected = true;
+
+                        editor_state.selected_polygon_id = Uuid::nil();
+                        editor_state.polygon_selected = false;
+                        editor_state.selected_image_id = Uuid::nil();
+                        editor_state.image_selected = false;
 
                         drop(editor_state);
                     }
@@ -411,20 +505,11 @@ pub fn project_view(
                             .as_ref()
                             .expect("Couldn't get Saved State");
 
-                        // let saved_sequence = saved_state
-                        //     .sequences
-                        //     .iter()
-                        //     .find(|s| {
-                        //         s.enter_motion_paths
-                        //             .iter()
-                        //             .any(|m| m.text_id == text_id.to_string())
-                        //     })
-                        //     .expect("Couldn't find matching sequence");
                         let saved_animation_data = saved_state
                             .sequences
                             .iter()
                             .flat_map(|s| s.polygon_motion_paths.iter())
-                            .find(|p| p.id == text_id.to_string());
+                            .find(|p| p.polygon_id == text_id.to_string());
 
                         if let Some(text_animation_data) = saved_animation_data {
                             animation_data.update(|c| {
@@ -465,8 +550,9 @@ pub fn project_view(
 
                 // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
 
-                let mut current_animation_data =
-                    animation_data.get().expect("Couldn't get Animation Data");
+                let mut current_animation_data = animation_data
+                    .get()
+                    .expect("Couldn't get current Animation Data");
                 let mut current_keyframe = selected_keyframes.get();
 
                 if let Some(current_keyframe) = current_keyframe.get_mut(0) {
@@ -556,9 +642,11 @@ pub fn project_view(
 
                 // println!("Motion Paths updated!");
 
-                selected_sequence_data.get()
+                (selected_sequence_data.get(), selected_keyframes.get())
             })
-                as Box<dyn FnMut(Uuid, Point) -> Sequence + Send>)
+                as Box<
+                    dyn FnMut(Uuid, Point) -> (Sequence, Vec<UIKeyframe>) + Send,
+                >)
         }
     });
 
@@ -615,9 +703,9 @@ pub fn project_view(
             },
         ),
         dyn_container(
-            move || polygon_selected.get(),
-            move |polygon_selected_real| {
-                if polygon_selected_real {
+            move || polygon_selected.get() || text_selected.get() || image_selected.get(),
+            move |object_selected_real| {
+                if object_selected_real {
                     let state_cloned3 = state_cloned3.clone();
                     let state_cloned4 = state_cloned4.clone();
                     let editor_cloned4 = editor_cloned4.clone();
