@@ -62,7 +62,7 @@ pub fn sequence_panel(
         v_stack((
             simple_button("Generate Animation".to_string(), move |_| {
                 // hook into CommonMotion2D run_motion_inference
-                let editor = editor_cloned_4.lock().unwrap();
+                let mut editor = editor_cloned_4.lock().unwrap();
 
                 let predicted_keyframes = editor.run_motion_inference();
 
@@ -70,6 +70,9 @@ pub fn sequence_panel(
                 new_sequence.polygon_motion_paths = predicted_keyframes.clone();
 
                 selected_sequence_data.set(new_sequence);
+
+                editor.update_motion_paths(&selected_sequence_data.get());
+                println!("Motion Paths updated!");
 
                 drop(editor);
 
