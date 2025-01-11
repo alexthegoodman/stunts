@@ -21,6 +21,7 @@ use stunts_engine::text_due::{SavedTextRendererConfig, TextRendererConfig};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
+use crate::helpers::utilities::save_saved_state_raw;
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
@@ -42,6 +43,7 @@ pub fn sequence_panel(
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
+    let editor_cloned_4 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
@@ -59,7 +61,36 @@ pub fn sequence_panel(
         }),
         v_stack((
             simple_button("Generate Animation".to_string(), move |_| {
-                // TODO: hook into CommonMotion2D
+                // hook into CommonMotion2D run_motion_inference
+                let editor = editor_cloned_4.lock().unwrap();
+
+                let predicted_keyframes = editor.run_motion_inference();
+
+                let mut new_sequence = selected_sequence_data.get();
+                new_sequence.polygon_motion_paths = predicted_keyframes.clone();
+
+                selected_sequence_data.set(new_sequence);
+
+                drop(editor);
+
+                let mut editor_state = state_cloned_4.lock().unwrap();
+
+                let mut saved_state = editor_state
+                    .saved_state
+                    .as_mut()
+                    .expect("Couldn't get Saved State");
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    if s.id == selected_sequence_id.get() {
+                        s.polygon_motion_paths = predicted_keyframes.clone();
+                    }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+
+                editor_state.saved_state = Some(saved_state.clone());
+
+                drop(editor_state);
             })
             .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE)),
             // maybe not needed after all
