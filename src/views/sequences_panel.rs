@@ -231,16 +231,53 @@ pub fn sequences_view(
 
                                     let mut rng = rand::thread_rng();
 
-                                    editor.polygons = Vec::new();
-                                    editor.text_items = Vec::new();
-                                    editor.image_items = Vec::new();
+                                    // editor.polygons = Vec::new();
+                                    // editor.text_items = Vec::new();
+                                    // editor.image_items = Vec::new();
 
-                                    editor.restore_sequence_objects(
-                                        &saved_sequence,
-                                        window_size,
-                                        &camera,
-                                        false,
-                                    );
+                                    // editor.restore_sequence_objects(
+                                    //     &saved_sequence,
+                                    //     window_size,
+                                    //     &camera,
+                                    //     false,
+                                    // );
+
+                                    // set hidden to false based on sequence
+                                    // also reset all objects to hidden=true beforehand
+                                    editor.polygons.iter_mut().for_each(|p| {
+                                        p.hidden = true;
+                                    });
+                                    editor.image_items.iter_mut().for_each(|i| {
+                                        i.hidden = true;
+                                    });
+                                    editor.text_items.iter_mut().for_each(|t| {
+                                        t.hidden = true;
+                                    });
+
+                                    saved_sequence.active_polygons.iter().for_each(|ap| {
+                                        let polygon = editor
+                                            .polygons
+                                            .iter_mut()
+                                            .find(|p| p.id.to_string() == ap.id)
+                                            .expect("Couldn't find polygon");
+                                        polygon.hidden = false;
+                                    });
+                                    saved_sequence.active_image_items.iter().for_each(|si| {
+                                        let image = editor
+                                            .image_items
+                                            .iter_mut()
+                                            .find(|i| i.id.to_string() == si.id)
+                                            .expect("Couldn't find image");
+                                        image.hidden = false;
+                                    });
+                                    saved_sequence.active_text_items.iter().for_each(|tr| {
+                                        let text = editor
+                                            .text_items
+                                            .iter_mut()
+                                            .find(|t| t.id.to_string() == tr.id)
+                                            .expect("Couldn't find image");
+                                        text.hidden = false;
+                                    });
 
                                     println!("Objects restored!");
 
@@ -378,20 +415,50 @@ pub fn sequences_view(
                 } else {
                     println!("Play Video...");
 
-                    editor.polygons = Vec::new();
-                    editor.text_items = Vec::new();
-                    editor.image_items = Vec::new();
+                    // editor.polygons = Vec::new();
+                    // editor.text_items = Vec::new();
+                    // editor.image_items = Vec::new();
 
+                    // cloned_sequences.iter().enumerate().for_each(|(i, s)| {
+                    //     editor.restore_sequence_objects(
+                    //         &s,
+                    //         WindowSize {
+                    //             width: viewport.width as u32,
+                    //             height: viewport.height as u32,
+                    //         },
+                    //         &camera,
+                    //         if i == 0 { false } else { true },
+                    //     );
+                    // });
+
+                    // set hidden to false for first sequence
                     cloned_sequences.iter().enumerate().for_each(|(i, s)| {
-                        editor.restore_sequence_objects(
-                            &s,
-                            WindowSize {
-                                width: viewport.width as u32,
-                                height: viewport.height as u32,
-                            },
-                            &camera,
-                            if i == 0 { false } else { true },
-                        );
+                        if i == 0 {
+                            s.active_polygons.iter().for_each(|ap| {
+                                let polygon = editor
+                                    .polygons
+                                    .iter_mut()
+                                    .find(|p| p.id.to_string() == ap.id)
+                                    .expect("Couldn't find polygon");
+                                polygon.hidden = false;
+                            });
+                            s.active_image_items.iter().for_each(|si| {
+                                let image = editor
+                                    .image_items
+                                    .iter_mut()
+                                    .find(|i| i.id.to_string() == si.id)
+                                    .expect("Couldn't find image");
+                                image.hidden = false;
+                            });
+                            s.active_text_items.iter().for_each(|tr| {
+                                let text = editor
+                                    .text_items
+                                    .iter_mut()
+                                    .find(|t| t.id.to_string() == tr.id)
+                                    .expect("Couldn't find image");
+                                text.hidden = false;
+                            });
+                        }
                     });
 
                     println!("All sequence objects restored...");

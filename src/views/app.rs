@@ -27,7 +27,7 @@ use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
     string_to_f32, Editor, ImageItemClickHandler, OnMouseUp, Point, PolygonClickHandler,
-    TextItemClickHandler, Viewport,
+    TextItemClickHandler, Viewport, WindowSize,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
 use stunts_engine::st_image::StImageConfig;
@@ -125,6 +125,7 @@ pub fn project_view(
 
     let viewport_cloned = Arc::clone(&viewport);
     let viewport_cloned2 = Arc::clone(&viewport);
+    let viewport_cloned3 = Arc::clone(&viewport);
 
     // set in sequence_panel
     let sequence_selected = create_rw_signal(false);
@@ -656,12 +657,46 @@ pub fn project_view(
         let handle_image_click = Arc::clone(&handle_image_click);
         let handle_text_click = Arc::clone(&handle_text_click);
         let editor_cloned3 = Arc::clone(&editor_cloned3);
+        let state_cloned5 = Arc::clone(&state_cloned5);
+        let viewport_cloned3 = Arc::clone(&viewport_cloned3);
+
         move |_| {
+            let editor_state = state_cloned5.lock().unwrap();
+
+            let saved_state = editor_state
+                .saved_state
+                .as_ref()
+                .expect("Couldn't get saved state");
+            let cloned_sequences = saved_state.sequences.clone();
+
+            drop(editor_state);
+
             let mut editor = editor_cloned3.lock().unwrap();
+            let viewport = viewport_cloned3.lock().unwrap();
+            let camera = editor.camera.expect("Couldn't get camera");
+
+            // attach object interaction handlers
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
             editor.handle_text_click = Some(Arc::clone(&handle_text_click));
             editor.handle_image_click = Some(Arc::clone(&handle_image_click));
             editor.on_mouse_up = Some(Arc::clone(&on_mouse_up));
+
+            // restore all objects as hidden, avoids too much loading mid-usage
+            editor.polygons = Vec::new();
+            editor.text_items = Vec::new();
+            editor.image_items = Vec::new();
+
+            cloned_sequences.iter().enumerate().for_each(|(i, s)| {
+                editor.restore_sequence_objects(
+                    &s,
+                    WindowSize {
+                        width: viewport.width as u32,
+                        height: viewport.height as u32,
+                    },
+                    &camera,
+                    true,
+                );
+            });
         }
     });
 
