@@ -260,14 +260,16 @@ pub fn sequence_panel(
 
                         let new_id = Uuid::new_v4();
 
+                        let position = Point {
+                            x: random_number_800 as f32 + 600.0,
+                            y: random_number_450 as f32 + 50.0,
+                        };
+
                         let image_config = StImageConfig {
                             id: new_id.clone().to_string(),
                             name: "New Image Item".to_string(),
                             dimensions: (100, 100),
-                            position: Point {
-                                x: random_number_800 as f32,
-                                y: random_number_450 as f32,
-                            },
+                            position,
                             path: path.to_str().expect("Couldn't get path string").to_string(),
                         };
 
@@ -309,8 +311,8 @@ pub fn sequence_panel(
                                     .to_string(),
                                 dimensions: (image_config.dimensions.0, image_config.dimensions.1),
                                 position: SavedPoint {
-                                    x: random_number_800,
-                                    y: random_number_450,
+                                    x: position.x as i32,
+                                    y: position.y as i32,
                                 },
                             },
                         );
@@ -332,15 +334,17 @@ pub fn sequence_panel(
                     let new_id = Uuid::new_v4();
                     let new_text = "Hello world!".to_string();
 
+                    let position = Point {
+                        x: random_number_800 as f32 + 600.0,
+                        y: random_number_450 as f32 + 50.0,
+                    };
+
                     let text_config = TextRendererConfig {
                         id: new_id.clone(),
                         name: "New Text Item".to_string(),
                         text: new_text.clone(),
                         dimensions: (100.0, 100.0),
-                        position: Point {
-                            x: random_number_800 as f32,
-                            y: random_number_450 as f32,
-                        },
+                        position,
                     };
 
                     let gpu_helper = gpu_cloned_2.lock().unwrap();
@@ -379,8 +383,8 @@ pub fn sequence_panel(
                                 text_config.dimensions.1 as i32,
                             ),
                             position: SavedPoint {
-                                x: random_number_800,
-                                y: random_number_450,
+                                x: position.x as i32,
+                                y: position.y as i32,
                             },
                         },
                     );
