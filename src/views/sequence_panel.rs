@@ -199,6 +199,7 @@ pub fn sequence_panel(
                         polygon_config.clone(),
                         "Polygon".to_string(),
                         new_id,
+                        selected_sequence_id.get(),
                     );
 
                     drop(viewport);
@@ -293,6 +294,7 @@ pub fn sequence_panel(
                             image_config.clone(),
                             &path,
                             new_id,
+                            selected_sequence_id.get(),
                         );
 
                         drop(viewport);
@@ -365,6 +367,7 @@ pub fn sequence_panel(
                         text_config.clone(),
                         new_text.clone(),
                         new_id,
+                        selected_sequence_id.get(),
                     );
 
                     drop(viewport);

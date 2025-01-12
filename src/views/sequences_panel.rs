@@ -42,6 +42,7 @@ pub fn sequences_view(
     let editor_cloned2 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
+    let viewport_cloned2 = Arc::clone(&viewport);
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
     let state_cloned3 = Arc::clone(&editor_state);
@@ -231,162 +232,15 @@ pub fn sequences_view(
                                     let mut rng = rand::thread_rng();
 
                                     editor.polygons = Vec::new();
+                                    editor.text_items = Vec::new();
+                                    editor.image_items = Vec::new();
 
-                                    saved_sequence.active_polygons.iter().for_each(|p| {
-                                        let gpu_resources = editor
-                                            .gpu_resources
-                                            .as_ref()
-                                            .expect("Couldn't get GPU Resources");
-
-                                        // Generate a random number between 0 and 800
-                                        // let random_number_800 = rng.gen_range(0..=800);
-
-                                        // Generate a random number between 0 and 450
-                                        // let random_number_450 = rng.gen_range(0..=450);
-
-                                        let restored_polygon = Polygon::new(
-                                            &window_size,
-                                            &gpu_resources.device,
-                                            &gpu_resources.queue,
-                                            &editor
-                                                .model_bind_group_layout
-                                                .as_ref()
-                                                .expect("Couldn't get model bind group layout"),
-                                            &camera,
-                                            // TODO: restoring triangles or non rectangles?
-                                            vec![
-                                                Point { x: 0.0, y: 0.0 },
-                                                Point { x: 1.0, y: 0.0 },
-                                                Point { x: 1.0, y: 1.0 },
-                                                Point { x: 0.0, y: 1.0 },
-                                            ],
-                                            (p.dimensions.0 as f32, p.dimensions.1 as f32),
-                                            Point {
-                                                // x: random_number_800 as f32,
-                                                // y: random_number_450 as f32,
-                                                x: p.position.x as f32,
-                                                y: p.position.y as f32,
-                                            },
-                                            // TODO: restore rotation?
-                                            0.0,
-                                            p.border_radius as f32,
-                                            [
-                                                p.fill[0] as f32,
-                                                p.fill[1] as f32,
-                                                p.fill[2] as f32,
-                                                p.fill[3] as f32,
-                                            ],
-                                            Stroke {
-                                                thickness: p.stroke.thickness as f32,
-                                                fill: [
-                                                    p.stroke.fill[0] as f32,
-                                                    p.stroke.fill[1] as f32,
-                                                    p.stroke.fill[2] as f32,
-                                                    p.stroke.fill[3] as f32,
-                                                ],
-                                            },
-                                            -2.0,
-                                            p.name.clone(),
-                                            Uuid::from_str(&p.id)
-                                                .expect("Couldn't convert string to uuid"),
-                                        );
-
-                                        // editor.add_polygon(restored_polygon);
-                                        editor.polygons.push(restored_polygon);
-
-                                        println!("Polygon restored...");
-                                    });
-
-                                    saved_sequence.active_text_items.iter().for_each(|t| {
-                                        let gpu_resources = editor
-                                            .gpu_resources
-                                            .as_ref()
-                                            .expect("Couldn't get GPU Resources");
-
-                                        // TODO: save and restore chosen font
-
-                                        let position = Point {
-                                            x: 600.0 + t.position.x as f32,
-                                            y: 50.0 + t.position.y as f32,
-                                        };
-
-                                        let mut restored_text = TextRenderer::new(
-                                            &gpu_resources.device,
-                                            editor
-                                                .model_bind_group_layout
-                                                .as_ref()
-                                                .expect("Couldn't get model bind group layout"),
-                                            editor
-                                                .font_manager
-                                                .get_font_by_name("Aleo")
-                                                .expect("Couldn't get Aleo font"),
-                                            &window_size,
-                                            t.text.clone(),
-                                            TextRendererConfig {
-                                                id: Uuid::from_str(&t.id)
-                                                    .expect("Couldn't convert uuid"),
-                                                name: t.name.clone(),
-                                                text: t.text.clone(),
-                                                dimensions: (
-                                                    t.dimensions.0 as f32,
-                                                    t.dimensions.1 as f32,
-                                                ),
-                                                position,
-                                            },
-                                            Uuid::from_str(&t.id)
-                                                .expect("Couldn't convert string to uuid"),
-                                        );
-
-                                        restored_text.render_text(
-                                            &gpu_resources.device,
-                                            &gpu_resources.queue,
-                                        );
-
-                                        // editor.add_polygon(restored_polygon);
-                                        editor.text_items.push(restored_text);
-
-                                        println!("Text restored...");
-                                    });
-
-                                    saved_sequence.active_image_items.iter().for_each(|i| {
-                                        let gpu_resources = editor
-                                            .gpu_resources
-                                            .as_ref()
-                                            .expect("Couldn't get GPU Resources");
-
-                                        let position = Point {
-                                            x: 600.0 + i.position.x as f32,
-                                            y: 50.0 + i.position.y as f32,
-                                        };
-
-                                        let image_config = StImageConfig {
-                                            id: i.id.clone(),
-                                            name: i.name.clone(),
-                                            dimensions: i.dimensions.clone(),
-                                            path: i.path.clone(),
-                                            position,
-                                        };
-
-                                        let restored_image = StImage::new(
-                                            &gpu_resources.device,
-                                            &gpu_resources.queue,
-                                            // string to Path
-                                            Path::new(&i.path),
-                                            image_config,
-                                            &window_size,
-                                            editor
-                                                .model_bind_group_layout
-                                                .as_ref()
-                                                .expect("Couldn't get model bind group layout"),
-                                            -2.0,
-                                            i.id.clone(),
-                                        );
-
-                                        // editor.add_polygon(restored_polygon);
-                                        editor.image_items.push(restored_image);
-
-                                        println!("Image restored...");
-                                    });
+                                    editor.restore_sequence_objects(
+                                        &saved_sequence,
+                                        window_size,
+                                        &camera,
+                                        false,
+                                    );
 
                                     println!("Objects restored!");
 
@@ -509,6 +363,8 @@ pub fn sequences_view(
                 drop(editor_state);
 
                 let mut editor = editor_cloned2.lock().unwrap();
+                let viewport = viewport_cloned2.lock().unwrap();
+                let camera = editor.camera.expect("Couldn't get camera");
 
                 if editor.video_is_playing {
                     println!("Pause Video...");
@@ -522,6 +378,24 @@ pub fn sequences_view(
                 } else {
                     println!("Play Video...");
 
+                    editor.polygons = Vec::new();
+                    editor.text_items = Vec::new();
+                    editor.image_items = Vec::new();
+
+                    cloned_sequences.iter().enumerate().for_each(|(i, s)| {
+                        editor.restore_sequence_objects(
+                            &s,
+                            WindowSize {
+                                width: viewport.width as u32,
+                                height: viewport.height as u32,
+                            },
+                            &camera,
+                            if i == 0 { false } else { true },
+                        );
+                    });
+
+                    println!("All sequence objects restored...");
+
                     let now = std::time::Instant::now();
                     editor.video_start_playing_time = Some(now.clone());
 
@@ -534,6 +408,8 @@ pub fn sequences_view(
                     // also set motion path playing
                     editor.start_playing_time = Some(now);
                     editor.is_playing = true;
+
+                    println!("Video playing!");
                 }
 
                 // EventPropagation::Continue
