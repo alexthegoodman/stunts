@@ -171,8 +171,8 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
 
                 let camera = editor.camera.expect("Couldn't get camera");
 
-                editor.step_video_animations(&camera);
-                editor.step_motion_path_animations(&camera);
+                editor.step_video_animations(&camera, None);
+                editor.step_motion_path_animations(&camera, None);
 
                 let camera_binding = editor
                     .camera_binding

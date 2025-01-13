@@ -1,6 +1,7 @@
 pub mod app;
 pub mod aside;
 pub mod editor_settings;
+pub mod export;
 pub mod images_panel;
 pub mod inputs;
 pub mod keyframe_panel;

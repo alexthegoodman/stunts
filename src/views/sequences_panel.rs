@@ -27,6 +27,7 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
+use super::export::export_widget;
 use super::sequence_timeline::{build_timeline, TimelineState};
 
 pub fn sequences_view(
@@ -48,6 +49,8 @@ pub fn sequences_view(
     let state_cloned3 = Arc::clone(&editor_state);
     let state_cloned4 = Arc::clone(&editor_state);
     let state_cloned5 = Arc::clone(&editor_state);
+    let state_cloned6 = Arc::clone(&editor_state);
+    let viewport_cloned3 = Arc::clone(&viewport);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
@@ -121,6 +124,7 @@ pub fn sequences_view(
     h_stack((
         v_stack((
             label(move || format!("Sequences")).style(|s| s.margin_bottom(10)),
+            export_widget(state_cloned6, viewport_cloned3, sequence_timeline_signal),
             simple_button("New Sequence".to_string(), move |_| {
                 println!("New Sequence...");
 
