@@ -181,6 +181,7 @@ pub fn sequences_view(
                         let viewport_cloned = viewport_cloned.clone();
 
                         let item_cloned = item.clone();
+                        let item_cloned2 = item.clone();
 
                         let sequence_quick_access = sequence_quick_access.get();
                         let quick_access_info = sequence_quick_access
@@ -324,58 +325,63 @@ pub fn sequences_view(
 
                                 println!("Sequence duplicated!");
                             }),
-                            simple_button("Add to Timeline".to_string(), move |_| {
-                                println!("Adding sequence to sequence timeline...");
+                            simple_button("Add to Timeline".to_string(), {
+                                let item_cloned = item_cloned2.clone();
 
-                                let mut editor_state = state_cloned4.lock().unwrap();
+                                move |_| {
+                                    println!("Adding sequence to sequence timeline...");
 
-                                // let mut existing_timeline = editor_state
-                                //     .sequence_timeline_state
-                                //     .timeline_sequences
-                                //     .get();
+                                    let mut editor_state = state_cloned4.lock().unwrap();
 
-                                let sequence_timeline_state = sequence_timeline_signal.get();
+                                    // let mut existing_timeline = editor_state
+                                    //     .sequence_timeline_state
+                                    //     .timeline_sequences
+                                    //     .get();
 
-                                let mut existing_timeline =
-                                    sequence_timeline_state.timeline_sequences.get();
+                                    let sequence_timeline_state = sequence_timeline_signal.get();
 
-                                // Find the sequence that ends at the latest point in time
-                                let start_time = if existing_timeline.is_empty() {
-                                    0
-                                } else {
-                                    existing_timeline
-                                        .iter()
-                                        .map(|seq| seq.start_time_ms + seq.duration_ms)
-                                        .max()
-                                        .unwrap_or(0)
-                                };
+                                    let mut existing_timeline =
+                                        sequence_timeline_state.timeline_sequences.get();
 
-                                existing_timeline.push(TimelineSequence {
-                                    id: Uuid::new_v4().to_string(),
-                                    track_type: TrackType::Video,
-                                    start_time_ms: start_time,
-                                    duration_ms: 20000,
-                                });
+                                    // Find the sequence that ends at the latest point in time
+                                    let start_time = if existing_timeline.is_empty() {
+                                        0
+                                    } else {
+                                        existing_timeline
+                                            .iter()
+                                            .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                            .max()
+                                            .unwrap_or(0)
+                                    };
 
-                                sequence_timeline_state
-                                    .timeline_sequences
-                                    .set(existing_timeline);
+                                    existing_timeline.push(TimelineSequence {
+                                        id: Uuid::new_v4().to_string(),
+                                        sequence_id: item_cloned.clone(),
+                                        track_type: TrackType::Video,
+                                        start_time_ms: start_time,
+                                        duration_ms: 20000,
+                                    });
 
-                                let new_savable = sequence_timeline_state.to_config();
+                                    sequence_timeline_state
+                                        .timeline_sequences
+                                        .set(existing_timeline);
 
-                                let mut new_state = editor_state
-                                    .saved_state
-                                    .as_mut()
-                                    .expect("Couldn't get Saved State")
-                                    .clone();
+                                    let new_savable = sequence_timeline_state.to_config();
 
-                                new_state.timeline_state = new_savable;
+                                    let mut new_state = editor_state
+                                        .saved_state
+                                        .as_mut()
+                                        .expect("Couldn't get Saved State")
+                                        .clone();
 
-                                editor_state.saved_state = Some(new_state.clone());
+                                    new_state.timeline_state = new_savable;
 
-                                save_saved_state_raw(new_state.clone());
+                                    editor_state.saved_state = Some(new_state.clone());
 
-                                println!("Sequence added!");
+                                    save_saved_state_raw(new_state.clone());
+
+                                    println!("Sequence added!");
+                                }
                             }),
                         ))
                     },
@@ -437,8 +443,10 @@ pub fn sequences_view(
                     // });
 
                     // set hidden to false for first sequence
+                    let mut first_sequence: Option<Sequence> = None;
                     cloned_sequences.iter().enumerate().for_each(|(i, s)| {
                         if i == 0 {
+                            first_sequence = Some(s.clone());
                             s.active_polygons.iter().for_each(|ap| {
                                 let polygon = editor
                                     .polygons
@@ -492,6 +500,9 @@ pub fn sequences_view(
                     });
 
                     println!("All sequence objects restored...");
+
+                    editor.current_sequence_data =
+                        Some(first_sequence.expect("Couldn't get first sequence"));
 
                     let now = std::time::Instant::now();
                     editor.video_start_playing_time = Some(now.clone());
