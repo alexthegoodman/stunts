@@ -134,7 +134,7 @@ pub fn timeline_sequence_track(
                 }
 
                 let small_labels: Vec<String> = seq
-                    .id
+                    .sequence_id
                     .split("-")
                     .into_iter()
                     .map(|id| id.to_string())
