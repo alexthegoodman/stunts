@@ -463,6 +463,31 @@ pub fn sequences_view(
                                     .expect("Couldn't find image");
                                 text.hidden = false;
                             });
+                        } else {
+                            s.active_polygons.iter().for_each(|ap| {
+                                let polygon = editor
+                                    .polygons
+                                    .iter_mut()
+                                    .find(|p| p.id.to_string() == ap.id)
+                                    .expect("Couldn't find polygon");
+                                polygon.hidden = true;
+                            });
+                            s.active_image_items.iter().for_each(|si| {
+                                let image = editor
+                                    .image_items
+                                    .iter_mut()
+                                    .find(|i| i.id.to_string() == si.id)
+                                    .expect("Couldn't find image");
+                                image.hidden = true;
+                            });
+                            s.active_text_items.iter().for_each(|tr| {
+                                let text = editor
+                                    .text_items
+                                    .iter_mut()
+                                    .find(|t| t.id.to_string() == tr.id)
+                                    .expect("Couldn't find image");
+                                text.hidden = true;
+                            });
                         }
                     });
 
