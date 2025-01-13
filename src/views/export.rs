@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use floem::event::EventPropagation;
 use floem::ext_event::create_signal_from_tokio_channel;
+use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, RwSignal, SignalGet, SignalUpdate};
 use floem::views::Decorators;
 use floem::{
@@ -124,6 +125,7 @@ pub fn export_widget(
 
     v_stack((h_stack((
         button(label(move || "Export Video"))
+            .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE))
             .on_click(move |_| {
                 if is_exporting.get() {
                     return EventPropagation::Stop;
