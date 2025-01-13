@@ -14,9 +14,13 @@ use floem::View;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
+use std::sync::Mutex;
 use stunts_engine::timelines::SavedTimelineStateConfig;
 use stunts_engine::timelines::TimelineSequence;
 use stunts_engine::timelines::TrackType;
+
+use crate::editor_state::EditorState;
+use crate::helpers::utilities::save_saved_state_raw;
 
 #[derive(Clone)]
 pub struct TimelineState {
@@ -66,7 +70,7 @@ impl TimelineState {
     }
 }
 
-pub fn build_timeline(state: TimelineState) -> impl View {
+pub fn build_timeline(editor_state: Arc<Mutex<EditorState>>, state: TimelineState) -> impl View {
     // TODO: many tracks
     v_stack((
         // Audio track
@@ -81,7 +85,7 @@ pub fn build_timeline(state: TimelineState) -> impl View {
                 })
                 .style(|s| s.absolute().margin_left(0.0)),
             // TimelineSequences
-            timeline_sequence_track(state.clone(), TrackType::Audio),
+            timeline_sequence_track(editor_state.clone(), state.clone(), TrackType::Audio),
         )))
         .style(|s| s.position(Position::Relative).height(60)),
         // Video track
@@ -96,13 +100,17 @@ pub fn build_timeline(state: TimelineState) -> impl View {
                 })
                 .style(|s| s.absolute().margin_left(0.0)),
             // timeline_sequences
-            timeline_sequence_track(state.clone(), TrackType::Video),
+            timeline_sequence_track(editor_state.clone(), state.clone(), TrackType::Video),
         )))
         .style(|s| s.position(Position::Relative).height(60)),
     ))
 }
 
-pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> impl View {
+pub fn timeline_sequence_track(
+    editor_state: Arc<Mutex<EditorState>>,
+    state: TimelineState,
+    track_type: TrackType,
+) -> impl View {
     let state_2 = state.clone();
 
     let dragger_id = create_rw_signal(String::new());
@@ -199,41 +207,57 @@ pub fn timeline_sequence_track(state: TimelineState, track_type: TrackType) -> i
                         dragger_id.set(seq.id.clone());
                         floem::event::EventPropagation::Continue
                     })
-                    .on_event(floem::event::EventListener::DragOver, move |_| {
-                        // let mut editor = editor.lock().unwrap();
-                        let dragger_id = dragger_id.get_untracked();
-                        let sortable_items = state.timeline_sequences;
-                        if dragger_id != seq_id.clone() {
-                            let dragger_pos = sortable_items
-                                .get()
-                                .iter()
-                                .position(|layer| layer.id == dragger_id)
-                                .or_else(|| Some(usize::MAX))
-                                .expect("Couldn't get dragger_pos");
-                            let hover_pos = sortable_items
-                                .get()
-                                .iter()
-                                .position(|layer| layer.id == seq_id.clone())
-                                .or_else(|| Some(usize::MAX))
-                                .expect("Couldn't get hover_pos");
+                    .on_event(floem::event::EventListener::DragOver, {
+                        let editor_state = editor_state.clone();
 
-                            sortable_items.update(|items| {
-                                if (dragger_pos <= items.len() && hover_pos <= items.len()) {
-                                    let item = items.get(dragger_pos).cloned();
-                                    items.remove(dragger_pos);
-                                    // editor.layer_list.remove(dragger_pos);
+                        move |_| {
+                            // let mut editor = editor.lock().unwrap();
+                            let dragger_id = dragger_id.get_untracked();
+                            let sortable_items = state.timeline_sequences;
+                            if dragger_id != seq_id.clone() {
+                                let dragger_pos = sortable_items
+                                    .get()
+                                    .iter()
+                                    .position(|layer| layer.id == dragger_id)
+                                    .or_else(|| Some(usize::MAX))
+                                    .expect("Couldn't get dragger_pos");
+                                let hover_pos = sortable_items
+                                    .get()
+                                    .iter()
+                                    .position(|layer| layer.id == seq_id.clone())
+                                    .or_else(|| Some(usize::MAX))
+                                    .expect("Couldn't get hover_pos");
 
-                                    if let Some(selected_item) = item {
-                                        items.insert(hover_pos, selected_item.clone());
-                                        // editor
-                                        //     .layer_list
-                                        //     .insert(hover_pos, selected_item.instance_id);
+                                sortable_items.update(|items| {
+                                    if (dragger_pos <= items.len() && hover_pos <= items.len()) {
+                                        let item = items.get(dragger_pos).cloned();
+                                        items.remove(dragger_pos);
+                                        // editor.layer_list.remove(dragger_pos);
+
+                                        if let Some(selected_item) = item {
+                                            items.insert(hover_pos, selected_item.clone());
+                                            // editor
+                                            //     .layer_list
+                                            //     .insert(hover_pos, selected_item.instance_id);
+                                        }
                                     }
-                                }
-                            });
-                            // TODO: update the saved_state
+                                });
+
+                                // update the saved_state
+                                let mut editor_state = editor_state.lock().unwrap();
+                                let mut new_state = editor_state
+                                    .saved_state
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State")
+                                    .clone();
+                                new_state.timeline_state.timeline_sequences = sortable_items.get();
+
+                                editor_state.saved_state = Some(new_state.clone());
+
+                                save_saved_state_raw(new_state.clone());
+                            }
+                            floem::event::EventPropagation::Continue
                         }
-                        floem::event::EventPropagation::Continue
                     })
                     .dragging_style(|s| {
                         s.box_shadow_blur(3)

@@ -136,6 +136,8 @@ pub fn export_widget(
 
                 progress_text.set("Starting export...".to_string());
 
+                println!("Starting export...");
+
                 let mut editor_state = editor_state.lock().unwrap();
                 let viewport = viewport.lock().unwrap();
 
@@ -158,6 +160,8 @@ pub fn export_widget(
                     .iter()
                     .map(|s| s.duration_ms as f64 / 1000.0)
                     .sum();
+
+                println!("Sending tx export command...");
 
                 // Send command to export thread
                 let _ = export_thread_tx.get().send(ExportCommand::StartExport {

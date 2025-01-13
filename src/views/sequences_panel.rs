@@ -50,6 +50,7 @@ pub fn sequences_view(
     let state_cloned4 = Arc::clone(&editor_state);
     let state_cloned5 = Arc::clone(&editor_state);
     let state_cloned6 = Arc::clone(&editor_state);
+    let state_cloned7 = Arc::clone(&editor_state);
     let viewport_cloned3 = Arc::clone(&viewport);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
@@ -99,25 +100,25 @@ pub fn sequences_view(
 
             sequence_timeline_signal.set(new_timeline_state);
         } else {
-            let new_timeline_state = TimelineState::new();
-            let timeline_sequences: Vec<TimelineSequence> = saved_state
-                .sequences
-                .clone()
-                .into_iter()
-                .enumerate() // Add enumerate() to get the index
-                .map(|(index, s)| TimelineSequence {
-                    id: s.id,
-                    track_type: TrackType::Video,
-                    duration_ms: 20000,
-                    start_time_ms: index as i32 * 20000, // Multiply index by 20000
-                })
-                .collect();
+            // let new_timeline_state = TimelineState::new();
+            // let timeline_sequences: Vec<TimelineSequence> = saved_state
+            //     .sequences
+            //     .clone()
+            //     .into_iter()
+            //     .enumerate() // Add enumerate() to get the index
+            //     .map(|(index, s)| TimelineSequence {
+            //         id: s.id,
+            //         track_type: TrackType::Video,
+            //         duration_ms: 20000,
+            //         start_time_ms: index as i32 * 20000, // Multiply index by 20000
+            //     })
+            //     .collect();
 
-            new_timeline_state
-                .timeline_sequences
-                .set(timeline_sequences);
+            // new_timeline_state
+            //     .timeline_sequences
+            //     .set(timeline_sequences);
 
-            sequence_timeline_signal.set(new_timeline_state);
+            // sequence_timeline_signal.set(new_timeline_state);
         }
     });
 
@@ -485,7 +486,7 @@ pub fn sequences_view(
 
                 // EventPropagation::Continue
             }),
-            build_timeline(sequence_timeline_signal.get()),
+            build_timeline(state_cloned7, sequence_timeline_signal.get()),
         ))
         .style(|s| s.margin_top(425.0).margin_left(25.0)),
     ))
