@@ -15,7 +15,9 @@ use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseSc
 // use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::draw_dot;
-use stunts_engine::editor::{point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader};
+use stunts_engine::editor::{
+    init_editor_with_model, point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader,
+};
 use stunts_engine::polygon::{Polygon, Stroke};
 use stunts_engine::vertex::Vertex;
 use uuid::Uuid;
@@ -116,20 +118,6 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         view: &view,
                         resolve_target: Some(&resolve_view),
                         ops: wgpu::Operations {
-                            // load: wgpu::LoadOp::Clear(wgpu::Color {
-                            //     // grey background
-                            //     r: 0.15,
-                            //     g: 0.15,
-                            //     b: 0.15,
-                            //     // white background
-                            //     // r: 1.0,
-                            //     // g: 1.0,
-                            //     // b: 1.0,
-                            //     a: 1.0,
-                            // }),
-                            // load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                            // load: wgpu::LoadOp::Load,
-                            // store: wgpu::StoreOp::Store,
                             load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
                             store: wgpu::StoreOp::Store,
                         },
@@ -175,7 +163,6 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 //     .lock()
                 //     .unwrap();
                 let editor = get_sensor_editor(engine_handle);
-                // does this freeze?
                 let mut editor = editor
                     .as_ref()
                     .expect("Couldn't get user engine")
@@ -191,9 +178,6 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     .camera_binding
                     .as_ref()
                     .expect("Couldn't get camera binding");
-
-                // camera_binding.update(&gpu_resources.queue, &editor.camera);
-                // editor.update_camera_binding(&gpu_resources.queue);
 
                 render_pass.set_bind_group(0, &camera_binding.bind_group, &[]);
                 render_pass.set_bind_group(
@@ -530,7 +514,7 @@ async fn main() {
         window_size.height as f32,
     )));
 
-    let mut editor = Arc::new(Mutex::new(Editor::new(viewport.clone())));
+    let mut editor = Arc::new(Mutex::new(init_editor_with_model(viewport.clone())));
 
     let cloned_viewport = Arc::clone(&viewport);
     let cloned_viewport2 = Arc::clone(&viewport);

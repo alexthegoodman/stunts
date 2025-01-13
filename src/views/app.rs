@@ -122,6 +122,7 @@ pub fn project_view(
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
+    let gpu_cloned3 = Arc::clone(&gpu_helper);
 
     let viewport_cloned = Arc::clone(&viewport);
     let viewport_cloned2 = Arc::clone(&viewport);
@@ -686,6 +687,14 @@ pub fn project_view(
             editor.text_items = Vec::new();
             editor.image_items = Vec::new();
 
+            let gpu_helper = gpu_cloned3.lock().unwrap();
+            let gpu_resources = gpu_helper
+                .gpu_resources
+                .as_ref()
+                .expect("Couldn't get gpu resources");
+            let device = &gpu_resources.device;
+            let queue = &gpu_resources.queue;
+
             cloned_sequences.iter().enumerate().for_each(|(i, s)| {
                 editor.restore_sequence_objects(
                     &s,
@@ -695,6 +704,8 @@ pub fn project_view(
                     },
                     &camera,
                     true,
+                    device,
+                    queue,
                 );
             });
         }
