@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use chrono::Local;
 use floem::event::EventPropagation;
 use floem::ext_event::create_signal_from_tokio_channel;
 use floem::peniko::Color;
@@ -268,6 +269,8 @@ pub fn export_widget(
                     .map(|s| s.duration_ms as f64 / 1000.0)
                     .sum();
 
+                let filename = format!("export_{}.mp4", Local::now().format("%Y-%m-%d_%H-%M-%S"));
+
                 // Spawn a new thread to handle the setup and sending
                 thread::spawn(move || {
                     println!("Sending tx export command...");
@@ -277,7 +280,7 @@ pub fn export_widget(
                     rt.block_on(async {
                         match export_thread_tx
                             .send(ExportCommand::StartExport {
-                                output_path: "D:/projects/common/stunts/output.mp4".to_string(),
+                                output_path: "D:/projects/common/stunts/".to_string() + &filename,
                                 window_size,
                                 sequences,
                                 saved_timeline_state_config,
