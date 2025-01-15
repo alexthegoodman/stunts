@@ -7,6 +7,16 @@ use floem::reactive::SignalUpdate;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+use stunts_engine::animations::AnimationData;
+use stunts_engine::animations::AnimationProperty;
+use stunts_engine::animations::EasingType;
+use stunts_engine::animations::KeyframeValue;
+use stunts_engine::animations::ObjectType;
+use stunts_engine::animations::Sequence;
+use stunts_engine::animations::UIKeyframe;
+use stunts_engine::polygon::SavedPoint;
+use stunts_engine::polygon::SavedPolygonConfig;
+use stunts_engine::polygon::SavedStroke;
 use stunts_engine::timelines::SavedTimelineStateConfig;
 use uuid::Uuid;
 
@@ -250,4 +260,158 @@ pub fn clear_auth_token() -> Result<(), Box<dyn std::error::Error>> {
         fs::remove_file(token_path)?;
     }
     Ok(())
+}
+
+// for reimporting ml data
+use std::collections::HashMap;
+use std::time::Duration;
+
+pub fn parse_animation_data(content: &str) -> Result<Vec<Sequence>, Box<dyn std::error::Error>> {
+    let sequences: Vec<&str> = content.split("---").collect();
+
+    let mut result = Vec::new();
+
+    for sequence_data in sequences {
+        if sequence_data.trim().is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = sequence_data.split("!!!").collect();
+        if parts.len() != 2 {
+            return Err("Invalid sequence format".into());
+        }
+
+        // Create a mapping of original indices to UUIDs
+        let mut polygon_id_map = HashMap::new();
+
+        let active_polygons = parse_active_polygons(parts[0], &mut polygon_id_map)?;
+        let motion_paths = parse_motion_paths(parts[1], &polygon_id_map)?;
+
+        let sequence = Sequence {
+            id: Uuid::new_v4().to_string(),
+            active_polygons,
+            polygon_motion_paths: motion_paths,
+            active_text_items: Vec::new(),
+            active_image_items: Vec::new(),
+        };
+
+        result.push(sequence);
+    }
+
+    Ok(result)
+}
+
+fn parse_active_polygons(
+    data: &str,
+    polygon_id_map: &mut HashMap<String, String>,
+) -> Result<Vec<SavedPolygonConfig>, Box<dyn std::error::Error>> {
+    let mut polygons = Vec::new();
+
+    for line in data.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+        if parts.len() != 6 {
+            return Err("Invalid polygon data format".into());
+        }
+
+        let original_id = parts[0].to_string();
+        let uuid = Uuid::new_v4().to_string();
+        polygon_id_map.insert(original_id.clone(), uuid.clone());
+
+        let polygon = SavedPolygonConfig {
+            id: uuid,
+            name: format!("Polygon {}", original_id),
+            fill: [255, 255, 255, 255], // Default white
+            dimensions: (parts[2].parse::<i32>()?, parts[3].parse::<i32>()?),
+            position: SavedPoint {
+                x: parts[4].parse::<i32>()?,
+                y: parts[5].parse::<i32>()?,
+            },
+            border_radius: 0,
+            stroke: SavedStroke {
+                thickness: 1,
+                fill: [0, 0, 0, 255], // Default black
+            },
+        };
+
+        polygons.push(polygon);
+    }
+
+    Ok(polygons)
+}
+
+fn parse_motion_paths(
+    data: &str,
+    polygon_id_map: &HashMap<String, String>,
+) -> Result<Vec<AnimationData>, Box<dyn std::error::Error>> {
+    let mut motion_paths = Vec::new();
+    let mut current_polygon_keyframes: HashMap<String, Vec<(f32, [i32; 2])>> = HashMap::new();
+
+    // First, group keyframes by polygon ID
+    for line in data.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split(',').map(|s| s.trim()).collect();
+        if parts.len() != 6 {
+            return Err("Invalid motion path data format".into());
+        }
+
+        let original_id = parts[0].to_string();
+        let uuid = polygon_id_map
+            .get(&original_id)
+            .ok_or_else(|| format!("No UUID mapping found for polygon {}", original_id))?;
+        let time = parts[1].parse::<f32>()?;
+        let position = [parts[4].parse::<i32>()?, parts[5].parse::<i32>()?];
+
+        current_polygon_keyframes
+            .entry(uuid.clone())
+            .or_default()
+            .push((time, position));
+    }
+
+    // Convert grouped keyframes into AnimationData structures
+    for (polygon_id, keyframes) in current_polygon_keyframes {
+        let mut position_property = AnimationProperty {
+            name: "Position".to_string(),
+            property_path: "position".to_string(),
+            children: Vec::new(),
+            keyframes: keyframes
+                .into_iter()
+                .map(|(time, pos)| UIKeyframe {
+                    id: Uuid::new_v4().to_string(),
+                    time: Duration::from_secs_f32(time),
+                    value: KeyframeValue::Position(pos),
+                    easing: EasingType::Linear,
+                })
+                .collect(),
+            depth: 0,
+        };
+
+        // Find the maximum time to set as duration
+        let max_time = position_property
+            .keyframes
+            .iter()
+            .map(|k| k.time)
+            .max()
+            .unwrap_or(Duration::from_secs(0));
+
+        let animation_data = AnimationData {
+            id: Uuid::new_v4().to_string(),
+            object_type: ObjectType::Polygon,
+            polygon_id: polygon_id.clone(),
+            duration: max_time,
+            properties: vec![position_property],
+        };
+
+        motion_paths.push(animation_data);
+    }
+
+    Ok(motion_paths)
 }

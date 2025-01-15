@@ -22,13 +22,21 @@ use stunts_engine::timelines::{TimelineSequence, TrackType};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
-use crate::helpers::utilities::save_saved_state_raw;
+use crate::helpers::utilities::{parse_animation_data, save_saved_state_raw};
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
 use super::export::export_widget;
 use super::sequence_timeline::{build_timeline, TimelineState};
+
+fn get_last_n_items<T>(vec: &[T], n: usize) -> &[T] {
+    if n > vec.len() {
+        &vec[..]
+    } else {
+        &vec[vec.len() - n..]
+    }
+}
 
 pub fn sequences_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,
@@ -51,6 +59,7 @@ pub fn sequences_view(
     let state_cloned5 = Arc::clone(&editor_state);
     let state_cloned6 = Arc::clone(&editor_state);
     let state_cloned7 = Arc::clone(&editor_state);
+    let state_cloned8 = Arc::clone(&editor_state);
     let viewport_cloned3 = Arc::clone(&viewport);
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
@@ -167,6 +176,53 @@ pub fn sequences_view(
 
                 // EventPropagation::Continue
             }),
+            // simple_button("TMP: Import Sequences".to_string(), move |_| {
+            //     println!("Import Sequences...");
+
+            //     let imported_data =
+            //         include_str!("D:/projects/common/common-motion-2d-reg/backup/augmented.txt");
+
+            //     let animated_data =
+            //         parse_animation_data(&imported_data).expect("Couldn't parse imported data");
+
+            //     let animated_data = get_last_n_items(&animated_data, 300);
+
+            //     let new_ids: Vec<String> = animated_data.iter().map(|s| s.id.clone()).collect();
+
+            //     let mut editor_state = state_cloned8.lock().unwrap();
+            //     let mut new_state = editor_state
+            //         .saved_state
+            //         .as_mut()
+            //         .expect("Couldn't get Saved State")
+            //         .clone();
+
+            //     new_state.sequences = animated_data.to_vec();
+
+            //     editor_state.saved_state = Some(new_state.clone());
+
+            //     save_saved_state_raw(new_state.clone());
+
+            //     let mut x = 0;
+            //     let qa_sequences: HashMap<String, i32> = new_state
+            //         .sequences
+            //         .clone()
+            //         .into_iter()
+            //         .map(|s| {
+            //             x = x + 1;
+            //             (s.id, x)
+            //         })
+            //         .collect();
+
+            //     sequence_quick_access.set(qa_sequences);
+
+            //     // new_ids.iter().for_each(|id| {
+            //     //     sequences.update(|s| s.push_back(id.clone()));
+            //     // });
+
+            //     sequences.set(im::Vector::from_iter(new_ids));
+
+            //     // EventPropagation::Continue
+            // }),
             scroll({
                 virtual_stack(
                     VirtualDirection::Vertical,
