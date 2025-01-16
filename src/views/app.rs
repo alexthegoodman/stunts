@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::fs;
 use std::path::Path;
 use std::rc::{Rc, Weak};
+use std::str::FromStr;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -96,6 +97,190 @@ fn find_object_type(last_saved_state: &SavedState, object_id: &Uuid) -> Option<O
     }
 
     None
+}
+
+fn set_polygon_selected(
+    editor_state: Arc<Mutex<EditorState>>,
+    text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_polygon_data_ref: Arc<Mutex<RwSignal<PolygonConfig>>>,
+    polygon_id: Uuid,
+    polygon_data: PolygonConfig,
+) {
+    if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+        polygon_selected.update(|c| {
+            *c = true;
+        });
+        if let Ok(mut text_selected) = text_selected_ref.lock() {
+            text_selected.update(|c| {
+                *c = false;
+            });
+        }
+        if let Ok(mut image_selected) = image_selected_ref.lock() {
+            image_selected.update(|c| {
+                *c = false;
+            });
+        }
+    }
+    if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+        selected_polygon_id.update(|c| {
+            *c = polygon_id;
+        });
+        if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+            selected_text_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+            selected_image_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+
+        let mut editor_state = editor_state.lock().unwrap();
+
+        editor_state.selected_polygon_id = polygon_id;
+        editor_state.polygon_selected = true;
+
+        editor_state.selected_text_id = Uuid::nil();
+        editor_state.text_selected = false;
+        editor_state.selected_image_id = Uuid::nil();
+        editor_state.image_selected = false;
+
+        drop(editor_state);
+    }
+    if let Ok(mut selected_polygon_data) = selected_polygon_data_ref.lock() {
+        selected_polygon_data.update(|c| {
+            *c = polygon_data;
+        });
+        // no need to update stale data for other object types as it will be overwritten later
+    }
+}
+
+fn set_image_selected(
+    editor_state: Arc<Mutex<EditorState>>,
+    text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_image_data_ref: Arc<Mutex<RwSignal<StImageConfig>>>,
+    image_id: Uuid,
+    image_data: StImageConfig,
+) {
+    if let Ok(mut image_selected) = image_selected_ref.lock() {
+        image_selected.update(|c| {
+            *c = true;
+        });
+        if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+            polygon_selected.update(|c| {
+                *c = false;
+            });
+        }
+        if let Ok(mut text_selected) = text_selected_ref.lock() {
+            text_selected.update(|c| {
+                *c = false;
+            });
+        }
+    }
+    if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+        selected_image_id.update(|c| {
+            *c = image_id;
+        });
+        if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+            selected_polygon_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+        if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+            selected_text_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+
+        let mut editor_state = editor_state.lock().unwrap();
+
+        editor_state.selected_image_id = image_id;
+        editor_state.image_selected = true;
+
+        editor_state.selected_text_id = Uuid::nil();
+        editor_state.text_selected = false;
+        editor_state.selected_polygon_id = Uuid::nil();
+        editor_state.polygon_selected = false;
+
+        drop(editor_state);
+    }
+    if let Ok(mut selected_image_data) = selected_image_data_ref.lock() {
+        selected_image_data.update(|c| {
+            *c = image_data;
+        });
+    }
+}
+
+fn set_text_selected(
+    editor_state: Arc<Mutex<EditorState>>,
+    text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_text_data_ref: Arc<Mutex<RwSignal<TextRendererConfig>>>,
+    text_id: Uuid,
+    text_data: TextRendererConfig,
+) {
+    if let Ok(mut text_selected) = text_selected_ref.lock() {
+        text_selected.update(|c| {
+            *c = true;
+        });
+        if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+            polygon_selected.update(|c| {
+                *c = false;
+            });
+        }
+        if let Ok(mut image_selected) = image_selected_ref.lock() {
+            image_selected.update(|c| {
+                *c = false;
+            });
+        }
+    }
+    if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+        selected_text_id.update(|c| {
+            *c = text_id;
+        });
+        if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+            selected_polygon_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+            selected_image_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+
+        let mut editor_state = editor_state.lock().unwrap();
+
+        editor_state.selected_text_id = text_id;
+        editor_state.text_selected = true;
+
+        editor_state.selected_polygon_id = Uuid::nil();
+        editor_state.polygon_selected = false;
+        editor_state.selected_image_id = Uuid::nil();
+        editor_state.image_selected = false;
+
+        drop(editor_state);
+    }
+    if let Ok(mut selected_text_data) = selected_text_data_ref.lock() {
+        selected_text_data.update(|c| {
+            *c = text_data;
+        });
+    }
 }
 
 pub fn project_view(
@@ -234,54 +419,19 @@ pub fn project_view(
                     //     // Update editor as needed
                     // }
 
-                    if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
-                        polygon_selected.update(|c| {
-                            *c = true;
-                        });
-                        if let Ok(mut text_selected) = text_selected_ref.lock() {
-                            text_selected.update(|c| {
-                                *c = false;
-                            });
-                        }
-                        if let Ok(mut image_selected) = image_selected_ref.lock() {
-                            image_selected.update(|c| {
-                                *c = false;
-                            });
-                        }
-                    }
-                    if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
-                        selected_polygon_id.update(|c| {
-                            *c = polygon_id;
-                        });
-                        if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
-                            selected_text_id.update(|c| {
-                                *c = Uuid::nil();
-                            });
-                        }
-                        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
-                            selected_image_id.update(|c| {
-                                *c = Uuid::nil();
-                            });
-                        }
+                    set_polygon_selected(
+                        editor_state.clone(),
+                        text_selected_ref.clone(),
+                        polygon_selected_ref.clone(),
+                        image_selected_ref.clone(),
+                        selected_text_id_ref.clone(),
+                        selected_polygon_id_ref.clone(),
+                        selected_image_id_ref.clone(),
+                        selected_polygon_data_ref.clone(),
+                        polygon_id,
+                        polygon_data,
+                    );
 
-                        let mut editor_state = editor_state.lock().unwrap();
-
-                        editor_state.selected_polygon_id = polygon_id;
-                        editor_state.polygon_selected = true;
-
-                        editor_state.selected_text_id = Uuid::nil();
-                        editor_state.text_selected = false;
-                        editor_state.selected_image_id = Uuid::nil();
-                        editor_state.image_selected = false;
-
-                        drop(editor_state);
-                    }
-                    if let Ok(mut selected_polygon_data) = selected_polygon_data_ref.lock() {
-                        selected_polygon_data.update(|c| {
-                            *c = polygon_data;
-                        });
-                        // no need to update stale data for other object types as it will be overwritten later
-                    }
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
                         let saved_state = editor_state
@@ -344,53 +494,19 @@ pub fn project_view(
                 //     // Update editor as needed
                 // }
 
-                if let Ok(mut image_selected) = image_selected_ref.lock() {
-                    image_selected.update(|c| {
-                        *c = true;
-                    });
-                    if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
-                        polygon_selected.update(|c| {
-                            *c = false;
-                        });
-                    }
-                    if let Ok(mut text_selected) = text_selected_ref.lock() {
-                        text_selected.update(|c| {
-                            *c = false;
-                        });
-                    }
-                }
-                if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
-                    selected_image_id.update(|c| {
-                        *c = image_id;
-                    });
-                    if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
-                        selected_polygon_id.update(|c| {
-                            *c = Uuid::nil();
-                        });
-                    }
-                    if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
-                        selected_text_id.update(|c| {
-                            *c = Uuid::nil();
-                        });
-                    }
+                set_image_selected(
+                    editor_state.clone(),
+                    text_selected_ref.clone(),
+                    polygon_selected_ref.clone(),
+                    image_selected_ref.clone(),
+                    selected_text_id_ref.clone(),
+                    selected_polygon_id_ref.clone(),
+                    selected_image_id_ref.clone(),
+                    selected_image_data_ref.clone(),
+                    image_id,
+                    image_data,
+                );
 
-                    let mut editor_state = editor_state.lock().unwrap();
-
-                    editor_state.selected_image_id = image_id;
-                    editor_state.image_selected = true;
-
-                    editor_state.selected_text_id = Uuid::nil();
-                    editor_state.text_selected = false;
-                    editor_state.selected_polygon_id = Uuid::nil();
-                    editor_state.polygon_selected = false;
-
-                    drop(editor_state);
-                }
-                if let Ok(mut selected_image_data) = selected_image_data_ref.lock() {
-                    selected_image_data.update(|c| {
-                        *c = image_data;
-                    });
-                }
                 if let Ok(mut animation_data) = animation_data_ref.lock() {
                     let editor_state = editor_state.lock().unwrap();
                     let saved_state = editor_state
@@ -453,53 +569,19 @@ pub fn project_view(
                     //     // Update editor as needed
                     // }
 
-                    if let Ok(mut text_selected) = text_selected_ref.lock() {
-                        text_selected.update(|c| {
-                            *c = true;
-                        });
-                        if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
-                            polygon_selected.update(|c| {
-                                *c = false;
-                            });
-                        }
-                        if let Ok(mut image_selected) = image_selected_ref.lock() {
-                            image_selected.update(|c| {
-                                *c = false;
-                            });
-                        }
-                    }
-                    if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
-                        selected_text_id.update(|c| {
-                            *c = text_id;
-                        });
-                        if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
-                            selected_polygon_id.update(|c| {
-                                *c = Uuid::nil();
-                            });
-                        }
-                        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
-                            selected_image_id.update(|c| {
-                                *c = Uuid::nil();
-                            });
-                        }
+                    set_text_selected(
+                        editor_state.clone(),
+                        text_selected_ref.clone(),
+                        polygon_selected_ref.clone(),
+                        image_selected_ref.clone(),
+                        selected_text_id_ref.clone(),
+                        selected_polygon_id_ref.clone(),
+                        selected_image_id_ref.clone(),
+                        selected_text_data_ref.clone(),
+                        text_id,
+                        text_data,
+                    );
 
-                        let mut editor_state = editor_state.lock().unwrap();
-
-                        editor_state.selected_text_id = text_id;
-                        editor_state.text_selected = true;
-
-                        editor_state.selected_polygon_id = Uuid::nil();
-                        editor_state.polygon_selected = false;
-                        editor_state.selected_image_id = Uuid::nil();
-                        editor_state.image_selected = false;
-
-                        drop(editor_state);
-                    }
-                    if let Ok(mut selected_text_data) = selected_text_data_ref.lock() {
-                        selected_text_data.update(|c| {
-                            *c = text_data;
-                        });
-                    }
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
                         let saved_state = editor_state
@@ -655,70 +737,231 @@ pub fn project_view(
     let on_handle_mouse_up: Arc<OnHandleMouseUp> = Arc::new({
         let editor_state = editor_state.clone();
         let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let text_selected_ref = Arc::clone(&text_selected_ref);
+        let image_selected_ref = Arc::clone(&image_selected_ref);
         let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
         let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
+        let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
+        let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
+        let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
             let polygon_selected_ref = polygon_selected_ref.clone();
+            let text_selected_ref = text_selected_ref.clone();
+            let image_selected_ref = image_selected_ref.clone();
             let selected_polygon_id_ref = selected_polygon_id_ref.clone();
             let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let selected_text_id_ref = selected_text_id_ref.clone();
+            let selected_text_data_ref = selected_text_data_ref.clone();
+            let selected_image_id_ref = selected_image_id_ref.clone();
+            let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
 
-            Some(Box::new(move |keyframe_id: Uuid, point: Point| {
-                // cannot lock editor here! probably because called from Editor
-                // {
-                //     let mut editor = new_editor.lock().unwrap();
-                //     // Update editor as needed
-                // }
+            Some(
+                Box::new(move |keyframe_id: Uuid, object_id: Uuid, point: Point| {
+                    // cannot lock editor here! probably because called from Editor
+                    // {
+                    //     let mut editor = new_editor.lock().unwrap();
+                    //     // Update editor as needed
+                    // }
 
-                // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
+                    // let value = string_to_f32(&value).map_err(|_| "Couldn't convert string to f32").expect("Couldn't convert string to f32");
 
-                let mut current_animation_data = animation_data
-                    .get()
-                    .expect("Couldn't get current Animation Data");
+                    println!("Updating keyframe via handle...");
 
-                let mut data = current_animation_data.clone();
+                    if (!sequence_selected.get()) {
+                        return (selected_sequence_data.get(), selected_keyframes.get());
+                    }
 
-                let current_keyframe = data.properties.iter_mut().find_map(|a| {
-                    a.keyframes
-                        .iter_mut()
-                        .find(|kf| kf.id == keyframe_id.to_string())
-                });
+                    let selected_sequence = selected_sequence_data.get();
 
-                // get current_keyframe from handle
+                    let is_polygon = selected_sequence
+                        .active_polygons
+                        .iter()
+                        .find(|p| p.id == object_id.to_string());
+                    let is_image = selected_sequence
+                        .active_image_items
+                        .iter()
+                        .find(|i| i.id == object_id.to_string());
+                    let is_text = selected_sequence
+                        .active_text_items
+                        .iter()
+                        .find(|t| t.id == object_id.to_string());
 
-                let mut editor_state = editor_state.lock().unwrap();
+                    if let Some(polygon) = is_polygon {
+                        set_polygon_selected(
+                            editor_state.clone(),
+                            text_selected_ref.clone(),
+                            polygon_selected_ref.clone(),
+                            image_selected_ref.clone(),
+                            selected_text_id_ref.clone(),
+                            selected_polygon_id_ref.clone(),
+                            selected_image_id_ref.clone(),
+                            selected_polygon_data_ref.clone(),
+                            object_id,
+                            PolygonConfig {
+                                id: Uuid::from_str(&polygon.id)
+                                    .expect("Couldn't convert string to uuid"),
+                                name: polygon.name.clone(),
+                                // TODO: support triangles and other shapes by saving points
+                                points: vec![
+                                    Point { x: 0.0, y: 0.0 },
+                                    Point { x: 1.0, y: 0.0 },
+                                    Point { x: 1.0, y: 1.0 },
+                                    Point { x: 0.0, y: 1.0 },
+                                ],
+                                fill: [
+                                    polygon.fill[0] as f32,
+                                    polygon.fill[1] as f32,
+                                    polygon.fill[2] as f32,
+                                    polygon.fill[3] as f32,
+                                ],
+                                dimensions: (
+                                    polygon.dimensions.0 as f32,
+                                    polygon.dimensions.1 as f32,
+                                ),
+                                position: Point {
+                                    x: polygon.position.x as f32,
+                                    y: polygon.position.y as f32,
+                                },
+                                border_radius: polygon.border_radius as f32,
+                                stroke: Stroke {
+                                    thickness: polygon.stroke.thickness as f32,
+                                    fill: [
+                                        polygon.stroke.fill[0] as f32,
+                                        polygon.stroke.fill[1] as f32,
+                                        polygon.stroke.fill[2] as f32,
+                                        polygon.stroke.fill[3] as f32,
+                                    ],
+                                },
+                            },
+                        );
+                    }
 
-                if let Some(current_keyframe) = current_keyframe {
-                    // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
-                    let mut current_sequence = selected_sequence_data.get();
+                    if let Some(image) = is_image {
+                        set_image_selected(
+                            editor_state.clone(),
+                            text_selected_ref.clone(),
+                            polygon_selected_ref.clone(),
+                            image_selected_ref.clone(),
+                            selected_text_id_ref.clone(),
+                            selected_polygon_id_ref.clone(),
+                            selected_image_id_ref.clone(),
+                            selected_image_data_ref.clone(),
+                            object_id,
+                            StImageConfig {
+                                id: image.id.clone(),
+                                name: image.name.clone(),
+                                dimensions: image.dimensions,
+                                position: Point {
+                                    x: image.position.x as f32,
+                                    y: image.position.y as f32,
+                                },
+                                path: image.path.clone(),
+                            },
+                        );
+                    }
 
-                    // update keyframe
-                    current_keyframe.value =
-                        KeyframeValue::Position([point.x as i32, point.y as i32]);
+                    if let Some(text) = is_text {
+                        set_text_selected(
+                            editor_state.clone(),
+                            text_selected_ref.clone(),
+                            polygon_selected_ref.clone(),
+                            image_selected_ref.clone(),
+                            selected_text_id_ref.clone(),
+                            selected_polygon_id_ref.clone(),
+                            selected_image_id_ref.clone(),
+                            selected_text_data_ref.clone(),
+                            object_id,
+                            TextRendererConfig {
+                                id: Uuid::from_str(&text.id)
+                                    .expect("Couldn't convert string to uuid"),
+                                name: text.name.clone(),
+                                text: text.text.clone(),
+                                dimensions: (text.dimensions.0 as f32, text.dimensions.1 as f32),
+                                position: Point {
+                                    x: text.position.x as f32,
+                                    y: text.position.y as f32,
+                                },
+                            },
+                        );
+                    }
 
-                    update_keyframe(
-                        editor_state,
-                        current_animation_data,
-                        current_keyframe,
-                        current_sequence,
-                        selected_keyframes,
-                        animation_data,
-                        selected_sequence_data,
-                        selected_sequence_id,
-                        sequence_selected,
-                    );
+                    if let Ok(mut animation_data) = animation_data_ref.lock() {
+                        let editor_state = editor_state.lock().unwrap();
+                        let saved_state = editor_state
+                            .saved_state
+                            .as_ref()
+                            .expect("Couldn't get Saved State");
 
-                    println!("Keyframe updated!");
-                }
+                        let saved_animation_data = saved_state
+                            .sequences
+                            .iter()
+                            .flat_map(|s| s.polygon_motion_paths.iter())
+                            .find(|p| p.polygon_id == object_id.to_string());
 
-                (selected_sequence_data.get(), selected_keyframes.get())
-            })
-                as Box<
-                    dyn FnMut(Uuid, Point) -> (Sequence, Vec<UIKeyframe>) + Send,
-                >)
+                        if let Some(object_animation_data) = saved_animation_data {
+                            animation_data.update(|c| {
+                                *c = Some(object_animation_data.clone());
+                            });
+                        } else {
+                            // text is not saved animation data
+                            // text_index,time,width,height,x,y,rotation,scale,perspective_x,perspective_y,opacity
+                        }
+
+                        drop(editor_state);
+                    }
+
+                    let mut current_animation_data = animation_data
+                        .get()
+                        .expect("Couldn't get current Animation Data");
+
+                    let mut data = current_animation_data.clone();
+
+                    let current_keyframe = data.properties.iter_mut().find_map(|a| {
+                        a.keyframes
+                            .iter_mut()
+                            .find(|kf| kf.id == keyframe_id.to_string())
+                    });
+
+                    // get current_keyframe from handle
+
+                    let mut editor_state = editor_state.lock().unwrap();
+
+                    if let Some(current_keyframe) = current_keyframe {
+                        println!("Current keyframe found...");
+
+                        // let mut current_keyframe = current_keyframe.get_mut(0).expect("Couldn't get Selected Keyframe");
+                        let mut current_sequence = selected_sequence_data.get();
+
+                        // update keyframe
+                        current_keyframe.value =
+                            KeyframeValue::Position([point.x as i32, point.y as i32]);
+
+                        update_keyframe(
+                            editor_state,
+                            current_animation_data,
+                            current_keyframe,
+                            current_sequence,
+                            selected_keyframes,
+                            animation_data,
+                            selected_sequence_data,
+                            selected_sequence_id,
+                            sequence_selected,
+                        );
+
+                        println!("Keyframe updated!");
+                    } else {
+                        println!("Current keyframe not found!");
+                    }
+
+                    (selected_sequence_data.get(), selected_keyframes.get())
+                })
+                    as Box<dyn FnMut(Uuid, Uuid, Point) -> (Sequence, Vec<UIKeyframe>) + Send>,
+            )
         }
     });
 
