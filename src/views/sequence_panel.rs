@@ -44,6 +44,7 @@ pub fn sequence_panel(
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
     let editor_cloned_4 = Arc::clone(&editor);
+    let editor_cloned_5 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
@@ -58,6 +59,12 @@ pub fn sequence_panel(
         label(move || format!("Create Sequence")).style(|s| s.margin_bottom(10)),
         simple_button("Back to Sequence List".to_string(), move |_| {
             sequence_selected.set(false);
+
+            let mut editor = editor_cloned_5.lock().unwrap();
+
+            editor.hide_all_objects();
+
+            drop(editor);
         }),
         v_stack((
             simple_button("Generate Animation".to_string(), move |_| {
