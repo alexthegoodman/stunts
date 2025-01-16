@@ -14,7 +14,7 @@ use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseScrollDelta};
 // use helpers::utilities::load_ground_truth_state;
 use stunts_engine::camera::{Camera, CameraBinding};
-use stunts_engine::dot::draw_dot;
+use stunts_engine::dot::{draw_dot, RingDot};
 use stunts_engine::editor::{
     init_editor_with_model, point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader,
 };
@@ -276,6 +276,17 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
                 // render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 // render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
+
+                if let Some(dot) = &editor.cursor_dot {
+                    dot.transform
+                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    render_pass.set_bind_group(1, &dot.bind_group, &[]);
+
+                    render_pass.set_vertex_buffer(0, dot.vertex_buffer.slice(..));
+                    render_pass
+                        .set_index_buffer(dot.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                    render_pass.draw_indexed(0..dot.indices.len() as u32, 0, 0..1);
+                }
             }
 
             (Some(encoder), Some(frame), Some(view), Some(resolve_view))
@@ -877,6 +888,18 @@ async fn main() {
                 );
 
                 editor.static_polygons.push(canvas_polygon);
+
+                let cursor_ring_dot = RingDot::new(
+                    &gpu_resources.device,
+                    &gpu_resources.queue,
+                    &model_bind_group_layout,
+                    &window_size,
+                    Point { x: 600.0, y: 300.0 },
+                    rgb_to_wgpu(250, 20, 10, 1.0),
+                    &camera,
+                );
+
+                editor.cursor_dot = Some(cursor_ring_dot);
 
                 window_handle.handle_cursor_moved = handle_cursor_moved(
                     cloned2.clone(),
