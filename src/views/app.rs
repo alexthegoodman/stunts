@@ -65,7 +65,7 @@ use super::inputs::styled_input;
 use super::keyframe_panel::keyframe_properties_view;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::project_browser::project_browser;
-use super::properties_panel::properties_view;
+use super::properties_panel::{image_properties_view, properties_view, text_properties_view};
 use super::sequence_panel::sequence_panel;
 
 fn find_object_type(last_saved_state: &SavedState, object_id: &Uuid) -> Option<ObjectType> {
@@ -296,6 +296,8 @@ pub fn project_view(
     let editor_cloned5 = Arc::clone(&editor);
     let editor_cloned6 = Arc::clone(&editor);
     let editor_cloned7 = Arc::clone(&editor);
+    let editor_cloned8 = Arc::clone(&editor);
+    let editor_cloned9 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
@@ -304,14 +306,20 @@ pub fn project_view(
     let state_cloned5 = Arc::clone(&editor_state);
     let state_cloned6 = Arc::clone(&editor_state);
     let state_cloned7 = Arc::clone(&editor_state);
+    let state_cloned8 = Arc::clone(&editor_state);
+    let state_cloned9 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
     let gpu_cloned3 = Arc::clone(&gpu_helper);
+    let gpu_cloned4 = Arc::clone(&gpu_helper);
+    let gpu_cloned5 = Arc::clone(&gpu_helper);
 
     let viewport_cloned = Arc::clone(&viewport);
     let viewport_cloned2 = Arc::clone(&viewport);
     let viewport_cloned3 = Arc::clone(&viewport);
+    let viewport_cloned4 = Arc::clone(&viewport);
+    let viewport_cloned5 = Arc::clone(&viewport);
 
     // set in sequence_panel
     let sequence_selected = create_rw_signal(false);
@@ -1080,6 +1088,14 @@ pub fn project_view(
                     let viewport_cloned2 = viewport_cloned2.clone();
                     let gpu_cloned3 = gpu_cloned2.clone();
                     let viewport_cloned3 = viewport_cloned2.clone();
+                    let state_cloned8 = state_cloned8.clone();
+                    let gpu_cloned4 = gpu_cloned4.clone();
+                    let editor_cloned8 = editor_cloned8.clone();
+                    let viewport_cloned4 = viewport_cloned4.clone();
+                    let state_cloned9 = state_cloned9.clone();
+                    let gpu_cloned5 = gpu_cloned5.clone();
+                    let editor_cloned9 = editor_cloned9.clone();
+                    let viewport_cloned5 = viewport_cloned5.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -1147,24 +1163,24 @@ pub fn project_view(
                             move || text_selected.get() && selected_keyframes.get().len() == 0,
                             move |text_selected_real| {
                                 if text_selected_real {
-                                    // let state_cloned5 = state_cloned6.clone();
-                                    // let gpu_cloned2 = gpu_cloned2.clone();
-                                    // let editor_cloned7 = editor_cloned7.clone();
-                                    // let viewport_cloned2 = viewport_cloned2.clone();
+                                    let state_cloned8 = state_cloned8.clone();
+                                    let gpu_cloned4 = gpu_cloned4.clone();
+                                    let editor_cloned8 = editor_cloned8.clone();
+                                    let viewport_cloned4 = viewport_cloned4.clone();
 
                                     container(
                                         (v_stack((
                                             label(|| "Text Properties"),
-                                            // properties_view(
-                                            //     state_cloned5,
-                                            //     gpu_cloned2,
-                                            //     editor_cloned7,
-                                            //     viewport_cloned2,
-                                            //     polygon_selected,
-                                            //     selected_polygon_id,
-                                            //     selected_polygon_data,
-                                            //     selected_sequence_id,
-                                            // ),
+                                            text_properties_view(
+                                                state_cloned8,
+                                                gpu_cloned4,
+                                                editor_cloned8,
+                                                viewport_cloned4,
+                                                text_selected,
+                                                selected_text_id,
+                                                selected_text_data,
+                                                selected_sequence_id,
+                                            ),
                                         ))
                                         .style(|s| card_styles(s))),
                                     )
@@ -1178,24 +1194,24 @@ pub fn project_view(
                             move || image_selected.get() && selected_keyframes.get().len() == 0,
                             move |image_selected_real| {
                                 if image_selected_real {
-                                    // let state_cloned5 = state_cloned6.clone();
-                                    // let gpu_cloned2 = gpu_cloned2.clone();
-                                    // let editor_cloned7 = editor_cloned7.clone();
-                                    // let viewport_cloned2 = viewport_cloned2.clone();
+                                    let state_cloned9 = state_cloned9.clone();
+                                    let gpu_cloned5 = gpu_cloned5.clone();
+                                    let editor_cloned9 = editor_cloned9.clone();
+                                    let viewport_cloned5 = viewport_cloned5.clone();
 
                                     container(
                                         (v_stack((
                                             label(|| "Image Properties"),
-                                            // properties_view(
-                                            //     state_cloned5,
-                                            //     gpu_cloned2,
-                                            //     editor_cloned7,
-                                            //     viewport_cloned2,
-                                            //     polygon_selected,
-                                            //     selected_polygon_id,
-                                            //     selected_polygon_data,
-                                            //     selected_sequence_id,
-                                            // ),
+                                            image_properties_view(
+                                                state_cloned9,
+                                                gpu_cloned5,
+                                                editor_cloned9,
+                                                viewport_cloned5,
+                                                image_selected,
+                                                selected_image_id,
+                                                selected_image_data,
+                                                selected_sequence_id,
+                                            ),
                                         ))
                                         .style(|s| card_styles(s))),
                                     )
