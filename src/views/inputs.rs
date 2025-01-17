@@ -14,8 +14,9 @@ use floem::kurbo::Size;
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, create_signal, RwSignal, SignalRead};
 use floem::style::{Background, CursorStyle, Transition};
-use floem::taffy::AlignItems;
+use floem::taffy::{AlignItems, Position};
 use floem::text::Weight;
+use floem::views::dropdown::dropdown;
 use floem::views::editor::view;
 use floem::views::{
     container, dyn_container, empty, label, scroll, stack, tab, text_input, virtual_stack,
@@ -222,4 +223,140 @@ pub fn debounce_input(
             .style(|s| input_styles(s)),
     ))
     .style(|s| s.margin_bottom(10))
+}
+
+// Define an option type for better ergonomics
+#[derive(Clone)]
+pub struct DropdownOption {
+    pub id: String,
+    pub label: String,
+}
+
+pub fn create_dropdown<F>(
+    initial_selection: String,
+    options: Vec<DropdownOption>,
+    on_selection: F,
+) -> impl IntoView
+where
+    F: Fn(String) + Clone + 'static,
+{
+    let (selected, set_selected) = create_signal(initial_selection);
+    let (options, _set_options) = create_signal(options);
+
+    // // Convert our options to DropdownOption format
+    // let dropdown_options = options
+    //     .get()
+    //     .into_iter()
+    //     .map(|opt| DropdownOption {
+    //         id: opt.id.clone(),
+    //         label: opt.label,
+    //     })
+    //     .collect::<Vec<_>>();
+
+    // Start with the default option
+    let mut dropdown_options = vec![DropdownOption {
+        id: "".to_string(),
+        label: "Select a file".to_string(),
+    }];
+
+    // Add the file options
+    dropdown_options.extend(options.get().into_iter().map(|file| DropdownOption {
+        id: file.id.clone(),
+        label: file.label.clone(),
+    }));
+
+    // Create the dropdown
+    let dropdown = {
+        let dropdown_2 = dropdown_options.clone();
+        let set_selected = set_selected.clone();
+        let on_selection = on_selection.clone();
+        // dropdown(
+        //     // Active item selector
+        //     move || {
+        //         dropdown_options
+        //             .clone()
+        //             .into_iter()
+        //             .find(|opt| opt.id == selected.get())
+        //             .unwrap_or_else(|| DropdownOption {
+        //                 id: "".to_string(),
+        //                 label: "Select an option".to_string(),
+        //             })
+        //     },
+        //     // Main view (what's shown when dropdown is closed)
+        //     |item: DropdownOption| Box::new(container(label(move || item.label.clone()))),
+        //     // Iterator for options
+        //     dropdown_2.clone(),
+        //     // List item view (how each option is rendered)
+        //     move |item: DropdownOption| {
+        //         let set_selected = set_selected.clone();
+        //         let on_selection = on_selection.clone();
+        //         Box::new(
+        //             container(label(move || item.label.clone())).on_click(move |_| {
+        //                 println!("Select dropdown option");
+        //                 set_selected.set(item.id.clone());
+        //                 on_selection(item.id.clone());
+        //                 EventPropagation::Continue
+        //             }),
+        //         )
+        //     },
+        // )
+        dropdown(
+            move || {
+                let selected = selected.get();
+                dropdown_options
+                    .clone()
+                    .into_iter()
+                    .find(|opt| opt.id == selected)
+                    .expect("Couldn't find dropdown option")
+            },
+            // Main view (selected item)
+            move |item: DropdownOption| {
+                text(item.label.to_string())
+                    .style(|s| {
+                        s.background(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                            .padding_left(8)
+                            .padding_right(8)
+                            .width_full()
+                    })
+                    .into_any()
+            },
+            // Options iterator
+            dropdown_2.clone(),
+            // List item view
+            move |item: DropdownOption| {
+                text(item.label.to_string())
+                    .style(|s| {
+                        s.background(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                            .padding(8)
+                            .hover(|s| s.background(Color::rgba(0.5, 0.5, 0.5, 1.0)))
+                            .width_full()
+                            .cursor(CursorStyle::Pointer)
+                    })
+                    .into_any()
+            },
+        )
+        .on_accept(move |new: DropdownOption| {
+            set_selected.set(new.id.clone());
+            on_selection(new.id.clone());
+        })
+        .style(|s| {
+            s.width(200)
+                .background(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                .border(1)
+                .border_color(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                .border_radius(4)
+                .position(Position::Relative)
+                // Style for the dropdown menu container
+                .class(dropdown::DropdownClass, |s| {
+                    s.background(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                        .border(1)
+                        .border_color(Color::rgba(0.5, 0.5, 0.5, 1.0))
+                        .border_radius(4)
+                        .z_index(999)
+                        .position(Position::Absolute)
+                })
+        })
+    };
+
+    dropdown
 }

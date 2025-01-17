@@ -895,7 +895,7 @@ async fn main() {
                     &model_bind_group_layout,
                     &window_size,
                     Point { x: 600.0, y: 300.0 },
-                    rgb_to_wgpu(250, 20, 10, 1.0),
+                    rgb_to_wgpu(250, 20, 10, 0.5),
                     &camera,
                 );
 
