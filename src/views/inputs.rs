@@ -7,7 +7,7 @@ use std::rc::{Rc, Weak};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use bytemuck::Contiguous;
-use floem::common::input_styles;
+use floem::common::{input_styles, simple_button, small_button};
 use floem::event::{Event, EventListener, EventPropagation};
 use floem::keyboard::{Key, KeyCode, NamedKey};
 use floem::kurbo::Size;
@@ -234,28 +234,18 @@ pub struct DropdownOption {
 
 pub fn create_dropdown<F>(
     initial_selection: String,
-    options: Vec<DropdownOption>,
+    provided_options: Vec<DropdownOption>,
     on_selection: F,
 ) -> impl IntoView
 where
     F: Fn(String) + Clone + 'static,
 {
-    let (selected, set_selected) = create_signal(initial_selection);
-    let (options, _set_options) = create_signal(options);
-
-    // // Convert our options to DropdownOption format
-    // let dropdown_options = options
-    //     .get()
-    //     .into_iter()
-    //     .map(|opt| DropdownOption {
-    //         id: opt.id.clone(),
-    //         label: opt.label,
-    //     })
-    //     .collect::<Vec<_>>();
+    let (selected, set_selected) = create_signal(initial_selection.clone());
+    let (options, _set_options) = create_signal(provided_options);
 
     // Start with the default option
     let mut dropdown_options = vec![DropdownOption {
-        id: "Aleo".to_string(),
+        id: initial_selection.clone(),
         label: "Make a selection".to_string(),
     }];
 
@@ -270,36 +260,7 @@ where
         let dropdown_2 = dropdown_options.clone();
         let set_selected = set_selected.clone();
         let on_selection = on_selection.clone();
-        // dropdown(
-        //     // Active item selector
-        //     move || {
-        //         dropdown_options
-        //             .clone()
-        //             .into_iter()
-        //             .find(|opt| opt.id == selected.get())
-        //             .unwrap_or_else(|| DropdownOption {
-        //                 id: "".to_string(),
-        //                 label: "Select an option".to_string(),
-        //             })
-        //     },
-        //     // Main view (what's shown when dropdown is closed)
-        //     |item: DropdownOption| Box::new(container(label(move || item.label.clone()))),
-        //     // Iterator for options
-        //     dropdown_2.clone(),
-        //     // List item view (how each option is rendered)
-        //     move |item: DropdownOption| {
-        //         let set_selected = set_selected.clone();
-        //         let on_selection = on_selection.clone();
-        //         Box::new(
-        //             container(label(move || item.label.clone())).on_click(move |_| {
-        //                 println!("Select dropdown option");
-        //                 set_selected.set(item.id.clone());
-        //                 on_selection(item.id.clone());
-        //                 EventPropagation::Continue
-        //             }),
-        //         )
-        //     },
-        // )
+
         dropdown(
             move || {
                 let selected = selected.get();
@@ -313,7 +274,7 @@ where
                         .expect("Couldn't find dropdown option")
                 } else {
                     DropdownOption {
-                        id: "Aleo".to_string(),
+                        id: initial_selection.clone(),
                         label: "Make a selection".to_string(),
                     }
                 }
@@ -336,7 +297,10 @@ where
                 text(item.label.to_string())
                     .style(|s| {
                         s.background(Color::rgba(0.5, 0.5, 0.5, 1.0))
-                            .padding(8)
+                            .padding_left(8)
+                            .padding_right(8)
+                            .padding_top(2)
+                            .padding_bottom(2)
                             .hover(|s| s.background(Color::rgba(0.5, 0.5, 0.5, 1.0)))
                             .width_full()
                             .cursor(CursorStyle::Pointer)
@@ -355,7 +319,6 @@ where
                 .border_color(Color::rgba(0.5, 0.5, 0.5, 1.0))
                 .border_radius(4)
                 .position(Position::Relative)
-                // Style for the dropdown menu container
                 .class(dropdown::DropdownClass, |s| {
                     s.background(Color::rgba(0.5, 0.5, 0.5, 1.0))
                         .border(1)
@@ -363,9 +326,74 @@ where
                         .border_radius(4)
                         .z_index(999)
                         .position(Position::Absolute)
+                        .height(300.0)
                 })
+                .class(dropdown::DropdownScrollClass, |s| s.height(300.0))
         })
     };
 
     dropdown
+}
+
+pub fn inline_dropdown<F>(
+    label_text: RwSignal<String>,
+    dropdown_options: RwSignal<Vec<DropdownOption>>,
+    on_selection: F,
+) -> impl IntoView
+where
+    F: Fn(String) + Clone + 'static,
+{
+    let dropdown_open = create_rw_signal(false);
+
+    let dropdown_options_im: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
+
+    create_effect(move |_| {
+        let options = dropdown_options.get();
+
+        let new_options: im::Vector<String> = options.iter().map(|o| o.id.clone()).collect();
+
+        dropdown_options_im.set(new_options);
+    });
+
+    v_stack((
+        simple_button("Select an item".to_string(), move |_| {
+            dropdown_open.set(true);
+        }),
+        dyn_container(
+            move || dropdown_open.get(),
+            move |is_dropdown_open| {
+                let on_selection = on_selection.clone();
+
+                if is_dropdown_open {
+                    container((scroll({
+                        virtual_stack(
+                            VirtualDirection::Vertical,
+                            VirtualItemSize::Fixed(Box::new(|| 30.0)),
+                            move || dropdown_options_im.get(),
+                            move |item| item.clone(),
+                            move |item| {
+                                let on_selection = on_selection.clone();
+
+                                h_stack((simple_button(item.clone(), move |_| {
+                                    on_selection(item.clone());
+                                    dropdown_open.set(false);
+                                }),))
+                            },
+                        )
+                        .style(|s| {
+                            s.flex_col()
+                                .width(260.0)
+                                .padding_vert(15.0)
+                                .padding_horiz(20.0)
+                                .background(Color::LIGHT_BLUE)
+                        })
+                    })
+                    .style(|s| s.height(400.0)),))
+                } else {
+                    container((empty()))
+                }
+            },
+        ),
+        label(move || label_text.get()),
+    ))
 }

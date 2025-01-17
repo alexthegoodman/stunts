@@ -27,6 +27,7 @@ use crate::editor_state::{self, EditorState};
 use crate::helpers::utilities::save_saved_state_raw;
 
 use super::inputs::create_dropdown;
+use super::inputs::inline_dropdown;
 use super::inputs::styled_input;
 use super::inputs::DropdownOption;
 
@@ -323,6 +324,7 @@ pub fn text_properties_view(
 
     let back_active = RwSignal::new(false);
     let font_dropdown_options: RwSignal<Vec<DropdownOption>> = create_rw_signal(Vec::new());
+    let selected_font_family = create_rw_signal("Aleo".to_string());
 
     create_effect(move |_| {
         let editor = editor_cloned.lock().unwrap();
@@ -339,6 +341,13 @@ pub fn text_properties_view(
             .collect();
 
         font_dropdown_options.set(options);
+    });
+
+    create_effect(move |_| {
+        let selected_data = selected_text_data.get();
+        let selected_family = selected_data.font_family.clone();
+
+        selected_font_family.set(selected_family);
     });
 
     let on_font_selection = move |font_id: String| {
@@ -460,13 +469,13 @@ pub fn text_properties_view(
                 "height".to_string(),
             )
             .style(move |s| s.width(halfs)),
-            h_stack((create_dropdown(
-                selected_text_data.get().font_family.clone(),
-                font_dropdown_options.get(),
-                on_font_selection,
-            ),)),
         )),))
         .style(move |s| s.width(aside_width)),
+        h_stack((inline_dropdown(
+            selected_font_family,
+            font_dropdown_options,
+            on_font_selection,
+        ),)),
     ))
     // .style(|s| card_styles(s))
     .style(|s| {
