@@ -20,6 +20,8 @@ use stunts_engine::polygon::SavedStroke;
 use stunts_engine::timelines::SavedTimelineStateConfig;
 use uuid::Uuid;
 
+use super::saved_state::ProjectData;
+use super::saved_state::ProjectsDataFile;
 use super::saved_state::SavedState;
 
 pub fn get_ground_truth_dir() -> Option<PathBuf> {
@@ -58,18 +60,55 @@ pub fn get_ground_truth_dir() -> Option<PathBuf> {
 //     Ok(state)
 // }
 
+pub fn load_projects_datafile() -> Result<ProjectsDataFile, Box<dyn std::error::Error>> {
+    let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
+    let json_path = sync_dir.join("projects.json");
+
+    if !json_path.exists() {
+        // create json file if it doesn't exist
+        let json = ProjectsDataFile {
+            projects: Vec::new(),
+        };
+
+        let json = serde_json::to_string_pretty(&json).expect("Couldn't serialize saved state");
+
+        fs::write(&json_path, json).expect("Couldn't write saved state");
+    }
+
+    // Read and parse the JSON file
+    let json_content = fs::read_to_string(json_path)?;
+    let state: ProjectsDataFile = serde_json::from_str(&json_content)?;
+
+    Ok(state)
+}
+
+pub fn save_projects_datafile(projects_datafile: ProjectsDataFile) {
+    let json =
+        serde_json::to_string_pretty(&projects_datafile).expect("Couldn't serialize saved state");
+    let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
+    let save_path = sync_dir.join("projects.json");
+
+    println!("Saving datafile... {}", save_path.display());
+
+    fs::write(&save_path, json).expect("Couldn't write saved state");
+
+    drop(projects_datafile);
+
+    println!("Saved datafile!");
+}
+
 pub fn load_project_state(project_id: String) -> Result<SavedState, Box<dyn std::error::Error>> {
     let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
     let project_dir = sync_dir.join("projects").join(project_id);
     let json_path = project_dir.join("project_data.json");
 
     if !json_path.exists() {
-        // TODO: create json file if it doesn't exist
+        // create json file if it doesn't exist
         let project_id = Uuid::new_v4().to_string();
 
         let json = SavedState {
             id: project_id,
-            name: "New Project".to_string(),
+            // name: "New Project".to_string(),
             sequences: Vec::new(),
             timeline_state: SavedTimelineStateConfig {
                 timeline_sequences: Vec::new(),
@@ -99,8 +138,8 @@ pub fn create_project_state(name: String) -> Result<SavedState, Box<dyn std::err
 
     // Create initial saved state
     let initial_state = SavedState {
-        id: project_id,
-        name: name.clone(),
+        id: project_id.clone(),
+        // name: name.clone(),
         sequences: Vec::new(),
         timeline_state: SavedTimelineStateConfig {
             timeline_sequences: Vec::new(),
@@ -109,6 +148,17 @@ pub fn create_project_state(name: String) -> Result<SavedState, Box<dyn std::err
 
     let json = serde_json::to_string_pretty(&initial_state)?;
     fs::write(project_dir.join("project_data.json"), json)?;
+
+    // auto-add to ProjectsDataFile?
+    // this will also create the datafile if it doesn't already exist
+    let mut datafile = load_projects_datafile().expect("Couldn't load datafile");
+
+    datafile.projects.push(ProjectData {
+        project_id: project_id,
+        project_name: name.clone(),
+    });
+
+    save_projects_datafile(datafile);
 
     Ok(initial_state)
 }

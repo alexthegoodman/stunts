@@ -1,17 +1,21 @@
 use super::saved_state::SavedState;
-use super::utilities::get_ground_truth_dir;
+use super::utilities::{get_ground_truth_dir, load_projects_datafile};
 use chrono::{DateTime, Local};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct ProjectInfo {
-    pub name: String,
+    pub dir_name: String,
+    pub project_id: String,
+    pub project_name: String,
     pub created: DateTime<Local>,
     pub modified: DateTime<Local>,
 }
 
 pub fn get_projects() -> Result<Vec<ProjectInfo>, Box<dyn std::error::Error>> {
+    let projects_datafile = load_projects_datafile().expect("Couldn't load projects datafile");
+
     let sync_dir = get_ground_truth_dir().expect("Couldn't get CommonOS directory");
     let projects_dir = sync_dir.join("projects");
 
@@ -46,15 +50,26 @@ pub fn get_projects() -> Result<Vec<ProjectInfo>, Box<dyn std::error::Error>> {
             .duration_since(UNIX_EPOCH)?;
         let modified: DateTime<Local> = DateTime::from(SystemTime::UNIX_EPOCH + modified);
 
-        projects.push(ProjectInfo {
-            name: path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("unknown")
-                .to_string(),
-            created,
-            modified,
-        });
+        let dir_name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        let datafile_project = projects_datafile
+            .projects
+            .iter()
+            .find(|dp| dp.project_id == dir_name);
+
+        if let Some(datafile) = datafile_project {
+            projects.push(ProjectInfo {
+                dir_name,
+                project_id: datafile.project_id.clone(),
+                project_name: datafile.project_name.clone(),
+                created,
+                modified,
+            });
+        }
     }
 
     // Sort by modification date (newest first)

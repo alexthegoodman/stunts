@@ -464,12 +464,12 @@ pub fn project_browser(
         scroll(
             dyn_stack(
                 move || project_list.get(),
-                move |project| project.name.clone(),
+                move |project| project.project_id.clone(),
                 move |project| {
                     project_item(
                         project.clone(),
                         project_list,
-                        project.modified.to_string().clone(),
+                        project.project_name.clone() + " / " + &project.modified.to_string(),
                         "sphere",
                     )
                     .on_click({
@@ -490,7 +490,7 @@ pub fn project_browser(
 
                             let mut editor_state = editor_state.lock().unwrap();
 
-                            let uuid = Uuid::from_str(&project.name.clone())
+                            let uuid = Uuid::from_str(&project.project_id.clone())
                                 .expect("Couldn't convert project name to id");
 
                             let destination_view = "scene".to_string();
@@ -523,7 +523,7 @@ pub fn project_browser(
 
                             drop(editor);
 
-                            println!("Project selected {:?}", project.name.clone());
+                            println!("Project selected {:?}", project.project_name.clone());
 
                             EventPropagation::Stop
                         }
