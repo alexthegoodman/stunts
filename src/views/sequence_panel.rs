@@ -43,7 +43,7 @@ pub struct Layer {
     pub instance_id: Uuid,
     pub instance_name: String,
     pub instance_kind: LayerKind,
-    pub layer_index: i32,
+    pub initial_layer_index: i32,
 }
 
 impl Layer {
@@ -52,7 +52,7 @@ impl Layer {
             instance_id: config.id,
             instance_name: config.name.clone(),
             instance_kind: LayerKind::Polygon,
-            layer_index: config.layer,
+            initial_layer_index: config.layer,
         }
     }
     pub fn from_image_config(config: &StImageConfig) -> Self {
@@ -60,7 +60,7 @@ impl Layer {
             instance_id: Uuid::from_str(&config.id).expect("Couldn't convert uuid to string"),
             instance_name: config.name.clone(),
             instance_kind: LayerKind::Image,
-            layer_index: config.layer,
+            initial_layer_index: config.layer,
         }
     }
     pub fn from_text_config(config: &TextRendererConfig) -> Self {
@@ -68,7 +68,7 @@ impl Layer {
             instance_id: config.id,
             instance_name: config.name.clone(),
             instance_kind: LayerKind::Text,
-            layer_index: config.layer,
+            initial_layer_index: config.layer,
         }
     }
 }
@@ -228,7 +228,7 @@ pub fn sequence_panel(
             });
 
             // sort layers by layer_index property, lower values should come first in the list
-            new_layers.sort_by(|a, b| a.layer_index.cmp(&b.layer_index));
+            new_layers.sort_by(|a, b| a.initial_layer_index.cmp(&b.initial_layer_index));
 
             layers.set(new_layers);
         }
@@ -249,29 +249,32 @@ pub fn sequence_panel(
 
         let mut editor = editor_cloned_8.lock().unwrap();
 
-        updated_layers.iter().for_each(|l| match l.instance_kind {
-            LayerKind::Polygon => {
-                editor.polygons.iter_mut().for_each(|p| {
-                    if p.id == l.instance_id {
-                        p.update_layer(l.layer_index);
-                    }
-                });
-            }
-            LayerKind::Text => {
-                editor.text_items.iter_mut().for_each(|t| {
-                    if t.id == l.instance_id {
-                        t.update_layer(l.layer_index);
-                    }
-                });
-            }
-            LayerKind::Image => {
-                editor.image_items.iter_mut().for_each(|i| {
-                    if i.id == l.instance_id.to_string() {
-                        i.update_layer(l.layer_index);
-                    }
-                });
-            }
-        });
+        updated_layers
+            .iter()
+            .enumerate()
+            .for_each(|(index, l)| match l.instance_kind {
+                LayerKind::Polygon => {
+                    editor.polygons.iter_mut().for_each(|p| {
+                        if p.id == l.instance_id {
+                            p.update_layer(-(index as i32));
+                        }
+                    });
+                }
+                LayerKind::Text => {
+                    editor.text_items.iter_mut().for_each(|t| {
+                        if t.id == l.instance_id {
+                            t.update_layer(-(index as i32));
+                        }
+                    });
+                }
+                LayerKind::Image => {
+                    editor.image_items.iter_mut().for_each(|i| {
+                        if i.id == l.instance_id.to_string() {
+                            i.update_layer(-(index as i32));
+                        }
+                    });
+                }
+            });
 
         drop(editor);
 
@@ -284,29 +287,32 @@ pub fn sequence_panel(
 
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id.get() {
-                updated_layers.iter().for_each(|l| match l.instance_kind {
-                    LayerKind::Polygon => {
-                        s.active_polygons.iter_mut().for_each(|p| {
-                            if p.id == l.instance_id.to_string() {
-                                p.layer = l.layer_index;
-                            }
-                        });
-                    }
-                    LayerKind::Text => {
-                        s.active_text_items.iter_mut().for_each(|t| {
-                            if t.id == l.instance_id.to_string() {
-                                t.layer = l.layer_index;
-                            }
-                        });
-                    }
-                    LayerKind::Image => {
-                        s.active_image_items.iter_mut().for_each(|i| {
-                            if i.id == l.instance_id.to_string() {
-                                i.layer = l.layer_index;
-                            }
-                        });
-                    }
-                });
+                updated_layers
+                    .iter()
+                    .enumerate()
+                    .for_each(|(index, l)| match l.instance_kind {
+                        LayerKind::Polygon => {
+                            s.active_polygons.iter_mut().for_each(|p| {
+                                if p.id == l.instance_id.to_string() {
+                                    p.layer = -(index as i32);
+                                }
+                            });
+                        }
+                        LayerKind::Text => {
+                            s.active_text_items.iter_mut().for_each(|t| {
+                                if t.id == l.instance_id.to_string() {
+                                    t.layer = -(index as i32);
+                                }
+                            });
+                        }
+                        LayerKind::Image => {
+                            s.active_image_items.iter_mut().for_each(|i| {
+                                if i.id == l.instance_id.to_string() {
+                                    i.layer = -(index as i32);
+                                }
+                            });
+                        }
+                    });
             }
         });
 
