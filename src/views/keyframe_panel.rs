@@ -27,6 +27,7 @@ use floem::IntoView;
 use crate::editor_state::{self, EditorState};
 use crate::helpers::utilities::save_saved_state_raw;
 
+use super::inputs::debounce_input;
 use super::inputs::styled_input;
 
 pub fn update_keyframe(
@@ -133,6 +134,8 @@ pub fn keyframe_properties_view(
     let editor_cloned4 = Arc::clone(&editor);
     let editor_state_cloned4 = Arc::clone(&editor_state);
     let editor_state_cloned5 = Arc::clone(&editor_state);
+    let editor_state_cloned6 = Arc::clone(&editor_state);
+    let editor_state_cloned7 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -149,102 +152,102 @@ pub fn keyframe_properties_view(
                     selected_keyframes.set(Vec::new());
                 }),
                 h_stack((
-                    styled_input(
+                    debounce_input(
                         "X:".to_string(),
                         &position[0].to_string(),
                         "Enter X",
-                        Box::new({
-                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                // then save merge animation_data with saved_data and save to file
-                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+                        move |value| {
+                            // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                            // then save merge animation_data with saved_data and save to file
+                            // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                                let value = string_to_f32(&value)
-                                    .map_err(|_| "Couldn't convert string to f32")
-                                    .expect("Couldn't convert string to f32");
+                            let value = string_to_f32(&value)
+                                .map_err(|_| "Couldn't convert string to f32")
+                                .expect("Couldn't convert string to f32");
 
-                                let mut current_animation_data =
-                                    animation_data.get().expect("Couldn't get Animation Data");
-                                let mut current_keyframe = selected_keyframes.get();
-                                let mut current_keyframe = current_keyframe
-                                    .get_mut(0)
-                                    .expect("Couldn't get Selected Keyframe");
-                                let mut current_sequence = selected_sequence_data.get();
-                                // let current_polygon = selected_polygon_data.read();
-                                // let current_polygon = current_polygon.borrow();
+                            let mut current_animation_data =
+                                animation_data.get().expect("Couldn't get Animation Data");
+                            let mut current_keyframe = selected_keyframes.get();
+                            let mut current_keyframe = current_keyframe
+                                .get_mut(0)
+                                .expect("Couldn't get Selected Keyframe");
+                            let mut current_sequence = selected_sequence_data.get();
+                            // let current_polygon = selected_polygon_data.read();
+                            // let current_polygon = current_polygon.borrow();
 
-                                // update keyframe
-                                current_keyframe.value =
-                                    KeyframeValue::Position([value as i32, position[1]]);
+                            // update keyframe
+                            current_keyframe.value =
+                                KeyframeValue::Position([value as i32, position[1]]);
 
-                                update_keyframe(
-                                    editor_state,
-                                    current_animation_data,
-                                    current_keyframe,
-                                    current_sequence,
-                                    selected_keyframes,
-                                    animation_data,
-                                    selected_sequence_data,
-                                    selected_sequence_id,
-                                    sequence_selected,
-                                );
+                            let editor_state = editor_state_cloned6.lock().unwrap();
 
-                                println!("Keyframe updated!");
+                            update_keyframe(
+                                editor_state,
+                                current_animation_data,
+                                current_keyframe,
+                                current_sequence,
+                                selected_keyframes,
+                                animation_data,
+                                selected_sequence_data,
+                                selected_sequence_id,
+                                sequence_selected,
+                            );
 
-                                let mut editor = editor_cloned.lock().unwrap();
-                                editor.update_motion_paths(&selected_sequence_data.get());
+                            println!("Keyframe updated!");
 
-                                println!("Motion Paths updated!");
-                            }
-                        }),
+                            let mut editor = editor_cloned.lock().unwrap();
+                            editor.update_motion_paths(&selected_sequence_data.get());
+
+                            println!("Motion Paths updated!");
+                        },
                         editor_state_cloned,
                         "x".to_string(),
                     )
                     .style(move |s| s.width(halfs).margin_right(5.0)),
-                    styled_input(
+                    debounce_input(
                         "Y:".to_string(),
                         &position[1].to_string(),
                         "Enter Y",
-                        Box::new({
-                            move |mut editor_state, value| {
-                                let value = string_to_f32(&value)
-                                    .map_err(|_| "Couldn't convert string to f32")
-                                    .expect("Couldn't convert string to f32");
+                        move |value| {
+                            let value = string_to_f32(&value)
+                                .map_err(|_| "Couldn't convert string to f32")
+                                .expect("Couldn't convert string to f32");
 
-                                let mut current_animation_data =
-                                    animation_data.get().expect("Couldn't get Animation Data");
-                                let mut current_keyframe = selected_keyframes.get();
-                                let mut current_keyframe = current_keyframe
-                                    .get_mut(0)
-                                    .expect("Couldn't get Selected Keyframe");
-                                let mut current_sequence = selected_sequence_data.get();
-                                // let current_polygon = selected_polygon_data.read();
-                                // let current_polygon = current_polygon.borrow();
+                            let mut current_animation_data =
+                                animation_data.get().expect("Couldn't get Animation Data");
+                            let mut current_keyframe = selected_keyframes.get();
+                            let mut current_keyframe = current_keyframe
+                                .get_mut(0)
+                                .expect("Couldn't get Selected Keyframe");
+                            let mut current_sequence = selected_sequence_data.get();
+                            // let current_polygon = selected_polygon_data.read();
+                            // let current_polygon = current_polygon.borrow();
 
-                                // update keyframe
-                                current_keyframe.value =
-                                    KeyframeValue::Position([position[0], value as i32]);
+                            // update keyframe
+                            current_keyframe.value =
+                                KeyframeValue::Position([position[0], value as i32]);
 
-                                update_keyframe(
-                                    editor_state,
-                                    current_animation_data,
-                                    current_keyframe,
-                                    current_sequence,
-                                    selected_keyframes,
-                                    animation_data,
-                                    selected_sequence_data,
-                                    selected_sequence_id,
-                                    sequence_selected,
-                                );
+                            let editor_state = editor_state_cloned7.lock().unwrap();
 
-                                println!("Keyframe updated!");
+                            update_keyframe(
+                                editor_state,
+                                current_animation_data,
+                                current_keyframe,
+                                current_sequence,
+                                selected_keyframes,
+                                animation_data,
+                                selected_sequence_data,
+                                selected_sequence_id,
+                                sequence_selected,
+                            );
 
-                                let mut editor = editor_cloned2.lock().unwrap();
-                                editor.update_motion_paths(&selected_sequence_data.get());
+                            println!("Keyframe updated!");
 
-                                println!("Motion Paths updated!");
-                            }
-                        }),
+                            let mut editor = editor_cloned2.lock().unwrap();
+                            editor.update_motion_paths(&selected_sequence_data.get());
+
+                            println!("Motion Paths updated!");
+                        },
                         editor_state_cloned2,
                         "y".to_string(),
                     )
