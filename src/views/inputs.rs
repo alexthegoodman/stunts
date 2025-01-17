@@ -255,8 +255,8 @@ where
 
     // Start with the default option
     let mut dropdown_options = vec![DropdownOption {
-        id: "".to_string(),
-        label: "Select a file".to_string(),
+        id: "Aleo".to_string(),
+        label: "Make a selection".to_string(),
     }];
 
     // Add the file options
@@ -303,11 +303,20 @@ where
         dropdown(
             move || {
                 let selected = selected.get();
-                dropdown_options
-                    .clone()
-                    .into_iter()
-                    .find(|opt| opt.id == selected)
-                    .expect("Couldn't find dropdown option")
+                let track = options.get();
+
+                if options.get().len() > 0 {
+                    dropdown_options
+                        .clone()
+                        .into_iter()
+                        .find(|opt| opt.id == selected)
+                        .expect("Couldn't find dropdown option")
+                } else {
+                    DropdownOption {
+                        id: "Aleo".to_string(),
+                        label: "Make a selection".to_string(),
+                    }
+                }
             },
             // Main view (selected item)
             move |item: DropdownOption| {
