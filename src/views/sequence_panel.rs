@@ -231,7 +231,8 @@ pub fn sequence_panel(
             });
 
             // sort layers by layer_index property, lower values should come first in the list
-            new_layers.sort_by(|a, b| a.initial_layer_index.cmp(&b.initial_layer_index));
+            // but reverse the order because the UI outputs the first one first, thus it displays last
+            new_layers.sort_by(|a, b| b.initial_layer_index.cmp(&a.initial_layer_index));
 
             layers.set(new_layers);
         }
