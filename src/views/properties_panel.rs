@@ -3,6 +3,7 @@ use floem::common::simple_button;
 use floem::common::small_button;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
+use stunts_engine::editor::color_to_wgpu;
 use stunts_engine::editor::string_to_f32;
 use stunts_engine::editor::wgpu_to_human;
 use stunts_engine::editor::Editor;
@@ -80,6 +81,7 @@ pub fn properties_view(
                             editor_state
                                 .update_width(&value)
                                 .expect("Couldn't update width");
+
                             // TODO: probably should update selected_polygon_data
                             // need to update active_polygons in saved_data
                             // TODO: on_debounce_stop?
@@ -120,6 +122,7 @@ pub fn properties_view(
                             editor_state
                                 .update_height(&value)
                                 .expect("Couldn't update height");
+
                             // TODO: probably should update selected_polygon_data
                             // need to update active_polygons in saved_data
                             // TODO: on_debounce_stop?
@@ -141,7 +144,7 @@ pub fn properties_view(
 
                             save_saved_state_raw(saved_state.clone());
 
-                            // TODO: editor_state.update_width?
+                            // update_height is called up there friend ^^^
                         }
                     }),
                     editor_state2,
@@ -156,8 +159,27 @@ pub fn properties_view(
                     "0-255",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_red(&value);
-                            // TODO: update saved state?
+                            editor_state
+                                .update_red(&value)
+                                .expect("Couldn't update red");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.fill[0] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state3,
@@ -170,7 +192,27 @@ pub fn properties_view(
                     "0-255",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_green(&value);
+                            editor_state
+                                .update_green(&value)
+                                .expect("Couldn't update green");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.fill[1] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state4,
@@ -183,7 +225,27 @@ pub fn properties_view(
                     "0-255",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_blue(&value);
+                            editor_state
+                                .update_blue(&value)
+                                .expect("Couldn't update blue");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.fill[2] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state5,
@@ -213,7 +275,27 @@ pub fn properties_view(
                 "Enter radius",
                 Box::new({
                     move |mut editor_state, value| {
-                        editor_state.update_border_radius(&value);
+                        editor_state
+                            .update_border_radius(&value)
+                            .expect("Couldn't update border radius");
+
+                        let value = string_to_f32(&value).expect("Couldn't convert string");
+                        let mut saved_state = editor_state
+                            .saved_state
+                            .as_mut()
+                            .expect("Couldn't get Saved State");
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id.get() {
+                                s.active_polygons.iter_mut().for_each(|p| {
+                                    if p.id == selected_polygon_id.get().to_string() {
+                                        p.border_radius = value as i32;
+                                    }
+                                });
+                            }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
                     }
                 }),
                 editor_state6,
@@ -232,7 +314,27 @@ pub fn properties_view(
                     "Enter thickness",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_stroke_thickness(&value);
+                            editor_state
+                                .update_stroke_thickness(&value)
+                                .expect("Couldn't update blue");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.stroke.thickness = value as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state7,
@@ -246,7 +348,27 @@ pub fn properties_view(
                     "Enter red",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_stroke_red(&value);
+                            editor_state
+                                .update_stroke_red(&value)
+                                .expect("Couldn't update blue");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.stroke.fill[0] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state10,
@@ -260,7 +382,27 @@ pub fn properties_view(
                     "Enter green",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_stroke_green(&value);
+                            editor_state
+                                .update_stroke_green(&value)
+                                .expect("Couldn't update blue");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.stroke.fill[1] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state8,
@@ -274,7 +416,27 @@ pub fn properties_view(
                     "Enter blue",
                     Box::new({
                         move |mut editor_state, value| {
-                            editor_state.update_stroke_blue(&value);
+                            editor_state
+                                .update_stroke_blue(&value)
+                                .expect("Couldn't update blue");
+
+                            let value = string_to_f32(&value).expect("Couldn't convert string");
+                            let mut saved_state = editor_state
+                                .saved_state
+                                .as_mut()
+                                .expect("Couldn't get Saved State");
+
+                            saved_state.sequences.iter_mut().for_each(|s| {
+                                if s.id == selected_sequence_id.get() {
+                                    s.active_polygons.iter_mut().for_each(|p| {
+                                        if p.id == selected_polygon_id.get().to_string() {
+                                            p.stroke.fill[2] = color_to_wgpu(value) as i32;
+                                        }
+                                    });
+                                }
+                            });
+
+                            save_saved_state_raw(saved_state.clone());
                         }
                     }),
                     editor_state9,
