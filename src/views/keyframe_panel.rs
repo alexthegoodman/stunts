@@ -40,13 +40,14 @@ pub fn update_keyframe(
     selected_sequence_id: RwSignal<String>,
     sequence_selected: RwSignal<bool>,
 ) {
-    if current_keyframe.id
-        != selected_keyframes
-            .get()
-            .get(0)
-            .expect("Couldn't get keyframe")
-            .id
-    {
+    if let Some(selected_keyframe) = selected_keyframes.get().get(0) {
+        if current_keyframe.id != selected_keyframe.id {
+            let mut new_keyframes = Vec::new();
+            new_keyframes.push(current_keyframe.to_owned());
+
+            selected_keyframes.set(new_keyframes);
+        }
+    } else {
         let mut new_keyframes = Vec::new();
         new_keyframes.push(current_keyframe.to_owned());
 
