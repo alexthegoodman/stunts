@@ -56,7 +56,7 @@ pub fn sequence_panel(
     let local_mode = create_rw_signal("layout".to_string());
 
     v_stack((
-        label(move || format!("Create Sequence")).style(|s| s.margin_bottom(10)),
+        label(move || format!("Update Sequence")).style(|s| s.margin_bottom(10)),
         simple_button("Back to Sequence List".to_string(), move |_| {
             sequence_selected.set(false);
 
@@ -65,7 +65,8 @@ pub fn sequence_panel(
             editor.hide_all_objects();
 
             drop(editor);
-        }),
+        })
+        .style(|s| s.margin_bottom(5.0)),
         v_stack((
             simple_button("Generate Animation".to_string(), move |_| {
                 // hook into CommonMotion2D run_motion_inference
@@ -141,7 +142,8 @@ pub fn sequence_panel(
             //         local_mode,
             //     ),
             // )),
-        )),
+        ))
+        .style(|s| s.margin_bottom(5.0)),
         stack((
             option_button(
                 "Add Square",
