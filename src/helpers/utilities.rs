@@ -386,6 +386,7 @@ fn parse_active_polygons(
                 thickness: 1,
                 fill: [0, 0, 0, 255], // Default black
             },
+            layer: -2,
         };
 
         polygons.push(polygon);

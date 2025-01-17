@@ -347,6 +347,7 @@ pub fn project_view(
             fill: [1.0, 1.0, 1.0, 1.0],
             thickness: 2.0,
         },
+        layer: -2,
     });
 
     let image_selected: RwSignal<bool> = create_rw_signal(false);
@@ -357,6 +358,7 @@ pub fn project_view(
         path: String::new(),
         dimensions: (100, 100),
         position: Point { x: 0.0, y: 0.0 },
+        layer: -2,
     });
 
     let text_selected: RwSignal<bool> = create_rw_signal(false);
@@ -368,6 +370,7 @@ pub fn project_view(
         font_family: "Aleo".to_string(),
         dimensions: (100.0, 100.0),
         position: Point { x: 0.0, y: 0.0 },
+        layer: -2,
     });
 
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
@@ -846,6 +849,7 @@ pub fn project_view(
                                         polygon.stroke.fill[3] as f32,
                                     ],
                                 },
+                                layer: polygon.layer.clone(),
                             },
                         );
                     }
@@ -870,6 +874,7 @@ pub fn project_view(
                                     y: image.position.y as f32,
                                 },
                                 path: image.path.clone(),
+                                layer: image.layer.clone(),
                             },
                         );
                     }
@@ -896,6 +901,7 @@ pub fn project_view(
                                     x: text.position.x as f32,
                                     y: text.position.y as f32,
                                 },
+                                layer: text.layer.clone(),
                             },
                         );
                     }
