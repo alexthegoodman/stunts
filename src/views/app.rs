@@ -365,6 +365,7 @@ pub fn project_view(
         id: Uuid::nil(),
         name: String::new(),
         text: String::new(),
+        font_family: "Aleo".to_string(),
         dimensions: (100.0, 100.0),
         position: Point { x: 0.0, y: 0.0 },
     });
@@ -889,6 +890,7 @@ pub fn project_view(
                                     .expect("Couldn't convert string to uuid"),
                                 name: text.name.clone(),
                                 text: text.text.clone(),
+                                font_family: text.font_family.clone(),
                                 dimensions: (text.dimensions.0 as f32, text.dimensions.1 as f32),
                                 position: Point {
                                     x: text.position.x as f32,

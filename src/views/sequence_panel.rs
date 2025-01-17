@@ -344,6 +344,7 @@ pub fn sequence_panel(
 
                     let new_id = Uuid::new_v4();
                     let new_text = "Hello world!".to_string();
+                    let font_family = "Aleo".to_string();
 
                     let position = Point {
                         x: random_number_800 as f32 + 600.0,
@@ -354,6 +355,7 @@ pub fn sequence_panel(
                         id: new_id.clone(),
                         name: "New Text Item".to_string(),
                         text: new_text.clone(),
+                        font_family: font_family.clone(),
                         dimensions: (100.0, 100.0),
                         position,
                     };
@@ -390,6 +392,7 @@ pub fn sequence_panel(
                             id: text_config.id.to_string().clone(),
                             name: text_config.name.clone(),
                             text: new_text,
+                            font_family,
                             dimensions: (
                                 text_config.dimensions.0 as i32,
                                 text_config.dimensions.1 as i32,

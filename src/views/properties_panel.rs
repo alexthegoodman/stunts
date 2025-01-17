@@ -306,6 +306,7 @@ pub fn text_properties_view(
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
+    let editor_state3 = Arc::clone(&editor_state);
     // let editor_state3 = Arc::clone(&editor_state);
     // let editor_state4 = Arc::clone(&editor_state);
     // let editor_state5 = Arc::clone(&editor_state);
@@ -340,8 +341,43 @@ pub fn text_properties_view(
         font_dropdown_options.set(options);
     });
 
-    let on_font_selection = |id: String| {
-        println!("on_font_selection {:?}", id);
+    let on_font_selection = move |font_id: String| {
+        println!("on_font_selection {:?}", font_id);
+
+        // update editor's text_item, recall render text
+        let mut editor = editor.lock().unwrap();
+
+        editor.update_text_font_family(font_id.clone(), selected_text_id.get());
+
+        drop(editor);
+
+        // update selected_text_data
+        let mut new_text_data = selected_text_data.get();
+        new_text_data.font_family = font_id.clone();
+        selected_text_data.set(new_text_data);
+
+        // save to saved_state
+        let mut editor_state = editor_state3.lock().unwrap();
+        let mut saved_state = editor_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id.get() {
+                s.active_text_items.iter_mut().for_each(|t| {
+                    if t.id == selected_text_id.get().to_string() {
+                        t.font_family = font_id.clone();
+                    }
+                });
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
+
+        editor_state.saved_state = Some(saved_state.clone());
+
+        drop(editor_state);
     };
 
     v_stack((
@@ -425,7 +461,7 @@ pub fn text_properties_view(
             )
             .style(move |s| s.width(halfs)),
             h_stack((create_dropdown(
-                "Aleo".to_string(),
+                selected_text_data.get().font_family.clone(),
                 font_dropdown_options.get(),
                 on_font_selection,
             ),)),
