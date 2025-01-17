@@ -103,7 +103,7 @@ where
         floem::event::EventPropagation::Continue
     })
     .on_event(floem::event::EventListener::DragOver, move |_| {
-        let mut editor = editor.lock().unwrap();
+        // let mut editor = editor.lock().unwrap();
         let dragger_id = dragger_id.get_untracked();
         if dragger_id != item_id {
             let dragger_pos = sortable_items
@@ -133,9 +133,12 @@ where
                     }
                 }
             });
-
-            on_items_updated();
         }
+        floem::event::EventPropagation::Continue
+    })
+    .on_event(floem::event::EventListener::DragEnd, move |_| {
+        on_items_updated();
+
         floem::event::EventPropagation::Continue
     })
     .dragging_style(|s| {
