@@ -206,19 +206,25 @@ pub fn sequence_panel(
 
             let mut new_layers = Vec::new();
             editor.polygons.iter().for_each(|polygon| {
-                let polygon_config: PolygonConfig = polygon.to_config();
-                let new_layer: Layer = Layer::from_polygon_config(&polygon_config);
-                new_layers.push(new_layer);
+                if !polygon.hidden {
+                    let polygon_config: PolygonConfig = polygon.to_config();
+                    let new_layer: Layer = Layer::from_polygon_config(&polygon_config);
+                    new_layers.push(new_layer);
+                }
             });
             editor.text_items.iter().for_each(|text| {
-                let text_config: TextRendererConfig = text.to_config();
-                let new_layer: Layer = Layer::from_text_config(&text_config);
-                new_layers.push(new_layer);
+                if !text.hidden {
+                    let text_config: TextRendererConfig = text.to_config();
+                    let new_layer: Layer = Layer::from_text_config(&text_config);
+                    new_layers.push(new_layer);
+                }
             });
             editor.image_items.iter().for_each(|image| {
-                let image_config: StImageConfig = image.to_config();
-                let new_layer: Layer = Layer::from_image_config(&image_config);
-                new_layers.push(new_layer);
+                if !image.hidden {
+                    let image_config: StImageConfig = image.to_config();
+                    let new_layer: Layer = Layer::from_image_config(&image_config);
+                    new_layers.push(new_layer);
+                }
             });
 
             // sort layers by layer_index property, lower values should come first in the list
