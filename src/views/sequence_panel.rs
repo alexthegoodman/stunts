@@ -640,6 +640,7 @@ pub fn sequence_panel(
                             position,
                             layer: -2,
                             color: [20, 20, 200, 255],
+                            font_size: 28,
                         };
 
                         let gpu_helper = gpu_cloned_2.lock().unwrap();
@@ -685,6 +686,7 @@ pub fn sequence_panel(
                                 },
                                 layer: text_config.layer.clone(),
                                 color: text_config.color.clone(),
+                                font_size: text_config.font_size.clone(),
                             },
                         );
                     }),
