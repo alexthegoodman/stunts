@@ -383,6 +383,7 @@ where
 }
 
 pub fn inline_dropdown<F>(
+    button_text: String,
     label_text: RwSignal<String>,
     dropdown_options: RwSignal<Vec<DropdownOption>>,
     on_selection: F,
@@ -403,7 +404,7 @@ where
     });
 
     v_stack((
-        simple_button("Select an item".to_string(), move |_| {
+        simple_button(button_text, move |_| {
             dropdown_open.set(true);
         }),
         dyn_container(

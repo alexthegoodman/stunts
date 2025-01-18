@@ -371,6 +371,7 @@ pub fn project_view(
         dimensions: (100.0, 100.0),
         position: Point { x: 0.0, y: 0.0 },
         layer: -2,
+        color: [0, 0, 0, 255],
     });
 
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
@@ -902,6 +903,7 @@ pub fn project_view(
                                     y: text.position.y as f32,
                                 },
                                 layer: text.layer.clone(),
+                                color: text.color.clone(),
                             },
                         );
                     }

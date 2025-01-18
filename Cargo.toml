@@ -27,3 +27,4 @@ rand = "0.8.5"
 chrono = { version = "0.4.38", features = ["serde"] }
 rfd = "0.15.2"
 reqwest = { version = "0.12.12", features = ["json"] }
+palette = "0.7.6"

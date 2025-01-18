@@ -27,6 +27,7 @@ use floem::IntoView;
 use crate::editor_state::{self, EditorState};
 use crate::helpers::utilities::save_saved_state_raw;
 
+use super::color_pallete::rgb_view_debounced;
 use super::inputs::create_dropdown;
 use super::inputs::inline_dropdown;
 use super::inputs::styled_input;
@@ -468,16 +469,10 @@ pub fn text_properties_view(
     selected_sequence_id: RwSignal<String>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
+    let editor_cloned2 = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
-    // let editor_state3 = Arc::clone(&editor_state);
-    // let editor_state4 = Arc::clone(&editor_state);
-    // let editor_state5 = Arc::clone(&editor_state);
-    // let editor_state6 = Arc::clone(&editor_state);
-    // let editor_state7 = Arc::clone(&editor_state);
-    // let editor_state8 = Arc::clone(&editor_state);
-    // let editor_state9 = Arc::clone(&editor_state);
-    // let editor_state10 = Arc::clone(&editor_state);
+    let editor_state4 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -487,6 +482,10 @@ pub fn text_properties_view(
     let back_active = RwSignal::new(false);
     let font_dropdown_options: RwSignal<Vec<DropdownOption>> = create_rw_signal(Vec::new());
     let selected_font_family = create_rw_signal("Aleo".to_string());
+    let init_red = create_rw_signal(40);
+    let init_green = create_rw_signal(40);
+    let init_blue = create_rw_signal(40);
+    let defaults_set = create_rw_signal(false);
 
     create_effect(move |_| {
         let editor = editor_cloned.lock().unwrap();
@@ -508,8 +507,16 @@ pub fn text_properties_view(
     create_effect(move |_| {
         let selected_data = selected_text_data.get();
         let selected_family = selected_data.font_family.clone();
+        let selected_red = selected_data.color[0];
+        let selected_green = selected_data.color[1];
+        let selected_blue = selected_data.color[2];
 
         selected_font_family.set(selected_family);
+        init_red.set(selected_red);
+        init_green.set(selected_green);
+        init_blue.set(selected_blue);
+
+        defaults_set.set(true);
     });
 
     let on_font_selection = move |font_id: String| {
@@ -551,93 +558,159 @@ pub fn text_properties_view(
         drop(editor_state);
     };
 
+    let on_color_update = move |r: i32, g: i32, b: i32| {
+        println!("Updating text color... {} {} {}", r, g, b);
+
+        let mut editor = editor_cloned2.lock().unwrap();
+
+        let color = [r, g, b, 255];
+
+        editor.update_text_color(selected_text_id.get(), color);
+
+        drop(editor);
+
+        // update selected_text_data
+        let mut new_text_data = selected_text_data.get();
+        new_text_data.color = color;
+        selected_text_data.set(new_text_data);
+
+        // save to saved_state
+        let mut editor_state = editor_state4.lock().unwrap();
+        let mut saved_state = editor_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id.get() {
+                s.active_text_items.iter_mut().for_each(|t| {
+                    if t.id == selected_text_id.get().to_string() {
+                        t.color = color;
+                    }
+                });
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
+
+        editor_state.saved_state = Some(saved_state.clone());
+
+        drop(editor_state);
+
+        println!("Text color updated!");
+    };
+
     v_stack((
         // label(|| "Properties"),
         simple_button("Back to Sequence".to_string(), move |_| {
             text_selected.set(false);
         }),
-        v_stack((h_stack((
-            styled_input(
-                "Width:".to_string(),
-                &selected_text_data.read().borrow().dimensions.0.to_string(),
-                "Enter width",
-                Box::new({
-                    move |mut editor_state, value| {
-                        editor_state
-                            .update_width(&value)
-                            .expect("Couldn't update width");
-                        // TODO: probably should update selected_polygon_data
-                        // need to update active_polygons in saved_data
-                        // TODO: on_debounce_stop?
-                        let value = string_to_f32(&value).expect("Couldn't convert string");
-                        let mut saved_state = editor_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State");
+        dyn_container(
+            move || defaults_set.get(),
+            move |defaults_are_set| {
+                let on_font_selection = on_font_selection.clone();
+                let on_color_update = on_color_update.clone();
+                let editor_state = editor_state.clone();
+                let editor_state2 = editor_state2.clone();
 
-                        saved_state.sequences.iter_mut().for_each(|s| {
-                            if s.id == selected_sequence_id.get() {
-                                s.active_text_items.iter_mut().for_each(|p| {
-                                    if p.id == selected_text_id.get().to_string() {
-                                        p.dimensions = (value as i32, p.dimensions.1);
+                if defaults_are_set {
+                    v_stack((
+                        v_stack((h_stack((
+                            styled_input(
+                                "Width:".to_string(),
+                                &selected_text_data.read().borrow().dimensions.0.to_string(),
+                                "Enter width",
+                                Box::new({
+                                    move |mut editor_state, value| {
+                                        editor_state
+                                            .update_width(&value)
+                                            .expect("Couldn't update width");
+                                        // TODO: probably should update selected_polygon_data
+                                        // need to update active_polygons in saved_data
+                                        // TODO: on_debounce_stop?
+                                        let value =
+                                            string_to_f32(&value).expect("Couldn't convert string");
+                                        let mut saved_state = editor_state
+                                            .saved_state
+                                            .as_mut()
+                                            .expect("Couldn't get Saved State");
+
+                                        saved_state.sequences.iter_mut().for_each(|s| {
+                                            if s.id == selected_sequence_id.get() {
+                                                s.active_text_items.iter_mut().for_each(|p| {
+                                                    if p.id == selected_text_id.get().to_string() {
+                                                        p.dimensions =
+                                                            (value as i32, p.dimensions.1);
+                                                    }
+                                                });
+                                            }
+                                        });
+
+                                        save_saved_state_raw(saved_state.clone());
+
+                                        // TODO: editor_state.update_height?
                                     }
-                                });
-                            }
-                        });
+                                }),
+                                editor_state,
+                                "width".to_string(),
+                            )
+                            .style(move |s| s.width(halfs).margin_right(5.0)),
+                            styled_input(
+                                "Height:".to_string(),
+                                &selected_text_data.read().borrow().dimensions.1.to_string(),
+                                "Enter height",
+                                Box::new({
+                                    move |mut editor_state, value| {
+                                        editor_state
+                                            .update_height(&value)
+                                            .expect("Couldn't update height");
+                                        // TODO: probably should update selected_polygon_data
+                                        // need to update active_polygons in saved_data
+                                        // TODO: on_debounce_stop?
+                                        let value =
+                                            string_to_f32(&value).expect("Couldn't convert string");
+                                        let mut saved_state = editor_state
+                                            .saved_state
+                                            .as_mut()
+                                            .expect("Couldn't get Saved State");
 
-                        save_saved_state_raw(saved_state.clone());
+                                        saved_state.sequences.iter_mut().for_each(|s| {
+                                            if s.id == selected_sequence_id.get() {
+                                                s.active_text_items.iter_mut().for_each(|p| {
+                                                    if p.id == selected_text_id.get().to_string() {
+                                                        p.dimensions =
+                                                            (p.dimensions.0, value as i32);
+                                                    }
+                                                });
+                                            }
+                                        });
 
-                        // TODO: editor_state.update_height?
-                    }
-                }),
-                editor_state,
-                "width".to_string(),
-            )
-            .style(move |s| s.width(halfs).margin_right(5.0)),
-            styled_input(
-                "Height:".to_string(),
-                &selected_text_data.read().borrow().dimensions.1.to_string(),
-                "Enter height",
-                Box::new({
-                    move |mut editor_state, value| {
-                        editor_state
-                            .update_height(&value)
-                            .expect("Couldn't update height");
-                        // TODO: probably should update selected_polygon_data
-                        // need to update active_polygons in saved_data
-                        // TODO: on_debounce_stop?
-                        let value = string_to_f32(&value).expect("Couldn't convert string");
-                        let mut saved_state = editor_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State");
+                                        save_saved_state_raw(saved_state.clone());
 
-                        saved_state.sequences.iter_mut().for_each(|s| {
-                            if s.id == selected_sequence_id.get() {
-                                s.active_text_items.iter_mut().for_each(|p| {
-                                    if p.id == selected_text_id.get().to_string() {
-                                        p.dimensions = (p.dimensions.0, value as i32);
+                                        // TODO: editor_state.update_width?
                                     }
-                                });
-                            }
-                        });
-
-                        save_saved_state_raw(saved_state.clone());
-
-                        // TODO: editor_state.update_width?
-                    }
-                }),
-                editor_state2,
-                "height".to_string(),
-            )
-            .style(move |s| s.width(halfs)),
-        )),))
-        .style(move |s| s.width(aside_width)),
-        h_stack((inline_dropdown(
-            selected_font_family,
-            font_dropdown_options,
-            on_font_selection,
-        ),)),
+                                }),
+                                editor_state2,
+                                "height".to_string(),
+                            )
+                            .style(move |s| s.width(halfs)),
+                        )),))
+                        .style(move |s| s.width(aside_width)),
+                        v_stack((
+                            inline_dropdown(
+                                "Select a font family".to_string(),
+                                selected_font_family,
+                                font_dropdown_options,
+                                on_font_selection,
+                            ),
+                            rgb_view_debounced(on_color_update, init_red, init_green, init_blue),
+                        )),
+                    ))
+                } else {
+                    v_stack((empty(),))
+                }
+            },
+        ),
     ))
     // .style(|s| card_styles(s))
     .style(|s| {

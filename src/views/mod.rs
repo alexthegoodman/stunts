@@ -1,5 +1,6 @@
 pub mod app;
 pub mod aside;
+pub mod color_pallete;
 pub mod editor_settings;
 pub mod export;
 pub mod images_panel;
