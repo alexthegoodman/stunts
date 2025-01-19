@@ -1,3 +1,5 @@
 /target
 output.mp4
 *.mp4
+*.msi
+*.wixpdb

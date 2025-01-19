@@ -1,7 +1,13 @@
 [package]
 name = "stunts"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["Alex Woodman <alexthegoodman@gmail.com>"]
+description = "Stunts is a video and motion graphics editor centered around UX and AI"
+license = "MIT"
+repository = "https://github.com/alexthegoodman/stunts"
+keywords = ["video", "motion"]
+readme = "README.md"
 
 [dependencies]
 bytemuck = "1.19.0"
