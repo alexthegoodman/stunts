@@ -16,7 +16,8 @@ use floem_winit::event::{ElementState, KeyEvent, Modifiers, MouseButton, MouseSc
 use stunts_engine::camera::{Camera, CameraBinding};
 use stunts_engine::dot::{draw_dot, RingDot};
 use stunts_engine::editor::{
-    init_editor_with_model, point_to_ndc, Editor, Point, Viewport, WindowSize, WindowSizeShader,
+    init_editor_with_model, point_to_ndc, ControlMode, Editor, Point, Viewport, WindowSize,
+    WindowSizeShader,
 };
 use stunts_engine::polygon::{Polygon, Stroke};
 use stunts_engine::vertex::Vertex;
@@ -251,32 +252,6 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     }
                 }
 
-                let viewport = editor.viewport.lock().unwrap();
-                let window_size = WindowSize {
-                    width: viewport.width as u32,
-                    height: viewport.height as u32,
-                };
-
-                // println!("Render size {:?}", window_size);
-
-                // let camera = editor.camera.expect("Couldn't get camera");
-
-                // let ndc_position = point_to_ndc(editor.last_top_left, &window_size);
-                // let (vertices, indices, vertex_buffer, index_buffer) = draw_dot(
-                //     &gpu_resources.device,
-                //     &window_size,
-                //     Point {
-                //         x: ndc_position.x,
-                //         y: ndc_position.y,
-                //     },
-                //     rgb_to_wgpu(47, 131, 222, 1.0),
-                //     &camera,
-                // ); // Green dot
-
-                // render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-                // render_pass.set_index_buffer(index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-                // render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
-
                 if let Some(dot) = &editor.cursor_dot {
                     dot.transform
                         .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
@@ -286,6 +261,11 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     render_pass
                         .set_index_buffer(dot.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                     render_pass.draw_indexed(0..dot.indices.len() as u32, 0, 0..1);
+                }
+
+                // much more efficient than calling on mousemove??
+                if editor.control_mode == ControlMode::Pan && editor.is_panning {
+                    editor.update_camera_binding();
                 }
             }
 
@@ -929,8 +909,6 @@ async fn main() {
                 window_handle.handle_keyboard_input =
                     handle_keyboard_input(state_2, gpu_resources.clone(), cloned_viewport3.clone());
 
-                editor.update_camera_binding(&gpu_resources.queue);
-
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.model_bind_group_layout = Some(model_bind_group_layout);
@@ -944,6 +922,8 @@ async fn main() {
                     gpu_helper: Some(gpu_cloned),
                     depth_view: None,
                 });
+
+                editor.update_camera_binding();
             }
             .await;
         }

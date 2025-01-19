@@ -196,6 +196,7 @@ pub fn sequence_panel(
     let gpu_cloned_3 = Arc::clone(&gpu_helper);
     let viewport_cloned_3 = Arc::clone(&viewport);
     let viewport_cloned_4 = Arc::clone(&viewport);
+    let viewport_cloned_5 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
     let local_mode = create_rw_signal("layout".to_string());
@@ -342,7 +343,13 @@ pub fn sequence_panel(
                 sequence_selected.set(false);
 
                 let mut editor = editor_cloned_5.lock().unwrap();
+                let viewport = viewport_cloned_5.lock().unwrap();
+                let window_size = WindowSize {
+                    width: viewport.width as u32,
+                    height: viewport.height as u32,
+                };
 
+                editor.reset_bounds(&window_size);
                 editor.hide_all_objects();
 
                 drop(editor);
