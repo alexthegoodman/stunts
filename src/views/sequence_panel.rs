@@ -4,7 +4,9 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use crossbeam::queue;
-use floem::common::{card_styles, create_icon, option_button, simple_button, toggle_button};
+use floem::common::{
+    card_styles, create_icon, option_button, simple_button, small_button, toggle_button,
+};
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
@@ -15,7 +17,7 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use rand::Rng;
-use stunts_engine::editor::{Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{ControlMode, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
 };
@@ -185,6 +187,8 @@ pub fn sequence_panel(
     let editor_cloned_6 = Arc::clone(&editor);
     let editor_cloned_7 = Arc::clone(&editor);
     let editor_cloned_8 = Arc::clone(&editor);
+    let editor_cloned_9 = Arc::clone(&editor);
+    let editor_cloned_10 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
@@ -200,6 +204,9 @@ pub fn sequence_panel(
     let layers_ref = Arc::new(Mutex::new(layers));
     let window_height = create_rw_signal(0.0);
     let dragger_id = create_rw_signal(Uuid::nil());
+
+    let select_active = create_rw_signal(false);
+    let pan_active = create_rw_signal(false);
 
     create_effect({
         let editor_cloned_6 = Arc::clone(&editor_cloned_6);
@@ -417,6 +424,35 @@ pub fn sequence_panel(
                 //         local_mode,
                 //     ),
                 // )),
+            ))
+            .style(|s| s.margin_bottom(5.0)),
+            h_stack((
+                small_button(
+                    "Select",
+                    "motion-arrow", // TODO: "cursor"
+                    move |_| {
+                        pan_active.set(false);
+                        select_active.set(true);
+
+                        let mut editor = editor_cloned_9.lock().unwrap();
+
+                        editor.control_mode = ControlMode::Select;
+                    },
+                    select_active,
+                ),
+                small_button(
+                    "Pan",
+                    "translate",
+                    move |_| {
+                        select_active.set(false);
+                        pan_active.set(true);
+
+                        let mut editor = editor_cloned_10.lock().unwrap();
+
+                        editor.control_mode = ControlMode::Pan;
+                    },
+                    pan_active,
+                ),
             ))
             .style(|s| s.margin_bottom(5.0)),
             stack((

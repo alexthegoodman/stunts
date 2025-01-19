@@ -313,6 +313,7 @@ fn handle_cursor_moved(
             editor.handle_mouse_move(
                 &window_size,
                 &gpu_resources.device,
+                &gpu_resources.queue,
                 positionX as f32,
                 positionY as f32,
             );
@@ -412,32 +413,30 @@ fn handle_window_resize(
 fn handle_mouse_wheel(
     editor: std::sync::Arc<Mutex<Editor>>,
     gpu_resources: std::sync::Arc<GpuResources>,
-    // window_size: WindowSize, // need newest window size
-    // gpu_helper: std::sync::Arc<Mutex<GpuHelper>>,
     viewport: std::sync::Arc<Mutex<Viewport>>,
 ) -> Option<Box<dyn FnMut(MouseScrollDelta)>> {
     Some(Box::new(move |delta: MouseScrollDelta| {
         let mut editor = editor.lock().unwrap();
 
-        // let mouse_pos = Point {
-        //     x: editor.global_top_left.x,
-        //     y: editor.global_top_left.y,
-        // };
+        let mouse_pos = Point {
+            x: editor.last_top_left.x,
+            y: editor.last_top_left.y,
+        };
 
-        // match delta {
-        //     MouseScrollDelta::LineDelta(_x, y) => {
-        //         // y is positive for scrolling up/away from user
-        //         // negative for scrolling down/toward user
-        //         // let zoom_factor = if y > 0.0 { 1.1 } else { 0.9 };
-        //         editor.handle_wheel(y, mouse_pos, &gpu_resources.queue);
-        //     }
-        //     MouseScrollDelta::PixelDelta(pos) => {
-        //         // Convert pixel delta if needed
-        //         let y = pos.y as f32;
-        //         // let zoom_factor = if y > 0.0 { 1.1 } else { 0.9 };
-        //         editor.handle_wheel(y, mouse_pos, &gpu_resources.queue);
-        //     }
-        // }
+        match delta {
+            MouseScrollDelta::LineDelta(_x, y) => {
+                // y is positive for scrolling up/away from user
+                // negative for scrolling down/toward user
+                // let zoom_factor = if y > 0.0 { 1.1 } else { 0.9 };
+                editor.handle_wheel(y, mouse_pos, &gpu_resources.queue);
+            }
+            MouseScrollDelta::PixelDelta(pos) => {
+                // Convert pixel delta if needed
+                let y = pos.y as f32;
+                // let zoom_factor = if y > 0.0 { 1.1 } else { 0.9 };
+                editor.handle_wheel(y, mouse_pos, &gpu_resources.queue);
+            }
+        }
     }))
 }
 
