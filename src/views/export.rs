@@ -254,6 +254,7 @@ pub fn export_widget(
                     height: viewport.height as u32,
                 };
                 let mut new_state = editor_state
+                    .record_state
                     .saved_state
                     .as_ref()
                     .expect("Couldn't get Saved State")

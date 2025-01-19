@@ -246,13 +246,14 @@ pub fn timeline_sequence_track(
                                 // update the saved_state
                                 let mut editor_state = editor_state.lock().unwrap();
                                 let mut new_state = editor_state
+                                    .record_state
                                     .saved_state
                                     .as_mut()
                                     .expect("Couldn't get Saved State")
                                     .clone();
                                 new_state.timeline_state.timeline_sequences = sortable_items.get();
 
-                                editor_state.saved_state = Some(new_state.clone());
+                                editor_state.record_state.saved_state = Some(new_state.clone());
 
                                 save_saved_state_raw(new_state.clone());
                             }

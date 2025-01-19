@@ -449,6 +449,7 @@ pub fn project_view(
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
                         let saved_state = editor_state
+                            .record_state
                             .saved_state
                             .as_ref()
                             .expect("Couldn't get Saved State");
@@ -524,6 +525,7 @@ pub fn project_view(
                 if let Ok(mut animation_data) = animation_data_ref.lock() {
                     let editor_state = editor_state.lock().unwrap();
                     let saved_state = editor_state
+                        .record_state
                         .saved_state
                         .as_ref()
                         .expect("Couldn't get Saved State");
@@ -599,6 +601,7 @@ pub fn project_view(
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
                         let saved_state = editor_state
+                            .record_state
                             .saved_state
                             .as_ref()
                             .expect("Couldn't get Saved State");
@@ -680,6 +683,7 @@ pub fn project_view(
                     println!("Keyframe updated!");
                 } else {
                     let last_saved_state = editor_state
+                        .record_state
                         .saved_state
                         .as_mut()
                         .expect("Couldn't get Saved State");
@@ -913,6 +917,7 @@ pub fn project_view(
                     if let Ok(mut animation_data) = animation_data_ref.lock() {
                         let editor_state = editor_state.lock().unwrap();
                         let saved_state = editor_state
+                            .record_state
                             .saved_state
                             .as_ref()
                             .expect("Couldn't get Saved State");
@@ -998,6 +1003,7 @@ pub fn project_view(
             let editor_state = state_cloned5.lock().unwrap();
 
             let saved_state = editor_state
+                .record_state
                 .saved_state
                 .as_ref()
                 .expect("Couldn't get saved state");

@@ -38,6 +38,10 @@ impl Edit for PolygonEdit {
 
     fn edit(&mut self, record_state: &mut RecordState) {
         let mut editor = record_state.editor.lock().unwrap();
+        let saved_state = record_state
+            .saved_state
+            .as_ref()
+            .expect("Couldn't get saved state");
 
         match &self.new_value {
             PolygonProperty::Width(w) => {
@@ -219,7 +223,7 @@ pub struct EditorState {
     pub selected_image_id: Uuid,
     pub value_signals: Arc<Mutex<HashMap<String, RwSignal<String>>>>,
     pub current_modifiers: ModifiersState,
-    pub saved_state: Option<SavedState>,
+    // pub saved_state: Option<SavedState>,
     pub project_selected_signal: Option<RwSignal<Uuid>>,
     pub active_sequence_mode: RwSignal<String>,
     pub sequence_timeline_state: TimelineState,
@@ -228,6 +232,8 @@ pub struct EditorState {
 pub struct RecordState {
     pub editor: Arc<Mutex<Editor>>,
     // pub record: Arc<Mutex<Record<PolygonEdit>>>,
+    // pub editor_state: EditorState,
+    pub saved_state: Option<SavedState>,
 }
 
 impl EditorState {
@@ -239,6 +245,7 @@ impl EditorState {
             record: Arc::clone(&record),
             record_state: RecordState {
                 editor: Arc::clone(&editor),
+                saved_state: None,
                 // record: Arc::clone(&record),
             },
             polygon_selected: false,
@@ -249,7 +256,7 @@ impl EditorState {
             selected_image_id: Uuid::nil(),
             value_signals: Arc::new(Mutex::new(HashMap::new())),
             current_modifiers: ModifiersState::empty(),
-            saved_state: None,
+            // saved_state: None,
             project_selected_signal: None,
             sequence_timeline_state,
             active_sequence_mode: RwSignal::new("layout".to_string()),
@@ -477,7 +484,11 @@ impl EditorState {
         let new_motion_path =
             self.save_default_keyframes(savable_polygon.id.clone(), ObjectType::Polygon);
 
-        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+        let mut saved_state = self
+            .record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
 
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
@@ -488,7 +499,7 @@ impl EditorState {
 
         save_saved_state_raw(saved_state.clone());
 
-        self.saved_state = Some(saved_state.clone());
+        self.record_state.saved_state = Some(saved_state.clone());
     }
 
     pub fn add_saved_text_item(
@@ -499,7 +510,11 @@ impl EditorState {
         let new_motion_path =
             self.save_default_keyframes(savable_text_item.id.clone(), ObjectType::TextItem);
 
-        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+        let mut saved_state = self
+            .record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
 
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
@@ -510,7 +525,7 @@ impl EditorState {
 
         save_saved_state_raw(saved_state.clone());
 
-        self.saved_state = Some(saved_state.clone());
+        self.record_state.saved_state = Some(saved_state.clone());
     }
 
     pub fn add_saved_image_item(
@@ -521,7 +536,11 @@ impl EditorState {
         let new_motion_path =
             self.save_default_keyframes(savable_image_item.id.clone(), ObjectType::ImageItem);
 
-        let mut saved_state = self.saved_state.as_mut().expect("Couldn't get Saved State");
+        let mut saved_state = self
+            .record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
 
         saved_state.sequences.iter_mut().for_each(|s| {
             if s.id == selected_sequence_id {
@@ -532,7 +551,7 @@ impl EditorState {
 
         save_saved_state_raw(saved_state.clone());
 
-        self.saved_state = Some(saved_state.clone());
+        self.record_state.saved_state = Some(saved_state.clone());
     }
 
     // Helper method to register a new signal

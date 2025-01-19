@@ -505,7 +505,7 @@ pub fn project_browser(
                             println!("Loading saved state...");
                             let saved_state = load_project_state(uuid.clone().to_string())
                                 .expect("Couldn't get Saved State");
-                            editor_state.saved_state = Some(saved_state.clone());
+                            editor_state.record_state.saved_state = Some(saved_state.clone());
 
                             // update the UI signal
                             let project_selected = editor_state

@@ -285,6 +285,7 @@ pub fn sequence_panel(
         let mut editor_state = state_cloned_5.lock().unwrap();
 
         let mut saved_state = editor_state
+            .record_state
             .saved_state
             .as_mut()
             .expect("Couldn't get Saved State");
@@ -322,7 +323,7 @@ pub fn sequence_panel(
 
         save_saved_state_raw(saved_state.clone());
 
-        editor_state.saved_state = Some(saved_state.clone());
+        editor_state.record_state.saved_state = Some(saved_state.clone());
 
         drop(editor_state);
     };
@@ -360,6 +361,7 @@ pub fn sequence_panel(
                     let mut editor_state = state_cloned_4.lock().unwrap();
 
                     let mut saved_state = editor_state
+                        .record_state
                         .saved_state
                         .as_mut()
                         .expect("Couldn't get Saved State");
@@ -372,7 +374,7 @@ pub fn sequence_panel(
 
                     save_saved_state_raw(saved_state.clone());
 
-                    editor_state.saved_state = Some(saved_state.clone());
+                    editor_state.record_state.saved_state = Some(saved_state.clone());
 
                     drop(editor_state);
                 })

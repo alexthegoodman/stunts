@@ -71,6 +71,7 @@ pub fn sequences_view(
     create_effect(move |_| {
         let mut editor_state = editor_state.lock().unwrap();
         let saved_state = editor_state
+            .record_state
             .saved_state
             .as_ref()
             .expect("Couldn't get Saved State");
@@ -149,13 +150,14 @@ pub fn sequences_view(
 
                 let mut editor_state = state_cloned.lock().unwrap();
                 let mut new_state = editor_state
+                    .record_state
                     .saved_state
                     .as_mut()
                     .expect("Couldn't get Saved State")
                     .clone();
                 new_state.sequences.push(new_sequence);
 
-                editor_state.saved_state = Some(new_state.clone());
+                editor_state.record_state.saved_state = Some(new_state.clone());
 
                 save_saved_state_raw(new_state.clone());
 
@@ -267,6 +269,7 @@ pub fn sequences_view(
 
                                     let editor_state = state_cloned2.lock().unwrap();
                                     let saved_state = editor_state
+                                        .record_state
                                         .saved_state
                                         .as_ref()
                                         .expect("Couldn't get Saved State");
@@ -355,6 +358,7 @@ pub fn sequences_view(
 
                                 let mut editor_state = state_cloned3.lock().unwrap();
                                 let mut new_state = editor_state
+                                    .record_state
                                     .saved_state
                                     .as_mut()
                                     .expect("Couldn't get Saved State")
@@ -373,7 +377,7 @@ pub fn sequences_view(
 
                                 new_state.sequences.push(dup_sequence.clone());
 
-                                editor_state.saved_state = Some(new_state.clone());
+                                editor_state.record_state.saved_state = Some(new_state.clone());
 
                                 save_saved_state_raw(new_state.clone());
 
@@ -425,6 +429,7 @@ pub fn sequences_view(
                                     let new_savable = sequence_timeline_state.to_config();
 
                                     let mut new_state = editor_state
+                                        .record_state
                                         .saved_state
                                         .as_mut()
                                         .expect("Couldn't get Saved State")
@@ -432,7 +437,7 @@ pub fn sequences_view(
 
                                     new_state.timeline_state = new_savable;
 
-                                    editor_state.saved_state = Some(new_state.clone());
+                                    editor_state.record_state.saved_state = Some(new_state.clone());
 
                                     save_saved_state_raw(new_state.clone());
 
@@ -459,6 +464,7 @@ pub fn sequences_view(
                 let mut editor_state = state_cloned5.lock().unwrap();
 
                 let saved_state = editor_state
+                    .record_state
                     .saved_state
                     .as_ref()
                     .expect("Couldn't get saved state");

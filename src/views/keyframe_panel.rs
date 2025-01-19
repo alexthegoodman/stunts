@@ -86,6 +86,7 @@ pub fn update_keyframe(
 
     // save to file
     let last_saved_state = editor_state
+        .record_state
         .saved_state
         .as_mut()
         .expect("Couldn't get Saved State");

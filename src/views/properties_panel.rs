@@ -89,6 +89,7 @@ pub fn properties_view(
                             // TODO: on_debounce_stop?
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -130,6 +131,7 @@ pub fn properties_view(
                             // TODO: on_debounce_stop?
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -167,6 +169,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -200,6 +203,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -233,6 +237,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -283,6 +288,7 @@ pub fn properties_view(
 
                         let value = string_to_f32(&value).expect("Couldn't convert string");
                         let mut saved_state = editor_state
+                            .record_state
                             .saved_state
                             .as_mut()
                             .expect("Couldn't get Saved State");
@@ -322,6 +328,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -356,6 +363,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -390,6 +398,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -424,6 +433,7 @@ pub fn properties_view(
 
                             let value = string_to_f32(&value).expect("Couldn't convert string");
                             let mut saved_state = editor_state
+                                .record_state
                                 .saved_state
                                 .as_mut()
                                 .expect("Couldn't get Saved State");
@@ -543,6 +553,7 @@ pub fn text_properties_view(
         // save to saved_state
         let mut editor_state = editor_state3.lock().unwrap();
         let mut saved_state = editor_state
+            .record_state
             .saved_state
             .as_mut()
             .expect("Couldn't get Saved State");
@@ -559,7 +570,7 @@ pub fn text_properties_view(
 
         save_saved_state_raw(saved_state.clone());
 
-        editor_state.saved_state = Some(saved_state.clone());
+        editor_state.record_state.saved_state = Some(saved_state.clone());
 
         drop(editor_state);
     };
@@ -585,6 +596,7 @@ pub fn text_properties_view(
         // save to saved_state
         let mut editor_state = editor_state4.lock().unwrap();
         let mut saved_state = editor_state
+            .record_state
             .saved_state
             .as_mut()
             .expect("Couldn't get Saved State");
@@ -601,7 +613,7 @@ pub fn text_properties_view(
 
         save_saved_state_raw(saved_state.clone());
 
-        editor_state.saved_state = Some(saved_state.clone());
+        editor_state.record_state.saved_state = Some(saved_state.clone());
 
         drop(editor_state);
 
@@ -727,6 +739,7 @@ pub fn text_properties_view(
                                     let mut editor_state = editor_state5.lock().unwrap();
 
                                     let mut saved_state = editor_state
+                                        .record_state
                                         .saved_state
                                         .as_mut()
                                         .expect("Couldn't get Saved State");
