@@ -54,6 +54,16 @@ pub fn properties_view(
     let editor_state8 = Arc::clone(&editor_state);
     let editor_state9 = Arc::clone(&editor_state);
     let editor_state10 = Arc::clone(&editor_state);
+    let editor_state11 = Arc::clone(&editor_state);
+    let editor_state12 = Arc::clone(&editor_state);
+    let editor_state13 = Arc::clone(&editor_state);
+    let editor_state14 = Arc::clone(&editor_state);
+    let editor_state15 = Arc::clone(&editor_state);
+    let editor_state16 = Arc::clone(&editor_state);
+    let editor_state17 = Arc::clone(&editor_state);
+    let editor_state18 = Arc::clone(&editor_state);
+    let editor_state19 = Arc::clone(&editor_state);
+    let editor_state20 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -69,7 +79,7 @@ pub fn properties_view(
         }),
         v_stack((
             h_stack((
-                styled_input(
+                debounce_input(
                     "Width:".to_string(),
                     &selected_polygon_data
                         .read()
@@ -78,40 +88,23 @@ pub fn properties_view(
                         .0
                         .to_string(),
                     "Enter width",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_width(&value)
-                                .expect("Couldn't update width");
+                    move |value| {
+                        let mut editor_state = editor_state11.lock().unwrap();
 
-                            // TODO: probably should update selected_polygon_data
-                            // need to update active_polygons in saved_data
-                            // TODO: on_debounce_stop?
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        // NOTE: editor_state actions are hooked into undo/redo as well as file save
+                        editor_state
+                            .update_width(&value)
+                            .expect("Couldn't update width");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.dimensions = (value as i32, p.dimensions.1);
-                                        }
-                                    });
-                                }
-                            });
+                        drop(editor_state);
 
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        // TODO: should update selected_polygon_data?
+                    },
                     editor_state,
                     "width".to_string(),
                 )
                 .style(move |s| s.width(halfs).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Height:".to_string(),
                     &selected_polygon_data
                         .read()
@@ -120,141 +113,68 @@ pub fn properties_view(
                         .1
                         .to_string(),
                     "Enter height",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_height(&value)
-                                .expect("Couldn't update height");
+                    move |value| {
+                        let mut editor_state = editor_state12.lock().unwrap();
 
-                            // TODO: probably should update selected_polygon_data
-                            // need to update active_polygons in saved_data
-                            // TODO: on_debounce_stop?
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_height(&value)
+                            .expect("Couldn't update height");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.dimensions = (p.dimensions.0, value as i32);
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-
-                            // update_height is called up there friend ^^^
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state2,
                     "height".to_string(),
                 )
                 .style(move |s| s.width(halfs)),
             )),
             h_stack((
-                styled_input(
+                debounce_input(
                     "Red:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().fill[0]).to_string(),
                     "0-255",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_red(&value)
-                                .expect("Couldn't update red");
+                    move |value| {
+                        let mut editor_state = editor_state13.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_red(&value)
+                            .expect("Couldn't update red");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.fill[0] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state3,
                     "red".to_string(),
                 )
                 .style(move |s| s.width(thirds).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Green:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().fill[1]).to_string(),
                     "0-255",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_green(&value)
-                                .expect("Couldn't update green");
+                    move |value| {
+                        let mut editor_state = editor_state14.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_green(&value)
+                            .expect("Couldn't update green");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.fill[1] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state4,
                     "green".to_string(),
                 )
                 .style(move |s| s.width(thirds).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Blue:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().fill[2]).to_string(),
                     "0-255",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_blue(&value)
-                                .expect("Couldn't update blue");
+                    move |value| {
+                        let mut editor_state = editor_state15.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_blue(&value)
+                            .expect("Couldn't update blue");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.fill[2] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state5,
                     "blue".to_string(),
                 )
@@ -272,7 +192,7 @@ pub fn properties_view(
                 //     })],
                 // )])
             }),
-            styled_input(
+            debounce_input(
                 "Border Radius:".to_string(),
                 &selected_polygon_data
                     .read()
@@ -280,38 +200,21 @@ pub fn properties_view(
                     .border_radius
                     .to_string(),
                 "Enter radius",
-                Box::new({
-                    move |mut editor_state, value| {
-                        editor_state
-                            .update_border_radius(&value)
-                            .expect("Couldn't update border radius");
+                move |value| {
+                    let mut editor_state = editor_state16.lock().unwrap();
 
-                        let value = string_to_f32(&value).expect("Couldn't convert string");
-                        let mut saved_state = editor_state
-                            .record_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State");
+                    editor_state
+                        .update_border_radius(&value)
+                        .expect("Couldn't update border radius");
 
-                        saved_state.sequences.iter_mut().for_each(|s| {
-                            if s.id == selected_sequence_id.get() {
-                                s.active_polygons.iter_mut().for_each(|p| {
-                                    if p.id == selected_polygon_id.get().to_string() {
-                                        p.border_radius = value as i32;
-                                    }
-                                });
-                            }
-                        });
-
-                        save_saved_state_raw(saved_state.clone());
-                    }
-                }),
+                    drop(editor_state);
+                },
                 editor_state6,
                 "border_radius".to_string(),
             ),
             label(|| "Stroke").style(|s| s.margin_bottom(5.0)),
             h_stack((
-                styled_input(
+                debounce_input(
                     "Thickness:".to_string(),
                     &selected_polygon_data
                         .read()
@@ -320,137 +223,69 @@ pub fn properties_view(
                         .thickness
                         .to_string(),
                     "Enter thickness",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_stroke_thickness(&value)
-                                .expect("Couldn't update blue");
+                    move |value| {
+                        let mut editor_state = editor_state17.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_stroke_thickness(&value)
+                            .expect("Couldn't update blue");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.stroke.thickness = value as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state7,
                     "stroke_thickness".to_string(),
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Red:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[0])
                         .to_string(),
                     "Enter red",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_stroke_red(&value)
-                                .expect("Couldn't update blue");
+                    move |value| {
+                        let mut editor_state = editor_state18.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_stroke_red(&value)
+                            .expect("Couldn't update blue");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.stroke.fill[0] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state10,
                     "stroke_red".to_string(),
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Green:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[1])
                         .to_string(),
                     "Enter green",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_stroke_green(&value)
-                                .expect("Couldn't update blue");
+                    move |value| {
+                        let mut editor_state = editor_state19.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_stroke_green(&value)
+                            .expect("Couldn't update blue");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.stroke.fill[1] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state8,
                     "stroke_green".to_string(),
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
-                styled_input(
+                debounce_input(
                     "Blue:".to_string(),
                     &wgpu_to_human(selected_polygon_data.read().borrow().stroke.fill[2])
                         .to_string(),
                     "Enter blue",
-                    Box::new({
-                        move |mut editor_state, value| {
-                            editor_state
-                                .update_stroke_blue(&value)
-                                .expect("Couldn't update blue");
+                    move |value| {
+                        let mut editor_state = editor_state20.lock().unwrap();
 
-                            let value = string_to_f32(&value).expect("Couldn't convert string");
-                            let mut saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_mut()
-                                .expect("Couldn't get Saved State");
+                        editor_state
+                            .update_stroke_blue(&value)
+                            .expect("Couldn't update blue");
 
-                            saved_state.sequences.iter_mut().for_each(|s| {
-                                if s.id == selected_sequence_id.get() {
-                                    s.active_polygons.iter_mut().for_each(|p| {
-                                        if p.id == selected_polygon_id.get().to_string() {
-                                            p.stroke.fill[2] = color_to_wgpu(value) as i32;
-                                        }
-                                    });
-                                }
-                            });
-
-                            save_saved_state_raw(saved_state.clone());
-                        }
-                    }),
+                        drop(editor_state);
+                    },
                     editor_state9,
                     "stroke_blue".to_string(),
                 )

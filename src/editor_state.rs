@@ -11,7 +11,9 @@ use floem::reactive::{RwSignal, SignalUpdate};
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, UIKeyframe,
 };
-use stunts_engine::editor::{string_to_f32, wgpu_to_human, Editor, InputValue, PolygonProperty};
+use stunts_engine::editor::{
+    color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, PolygonProperty,
+};
 use stunts_engine::polygon::SavedPolygonConfig;
 use stunts_engine::st_image::SavedStImageConfig;
 use stunts_engine::text_due::SavedTextRendererConfig;
@@ -38,9 +40,9 @@ impl Edit for PolygonEdit {
 
     fn edit(&mut self, record_state: &mut RecordState) {
         let mut editor = record_state.editor.lock().unwrap();
-        let saved_state = record_state
+        let mut saved_state = record_state
             .saved_state
-            .as_ref()
+            .as_mut()
             .expect("Couldn't get saved state");
 
         match &self.new_value {
@@ -49,60 +51,180 @@ impl Edit for PolygonEdit {
 
                 let mut width = w.to_string();
                 self.signal.expect("signal error").set(width);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.dimensions = (*w as i32, p.dimensions.1);
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Height(h) => {
                 editor.update_polygon(self.polygon_id, "height", InputValue::Number(*h));
 
                 let mut height = h.to_string();
                 self.signal.expect("signal error").set(height);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.dimensions = (p.dimensions.0, *h as i32);
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Red(h) => {
                 editor.update_polygon(self.polygon_id, "red", InputValue::Number(*h));
 
                 let mut red = h.to_string();
                 self.signal.expect("signal error").set(red);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[0] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Green(h) => {
                 editor.update_polygon(self.polygon_id, "green", InputValue::Number(*h));
 
                 let mut green = h.to_string();
                 self.signal.expect("signal error").set(green);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[1] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Blue(h) => {
                 editor.update_polygon(self.polygon_id, "blue", InputValue::Number(*h));
 
                 let mut blue = h.to_string();
                 self.signal.expect("signal error").set(blue);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[2] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::BorderRadius(h) => {
                 editor.update_polygon(self.polygon_id, "border_radius", InputValue::Number(*h));
 
                 let mut border_radius = h.to_string();
                 self.signal.expect("signal error").set(border_radius);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.border_radius = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeThickness(h) => {
                 editor.update_polygon(self.polygon_id, "stroke_thickness", InputValue::Number(*h));
 
                 let mut stroke_thickness = h.to_string();
                 self.signal.expect("signal error").set(stroke_thickness);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.thickness = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeRed(h) => {
                 editor.update_polygon(self.polygon_id, "stroke_red", InputValue::Number(*h));
 
                 let mut stroke_red = h.to_string();
                 self.signal.expect("signal error").set(stroke_red);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[0] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeGreen(h) => {
                 editor.update_polygon(self.polygon_id, "stroke_green", InputValue::Number(*h));
 
                 let mut stroke_green = h.to_string();
                 self.signal.expect("signal error").set(stroke_green);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[1] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeBlue(h) => {
                 editor.update_polygon(self.polygon_id, "stroke_blue", InputValue::Number(*h));
 
                 let mut stroke_blue = h.to_string();
                 self.signal.expect("signal error").set(stroke_blue);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[2] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             } // PolygonProperty::Points(w) => {
               //     editor.update_polygon(self.polygon_id, "points", InputValue::Points(w.clone()));
               // }
@@ -111,6 +233,10 @@ impl Edit for PolygonEdit {
 
     fn undo(&mut self, record_state: &mut RecordState) {
         let mut editor = record_state.editor.lock().unwrap();
+        let mut saved_state = record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get saved state");
 
         match &self.old_value {
             PolygonProperty::Width(w) => {
@@ -118,12 +244,36 @@ impl Edit for PolygonEdit {
 
                 let mut width = w.to_string();
                 self.signal.expect("signal error").set(width);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.dimensions = (*w as i32, p.dimensions.1);
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Height(h) => {
                 editor.update_polygon(self.polygon_id, "height", InputValue::Number(*h));
 
                 let mut height = h.to_string();
                 self.signal.expect("signal error").set(height);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.dimensions = (p.dimensions.0, *h as i32);
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Red(h) => {
                 // let mut stroke_green = h.to_string();
@@ -134,6 +284,18 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(red_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[0] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Green(h) => {
                 // let mut stroke_green = h.to_string();
@@ -144,6 +306,18 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(green_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[1] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::Blue(h) => {
                 // let mut stroke_green = h.to_string();
@@ -154,18 +328,54 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(blue_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.fill[2] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::BorderRadius(h) => {
                 editor.update_polygon(self.polygon_id, "border_radius", InputValue::Number(*h));
 
                 let mut border_radius = h.to_string();
                 self.signal.expect("signal error").set(border_radius);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.border_radius = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeThickness(h) => {
                 editor.update_polygon(self.polygon_id, "stroke_thickness", InputValue::Number(*h));
 
                 let mut stroke_thickness = h.to_string();
                 self.signal.expect("signal error").set(stroke_thickness);
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.thickness = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeRed(h) => {
                 // let mut stroke_red = h.to_string();
@@ -176,6 +386,18 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(red_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[0] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeGreen(h) => {
                 // let mut stroke_green = h.to_string();
@@ -190,6 +412,18 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(green_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[1] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             }
             PolygonProperty::StrokeBlue(h) => {
                 // let mut stroke_blue = h.to_string();
@@ -204,6 +438,18 @@ impl Edit for PolygonEdit {
                 self.signal
                     .expect("signal error")
                     .set(blue_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_polygons.iter_mut().for_each(|p| {
+                        if p.id == self.polygon_id.to_string() {
+                            p.stroke.fill[2] = color_to_wgpu(*h) as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
             } // PolygonProperty::Points(w) => {
               //     editor.update_polygon(self.polygon_id, "points", InputValue::Points(w.clone()));
               // }
