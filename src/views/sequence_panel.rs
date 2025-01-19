@@ -206,7 +206,7 @@ pub fn sequence_panel(
     let window_height = create_rw_signal(0.0);
     let dragger_id = create_rw_signal(Uuid::nil());
 
-    let select_active = create_rw_signal(false);
+    let select_active = create_rw_signal(true);
     let pan_active = create_rw_signal(false);
 
     create_effect({
