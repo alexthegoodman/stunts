@@ -18,7 +18,7 @@ use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
 use stunts_engine::st_image::{StImage, StImageConfig};
 use stunts_engine::text_due::{TextRenderer, TextRendererConfig};
-use stunts_engine::timelines::{TimelineSequence, TrackType};
+use stunts_engine::timelines::{SavedTimelineStateConfig, TimelineSequence, TrackType};
 use uuid::Uuid;
 
 use crate::editor_state::EditorState;
@@ -28,7 +28,8 @@ use stunts_engine::animations::{
 };
 
 use super::export::export_widget;
-use super::sequence_timeline::{build_timeline, TimelineState};
+use super::keyframe_timeline::TimelineState;
+use super::sequence_timeline::build_timeline;
 
 fn get_last_n_items<T>(vec: &[T], n: usize) -> &[T] {
     if n > vec.len() {
@@ -49,6 +50,7 @@ pub fn sequences_view(
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned2 = Arc::clone(&editor);
+    let editor_cloned3 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let viewport_cloned2 = Arc::clone(&viewport);
@@ -66,7 +68,11 @@ pub fn sequences_view(
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
     let sequence_quick_access: RwSignal<HashMap<String, i32>> = create_rw_signal(HashMap::new());
 
-    let sequence_timeline_signal = create_rw_signal(TimelineState::new());
+    // let sequence_timeline_signal = create_rw_signal(TimelineState::new());
+    let timeline_sequences: RwSignal<Vec<TimelineSequence>> = create_rw_signal(Vec::new());
+    let dragging_timeline_sequence: RwSignal<Option<(String, i32)>> = create_rw_signal(None);
+    let export_play_timeline_config: RwSignal<Option<SavedTimelineStateConfig>> =
+        create_rw_signal(None);
 
     create_effect(move |_| {
         let mut editor_state = editor_state.lock().unwrap();
@@ -102,13 +108,13 @@ pub fn sequences_view(
 
         // initialize TimelineState based on stored config if exists or saved sequences if not
         if saved_state.timeline_state.timeline_sequences.len() > 0 {
-            let new_timeline_state = TimelineState::new();
+            timeline_sequences.set(saved_state.timeline_state.timeline_sequences.clone());
 
-            new_timeline_state
-                .timeline_sequences
-                .set(saved_state.timeline_state.timeline_sequences.clone());
+            export_play_timeline_config.set(Some(SavedTimelineStateConfig {
+                timeline_sequences: timeline_sequences.get(),
+            }));
 
-            sequence_timeline_signal.set(new_timeline_state);
+            // sequence_timeline_signal.set(new_timeline_state);
         } else {
             // let new_timeline_state = TimelineState::new();
             // let timeline_sequences: Vec<TimelineSequence> = saved_state
@@ -135,7 +141,8 @@ pub fn sequences_view(
     h_stack((
         v_stack((
             label(move || format!("Sequences")).style(|s| s.margin_bottom(10)),
-            export_widget(state_cloned6, viewport_cloned3, sequence_timeline_signal),
+            // double check this exports with the latest timeline
+            export_widget(state_cloned6, viewport_cloned3, export_play_timeline_config),
             simple_button("New Sequence".to_string(), move |_| {
                 println!("New Sequence...");
 
@@ -398,35 +405,39 @@ pub fn sequences_view(
                                     //     .timeline_sequences
                                     //     .get();
 
-                                    let sequence_timeline_state = sequence_timeline_signal.get();
+                                    // let sequence_timeline_state = sequence_timeline_state;
 
-                                    let mut existing_timeline =
-                                        sequence_timeline_state.timeline_sequences.get();
+                                    let mut existing_timeline = timeline_sequences.get();
 
                                     // Find the sequence that ends at the latest point in time
-                                    // let start_time = if existing_timeline.is_empty() {
-                                    //     0
-                                    // } else {
-                                    //     existing_timeline
-                                    //         .iter()
-                                    //         .map(|seq| seq.start_time_ms + seq.duration_ms)
-                                    //         .max()
-                                    //         .unwrap_or(0)
-                                    // };
+                                    let start_time = if existing_timeline.is_empty() {
+                                        0
+                                    } else {
+                                        existing_timeline
+                                            .iter()
+                                            .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                            .max()
+                                            .unwrap_or(0)
+                                    };
 
                                     existing_timeline.push(TimelineSequence {
                                         id: Uuid::new_v4().to_string(),
                                         sequence_id: item_cloned.clone(),
                                         track_type: TrackType::Video,
-                                        // start_time_ms: start_time,
+                                        start_time_ms: start_time,
                                         duration_ms: 20000,
                                     });
 
-                                    sequence_timeline_state
-                                        .timeline_sequences
-                                        .set(existing_timeline);
+                                    timeline_sequences.set(existing_timeline);
+                                    export_play_timeline_config.set(Some(
+                                        SavedTimelineStateConfig {
+                                            timeline_sequences: timeline_sequences.get(),
+                                        },
+                                    ));
 
-                                    let new_savable = sequence_timeline_state.to_config();
+                                    let new_savable = export_play_timeline_config
+                                        .get()
+                                        .expect("Couldn't get timeline config");
 
                                     let mut new_state = editor_state
                                         .record_state
@@ -569,8 +580,11 @@ pub fn sequences_view(
                     let now = std::time::Instant::now();
                     editor.video_start_playing_time = Some(now.clone());
 
-                    editor.video_current_sequence_timeline =
-                        Some(sequence_timeline_signal.get().to_config());
+                    editor.video_current_sequence_timeline = Some(
+                        export_play_timeline_config
+                            .get()
+                            .expect("Couldn't get a timeline"),
+                    );
                     editor.video_current_sequences_data = Some(cloned_sequences);
 
                     editor.video_is_playing = true;
@@ -584,7 +598,14 @@ pub fn sequences_view(
 
                 // EventPropagation::Continue
             }),
-            build_timeline(state_cloned7, sequence_timeline_signal.get()),
+            build_timeline(
+                editor_cloned3,
+                state_cloned7,
+                timeline_sequences,
+                dragging_timeline_sequence,
+                export_play_timeline_config,
+                10,
+            ),
         ))
         .style(|s| s.margin_top(425.0).margin_left(25.0)),
     ))

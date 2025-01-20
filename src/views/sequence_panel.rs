@@ -453,110 +453,112 @@ pub fn sequence_panel(
                 ),
             ))
             .style(|s| s.margin_bottom(5.0)),
-            v_stack((
-                debounce_input(
-                    "Target Duration".to_string(),
-                    &sequence_duration_input.get(),
-                    "Seconds",
-                    move |target_dur| {
-                        target_duration_signal.set(target_dur);
-                    },
-                    state_cloned_6,
-                    "target_duration".to_string(),
-                ),
-                h_stack((
-                    simple_button("Shrink / Stretch".to_string(), move |_| {
-                        // TODO: integrate with undo/redo
-                        if target_duration_signal.get().len() < 1 {
-                            return;
-                        }
+            // v_stack((
+            //     debounce_input(
+            //         "Target Duration".to_string(),
+            //         &sequence_duration_input.get(),
+            //         "Seconds",
+            //         move |target_dur| {
+            //             target_duration_signal.set(target_dur);
+            //         },
+            //         state_cloned_6,
+            //         "target_duration".to_string(),
+            //     ),
+            //     h_stack((
+            //         simple_button("Shrink / Stretch".to_string(), move |_| {
+            //             // TODO: integrate with undo/redo
+            //             if target_duration_signal.get().len() < 1 {
+            //                 return;
+            //             }
 
-                        let mut editor_state = state_cloned_8.lock().unwrap();
+            //             let mut editor_state = state_cloned_8.lock().unwrap();
 
-                        let target_duration = string_to_f32(&target_duration_signal.get())
-                            .expect("Couldn't get duration");
+            //             let target_duration = string_to_f32(&target_duration_signal.get())
+            //                 .expect("Couldn't get duration");
 
-                        let target_keyframes = editor_state
-                            .scale_keyframes(selected_sequence_id.get(), target_duration);
+            //             let target_keyframes = editor_state
+            //                 .scale_keyframes(selected_sequence_id.get(), target_duration);
 
-                        let mut new_sequence = selected_sequence_data.get();
-                        new_sequence.polygon_motion_paths = target_keyframes.clone();
+            //             let mut new_sequence = selected_sequence_data.get();
+            //             new_sequence.polygon_motion_paths = target_keyframes.clone();
 
-                        selected_sequence_data.set(new_sequence);
+            //             selected_sequence_data.set(new_sequence);
 
-                        let mut saved_state = editor_state
-                            .record_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State");
+            //             let mut saved_state = editor_state
+            //                 .record_state
+            //                 .saved_state
+            //                 .as_mut()
+            //                 .expect("Couldn't get Saved State");
 
-                        saved_state.sequences.iter_mut().for_each(|s| {
-                            if s.id == selected_sequence_id.get() {
-                                s.polygon_motion_paths = target_keyframes.clone();
-                            }
-                        });
+            //             saved_state.sequences.iter_mut().for_each(|s| {
+            //                 if s.id == selected_sequence_id.get() {
+            //                     s.polygon_motion_paths = target_keyframes.clone();
+            //                 }
+            //             });
 
-                        saved_state
-                            .timeline_state
-                            .timeline_sequences
-                            .iter_mut()
-                            .for_each(|ts| {
-                                if ts.sequence_id == selected_sequence_id.get() {
-                                    ts.duration_ms = target_duration as i32 * 1000;
-                                }
-                            });
+            //             saved_state
+            //                 .timeline_state
+            //                 .timeline_sequences
+            //                 .iter_mut()
+            //                 .for_each(|ts| {
+            //                     if ts.sequence_id == selected_sequence_id.get() {
+            //                         ts.duration_ms = target_duration as i32 * 1000;
+            //                     }
+            //                 });
 
-                        save_saved_state_raw(saved_state.clone());
+            //             save_saved_state_raw(saved_state.clone());
 
-                        editor_state.record_state.saved_state = Some(saved_state.clone());
+            //             editor_state.record_state.saved_state = Some(saved_state.clone());
 
-                        drop(editor_state);
-                    }),
-                    simple_button("Cut / Extend".to_string(), move |_| {
-                        if target_duration_signal.get().len() < 1 {
-                            return;
-                        }
+            //             drop(editor_state);
+            //         }),
+            //         simple_button("Cut / Extend".to_string(), move |_| {
+            //             if target_duration_signal.get().len() < 1 {
+            //                 return;
+            //             }
 
-                        let mut editor_state = state_cloned_9.lock().unwrap();
+            //             // TODO: needs to actually cut off keyframes? and update motion paths?
 
-                        let target_duration = string_to_f32(&target_duration_signal.get())
-                            .expect("Couldn't get duration");
+            //             let mut editor_state = state_cloned_9.lock().unwrap();
 
-                        let mut saved_state = editor_state
-                            .record_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State");
+            //             let target_duration = string_to_f32(&target_duration_signal.get())
+            //                 .expect("Couldn't get duration");
 
-                        saved_state
-                            .sequences
-                            .iter_mut()
-                            .filter(|s| s.id == selected_sequence_id.get())
-                            .for_each(|s| {
-                                s.polygon_motion_paths.iter_mut().for_each(|pm| {
-                                    pm.duration = Duration::from_secs(target_duration as u64);
-                                });
-                            });
+            //             let mut saved_state = editor_state
+            //                 .record_state
+            //                 .saved_state
+            //                 .as_mut()
+            //                 .expect("Couldn't get Saved State");
 
-                        saved_state
-                            .timeline_state
-                            .timeline_sequences
-                            .iter_mut()
-                            .for_each(|ts| {
-                                if ts.sequence_id == selected_sequence_id.get() {
-                                    ts.duration_ms = target_duration as i32 * 1000;
-                                }
-                            });
+            //             saved_state
+            //                 .sequences
+            //                 .iter_mut()
+            //                 .filter(|s| s.id == selected_sequence_id.get())
+            //                 .for_each(|s| {
+            //                     s.polygon_motion_paths.iter_mut().for_each(|pm| {
+            //                         pm.duration = Duration::from_secs(target_duration as u64);
+            //                     });
+            //                 });
 
-                        save_saved_state_raw(saved_state.clone());
+            //             saved_state
+            //                 .timeline_state
+            //                 .timeline_sequences
+            //                 .iter_mut()
+            //                 .for_each(|ts| {
+            //                     if ts.sequence_id == selected_sequence_id.get() {
+            //                         ts.duration_ms = target_duration as i32 * 1000;
+            //                     }
+            //                 });
 
-                        editor_state.record_state.saved_state = Some(saved_state.clone());
+            //             save_saved_state_raw(saved_state.clone());
 
-                        drop(editor_state);
-                    }),
-                )),
-            ))
-            .style(|s| s.margin_bottom(5.0)),
+            //             editor_state.record_state.saved_state = Some(saved_state.clone());
+
+            //             drop(editor_state);
+            //         }),
+            //     )),
+            // ))
+            // .style(|s| s.margin_bottom(5.0)),
             stack((
                 option_button(
                     "Add Square",

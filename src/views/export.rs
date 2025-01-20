@@ -21,8 +21,6 @@ use tokio::sync::mpsc;
 
 use crate::editor_state::EditorState;
 
-use super::sequence_timeline::TimelineState;
-
 use std::thread;
 
 // Messages we'll send to the export thread
@@ -198,7 +196,8 @@ pub fn spawn_export_thread() -> mpsc::Sender<ExportCommand> {
 pub fn export_widget(
     editor_state: Arc<Mutex<EditorState>>,
     viewport: Arc<Mutex<Viewport>>,
-    sequence_timeline_signal: RwSignal<TimelineState>,
+    // sequence_timeline_signal: RwSignal<TimelineState>,
+    sequence_timeline: RwSignal<Option<SavedTimelineStateConfig>>,
 ) -> impl View {
     let (progress_tx, progress_rx) = mpsc::unbounded_channel();
     let progress = create_signal_from_tokio_channel(progress_rx);
@@ -243,7 +242,7 @@ pub fn export_widget(
                 // Clone necessary values before spawning thread
                 let editor_state = editor_state.clone();
                 let viewport = viewport.clone();
-                let sequence_timeline_signal = sequence_timeline_signal;
+                // let sequence_timeline_signal = sequence_timeline_signal;
                 let export_thread_tx = export_thread_tx.get();
 
                 let editor_state = editor_state.lock().unwrap();
@@ -262,9 +261,12 @@ pub fn export_widget(
 
                 let sequences = new_state.sequences.clone();
 
-                let timeline_state = sequence_timeline_signal.get();
-                let saved_timeline_state_config = timeline_state.to_config();
+                // let timeline_state = sequence_timeline_signal.get();
+                // let saved_timeline_state_config = sequence_timeline.clone();
+                let saved_timeline_state_config =
+                    sequence_timeline.get().expect("Couldn't get a timeline");
                 let total_duration_s: f64 = saved_timeline_state_config
+                    .clone()
                     .timeline_sequences
                     .iter()
                     .map(|s| s.duration_ms as f64 / 1000.0)
@@ -284,7 +286,7 @@ pub fn export_widget(
                                 output_path: "D:/projects/common/stunts/".to_string() + &filename,
                                 window_size,
                                 sequences,
-                                saved_timeline_state_config,
+                                saved_timeline_state_config: saved_timeline_state_config.clone(),
                                 video_width: 1920,
                                 video_height: 1080,
                                 total_duration_s,
