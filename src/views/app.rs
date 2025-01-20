@@ -64,6 +64,7 @@ use super::editor_settings::editor_settings;
 use super::inputs::styled_input;
 use super::keyframe_panel::keyframe_properties_view;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
+use super::object_timeline::build_object_timeline;
 use super::project_browser::project_browser;
 use super::properties_panel::{image_properties_view, properties_view, text_properties_view};
 use super::sequence_panel::sequence_panel;
@@ -298,6 +299,7 @@ pub fn project_view(
     let editor_cloned7 = Arc::clone(&editor);
     let editor_cloned8 = Arc::clone(&editor);
     let editor_cloned9 = Arc::clone(&editor);
+    let editor_cloned10 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
@@ -308,6 +310,7 @@ pub fn project_view(
     let state_cloned7 = Arc::clone(&editor_state);
     let state_cloned8 = Arc::clone(&editor_state);
     let state_cloned9 = Arc::clone(&editor_state);
+    let state_cloned10 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
@@ -326,6 +329,7 @@ pub fn project_view(
     let selected_sequence_id = create_rw_signal(String::new());
     let selected_sequence_data: RwSignal<Sequence> = create_rw_signal(Sequence {
         id: String::new(),
+        name: String::new(),
         active_polygons: Vec::new(),
         polygon_motion_paths: Vec::new(),
         active_text_items: Vec::new(),
@@ -1082,7 +1086,13 @@ pub fn project_view(
                             selected_sequence_id,
                             selected_sequence_data,
                         ),
-                        // keyframe_timeline,
+                        container((build_object_timeline(
+                            editor_cloned10.clone(),
+                            state_cloned10.clone(),
+                            selected_sequence_data,
+                            10,
+                        ),))
+                        .style(|s| s.margin_top(425.0).margin_left(25.0)),
                     ))
                     .into_any()
                 } else {

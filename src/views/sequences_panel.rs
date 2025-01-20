@@ -66,7 +66,7 @@ pub fn sequences_view(
 
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
-    let sequence_quick_access: RwSignal<HashMap<String, i32>> = create_rw_signal(HashMap::new());
+    let sequence_quick_access: RwSignal<HashMap<String, String>> = create_rw_signal(HashMap::new());
 
     // let sequence_timeline_signal = create_rw_signal(TimelineState::new());
     let timeline_sequences: RwSignal<Vec<TimelineSequence>> = create_rw_signal(Vec::new());
@@ -93,13 +93,13 @@ pub fn sequences_view(
 
         let mut x = 0;
 
-        let qa_sequences: HashMap<String, i32> = saved_state
+        let qa_sequences: HashMap<String, String> = saved_state
             .sequences
             .clone()
             .into_iter()
             .map(|s| {
                 x = x + 1;
-                (s.id, x)
+                (s.id, s.name)
             })
             .collect();
 
@@ -149,6 +149,7 @@ pub fn sequences_view(
                 let new_sequence_id = Uuid::new_v4().to_string();
                 let new_sequence = Sequence {
                     id: new_sequence_id.clone(),
+                    name: "New Sequence".to_string(),
                     active_polygons: Vec::new(),
                     polygon_motion_paths: Vec::new(),
                     active_text_items: Vec::new(),
@@ -169,13 +170,13 @@ pub fn sequences_view(
                 save_saved_state_raw(new_state.clone());
 
                 let mut x = 0;
-                let qa_sequences: HashMap<String, i32> = new_state
+                let qa_sequences: HashMap<String, String> = new_state
                     .sequences
                     .clone()
                     .into_iter()
                     .map(|s| {
                         x = x + 1;
-                        (s.id, x)
+                        (s.id, s.name)
                     })
                     .collect();
 
@@ -253,113 +254,95 @@ pub fn sequences_view(
                             .get(&item)
                             .expect("Couldn't find matching qa info");
 
-                        let small_labels: Vec<String> = item
-                            .split("-")
-                            .into_iter()
-                            .map(|id| id.to_string())
-                            .collect();
-
-                        let mut small_label = "".to_string();
-                        let mut y = 0;
-                        for label in small_labels {
-                            if y == 0 {
-                                small_label += &label;
-                                y = y + 1;
-                            }
-                        }
-
                         h_stack((
-                            simple_button(
-                                "Edit ".to_string() + &small_label.to_string(),
-                                move |_| {
-                                    println!("Open Sequence...");
+                            simple_button("Edit ".to_string() + &quick_access_info, move |_| {
+                                println!("Open Sequence...");
 
-                                    let editor_state = state_cloned2.lock().unwrap();
-                                    let saved_state = editor_state
-                                        .record_state
-                                        .saved_state
-                                        .as_ref()
-                                        .expect("Couldn't get Saved State");
+                                let editor_state = state_cloned2.lock().unwrap();
+                                let saved_state = editor_state
+                                    .record_state
+                                    .saved_state
+                                    .as_ref()
+                                    .expect("Couldn't get Saved State");
 
-                                    let saved_sequence = saved_state
-                                        .sequences
-                                        .iter()
-                                        .find(|s| s.id == item.clone())
-                                        .expect("Couldn't find matching sequence");
+                                let saved_sequence = saved_state
+                                    .sequences
+                                    .iter()
+                                    .find(|s| s.id == item.clone())
+                                    .expect("Couldn't find matching sequence");
 
-                                    selected_sequence_data.set(saved_sequence.clone());
-                                    selected_sequence_id.set(item.clone());
-                                    sequence_selected.set(true);
+                                selected_sequence_data.set(saved_sequence.clone());
+                                selected_sequence_id.set(item.clone());
+                                sequence_selected.set(true);
 
-                                    let mut editor = editor_cloned.lock().unwrap();
+                                let mut editor = editor_cloned.lock().unwrap();
 
-                                    let camera = editor.camera.expect("Couldn't get camera");
-                                    let viewport = viewport_cloned.lock().unwrap();
+                                let camera = editor.camera.expect("Couldn't get camera");
+                                let viewport = viewport_cloned.lock().unwrap();
 
-                                    let window_size = WindowSize {
-                                        width: viewport.width as u32,
-                                        height: viewport.height as u32,
-                                    };
+                                let window_size = WindowSize {
+                                    width: viewport.width as u32,
+                                    height: viewport.height as u32,
+                                };
 
-                                    let mut rng = rand::thread_rng();
+                                let mut rng = rand::thread_rng();
 
-                                    // editor.polygons = Vec::new();
-                                    // editor.text_items = Vec::new();
-                                    // editor.image_items = Vec::new();
+                                // editor.polygons = Vec::new();
+                                // editor.text_items = Vec::new();
+                                // editor.image_items = Vec::new();
 
-                                    // editor.restore_sequence_objects(
-                                    //     &saved_sequence,
-                                    //     window_size,
-                                    //     &camera,
-                                    //     false,
-                                    // );
+                                // editor.restore_sequence_objects(
+                                //     &saved_sequence,
+                                //     window_size,
+                                //     &camera,
+                                //     false,
+                                // );
 
-                                    // set hidden to false based on sequence
-                                    // also reset all objects to hidden=true beforehand
-                                    editor.polygons.iter_mut().for_each(|p| {
-                                        p.hidden = true;
-                                    });
-                                    editor.image_items.iter_mut().for_each(|i| {
-                                        i.hidden = true;
-                                    });
-                                    editor.text_items.iter_mut().for_each(|t| {
-                                        t.hidden = true;
-                                    });
+                                // set hidden to false based on sequence
+                                // also reset all objects to hidden=true beforehand
+                                editor.polygons.iter_mut().for_each(|p| {
+                                    p.hidden = true;
+                                });
+                                editor.image_items.iter_mut().for_each(|i| {
+                                    i.hidden = true;
+                                });
+                                editor.text_items.iter_mut().for_each(|t| {
+                                    t.hidden = true;
+                                });
 
-                                    saved_sequence.active_polygons.iter().for_each(|ap| {
-                                        let polygon = editor
-                                            .polygons
-                                            .iter_mut()
-                                            .find(|p| p.id.to_string() == ap.id)
-                                            .expect("Couldn't find polygon");
-                                        polygon.hidden = false;
-                                    });
-                                    saved_sequence.active_image_items.iter().for_each(|si| {
-                                        let image = editor
-                                            .image_items
-                                            .iter_mut()
-                                            .find(|i| i.id.to_string() == si.id)
-                                            .expect("Couldn't find image");
-                                        image.hidden = false;
-                                    });
-                                    saved_sequence.active_text_items.iter().for_each(|tr| {
-                                        let text = editor
-                                            .text_items
-                                            .iter_mut()
-                                            .find(|t| t.id.to_string() == tr.id)
-                                            .expect("Couldn't find image");
-                                        text.hidden = false;
-                                    });
+                                saved_sequence.active_polygons.iter().for_each(|ap| {
+                                    let polygon = editor
+                                        .polygons
+                                        .iter_mut()
+                                        .find(|p| p.id.to_string() == ap.id)
+                                        .expect("Couldn't find polygon");
+                                    polygon.hidden = false;
+                                });
+                                saved_sequence.active_image_items.iter().for_each(|si| {
+                                    let image = editor
+                                        .image_items
+                                        .iter_mut()
+                                        .find(|i| i.id.to_string() == si.id)
+                                        .expect("Couldn't find image");
+                                    image.hidden = false;
+                                });
+                                saved_sequence.active_text_items.iter().for_each(|tr| {
+                                    let text = editor
+                                        .text_items
+                                        .iter_mut()
+                                        .find(|t| t.id.to_string() == tr.id)
+                                        .expect("Couldn't find image");
+                                    text.hidden = false;
+                                });
 
-                                    println!("Objects restored!");
+                                println!("Objects restored!");
 
-                                    editor.update_motion_paths(&saved_sequence);
+                                editor.update_motion_paths(&saved_sequence);
 
-                                    println!("Motion Paths restored!");
+                                println!("Motion Paths restored!");
 
-                                    // EventPropagation::Continue
-                                },
-                            ),
+                                // EventPropagation::Continue
+                            }),
                             simple_button("Duplicate".to_string(), move |_| {
                                 println!("Duplicating sequence...");
 
@@ -605,6 +588,7 @@ pub fn sequences_view(
                 dragging_timeline_sequence,
                 export_play_timeline_config,
                 10,
+                sequence_quick_access,
             ),
         ))
         .style(|s| s.margin_top(425.0).margin_left(25.0)),

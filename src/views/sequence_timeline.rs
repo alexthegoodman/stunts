@@ -13,6 +13,7 @@ use floem::taffy::Position;
 use floem::views::*;
 use floem::IntoView;
 use floem::View;
+use im::HashMap;
 use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
@@ -100,6 +101,7 @@ pub fn build_timeline(
     dragging_timeline_sequence: RwSignal<Option<(String, i32)>>,
     export_play_timeline_config: RwSignal<Option<SavedTimelineStateConfig>>,
     pixels_per_s: i32,
+    sequence_quick_access: RwSignal<HashMap<String, String>>,
 ) -> impl View {
     // TODO: many tracks
     v_stack((
@@ -124,6 +126,7 @@ pub fn build_timeline(
                 export_play_timeline_config,
                 TrackType::Audio,
                 pixels_per_s,
+                sequence_quick_access,
             ),
         )))
         .style(|s| s.position(Position::Relative).height(60)),
@@ -148,6 +151,7 @@ pub fn build_timeline(
                 export_play_timeline_config,
                 TrackType::Video,
                 pixels_per_s,
+                sequence_quick_access,
             ),
         )))
         .style(|s| s.position(Position::Relative).height(60)),
@@ -163,6 +167,7 @@ pub fn timeline_sequence_track(
     // state: RwSignal<TimelineState>,
     track_type: TrackType,
     pixels_per_s: i32,
+    sequence_quick_access: RwSignal<HashMap<String, String>>,
 ) -> impl View {
     // let state_2 = state.clone();
 
@@ -181,31 +186,25 @@ pub fn timeline_sequence_track(
                 let pixels_per_ms = pixels_per_s as f32 / 1000.0;
                 let left = seq.start_time_ms as f32 * pixels_per_ms;
                 let left_signal = create_rw_signal(left);
-                println!("seq {:?} {:?}", seq_id, left);
+                // println!("seq {:?} {:?}", seq_id, left);
                 let width = seq.duration_ms as f32 * pixels_per_ms;
 
                 if (seq.track_type != track_type) {
                     return container((empty())).into_view();
                 }
 
-                let small_labels: Vec<String> = seq
-                    .sequence_id
-                    .split("-")
-                    .into_iter()
-                    .map(|id| id.to_string())
-                    .collect();
+                let sequence_quick_access = sequence_quick_access.get();
+                let quick_access_info = sequence_quick_access
+                    // .clone()
+                    .get(&seq.sequence_id)
+                    .expect("Couldn't find matching qa info")
+                    .clone();
 
-                let mut small_label = "".to_string();
-                let mut y = 0;
-                for label in small_labels {
-                    if y == 0 {
-                        small_label += &label;
-                        y = y + 1;
-                    }
-                }
+                // drop(sequence_quick_access);
 
                 container(
-                    label(move || small_label.clone()).style(|s| s.padding(5).selectable(false)),
+                    label(move || quick_access_info.clone())
+                        .style(|s| s.padding(5).selectable(false)),
                 )
                 // .style(move |s| {
                 //     s.absolute()
