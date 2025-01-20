@@ -126,7 +126,7 @@ pub fn timeline_sequence_track(
                 let seq_id = seq.id.clone();
                 let track_type = track_type.clone();
                 let pixels_per_ms = state.pixels_per_s as f32 / 1000.0;
-                let left = seq.start_time_ms as f32 * pixels_per_ms;
+                // let left = seq.start_time_ms as f32 * pixels_per_ms;
                 let width = seq.duration_ms as f32 * pixels_per_ms;
 
                 if (seq.track_type != track_type) {

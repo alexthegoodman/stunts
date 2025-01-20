@@ -704,11 +704,11 @@ impl EditorState {
             depth: 0,
         };
 
-        properties.push(position_prop); // usually easiest with a top-left anchor point...
-        properties.push(rotation_prop); // TODO: best with centered anchor point?
-        properties.push(scale_prop); // TODO: also better with centered anchor point?
-                                     // properties.push(perspective_x_prop);
-                                     // properties.push(perspective_y_prop);
+        properties.push(position_prop);
+        properties.push(rotation_prop);
+        properties.push(scale_prop);
+        // properties.push(perspective_x_prop);
+        // properties.push(perspective_y_prop);
         properties.push(opacity_prop);
 
         let new_motion_path = AnimationData {
@@ -720,6 +720,50 @@ impl EditorState {
         };
 
         new_motion_path
+    }
+
+    /// squish keyframes into target_duration, keeping proportional time between them
+    pub fn scale_keyframes(
+        &mut self,
+        selected_sequence_id: String,
+        target_duration_s: f32,
+    ) -> Vec<AnimationData> {
+        let target_duration = Duration::from_secs_f32(target_duration_s);
+        let mut animations = Vec::new();
+
+        // Find the animation with matching ID
+        let saved_state = self
+            .record_state
+            .saved_state
+            .as_ref()
+            .expect("Couldn't get saved state");
+        if let Some(sequence) = saved_state
+            .sequences
+            .iter()
+            .find(|a| a.id == selected_sequence_id)
+        {
+            for animation in sequence.polygon_motion_paths.clone() {
+                let original_duration = animation.duration;
+                let scale_factor = target_duration.as_secs_f32() / original_duration.as_secs_f32();
+
+                // Create a new animation with scaled keyframes
+                let mut new_animation = animation.clone();
+                new_animation.duration = target_duration;
+
+                // Scale each property's keyframes
+                for property in &mut new_animation.properties {
+                    for keyframe in &mut property.keyframes {
+                        let original_time_secs = keyframe.time.as_secs_f32();
+                        let new_time_secs = original_time_secs * scale_factor;
+                        keyframe.time = Duration::from_secs_f32(new_time_secs);
+                    }
+                }
+
+                animations.push(new_animation);
+            }
+        }
+
+        animations
     }
 
     pub fn add_saved_polygon(

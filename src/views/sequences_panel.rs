@@ -404,21 +404,21 @@ pub fn sequences_view(
                                         sequence_timeline_state.timeline_sequences.get();
 
                                     // Find the sequence that ends at the latest point in time
-                                    let start_time = if existing_timeline.is_empty() {
-                                        0
-                                    } else {
-                                        existing_timeline
-                                            .iter()
-                                            .map(|seq| seq.start_time_ms + seq.duration_ms)
-                                            .max()
-                                            .unwrap_or(0)
-                                    };
+                                    // let start_time = if existing_timeline.is_empty() {
+                                    //     0
+                                    // } else {
+                                    //     existing_timeline
+                                    //         .iter()
+                                    //         .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                    //         .max()
+                                    //         .unwrap_or(0)
+                                    // };
 
                                     existing_timeline.push(TimelineSequence {
                                         id: Uuid::new_v4().to_string(),
                                         sequence_id: item_cloned.clone(),
                                         track_type: TrackType::Video,
-                                        start_time_ms: start_time,
+                                        // start_time_ms: start_time,
                                         duration_ms: 20000,
                                     });
 

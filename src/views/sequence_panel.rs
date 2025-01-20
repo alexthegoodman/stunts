@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use crossbeam::queue;
 use floem::common::{
@@ -17,7 +18,7 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use rand::Rng;
-use stunts_engine::editor::{ControlMode, Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
 };
@@ -30,6 +31,8 @@ use crate::helpers::utilities::save_saved_state_raw;
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
+
+use super::inputs::debounce_input;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum LayerKind {
@@ -179,6 +182,11 @@ pub fn sequence_panel(
     let state_cloned_3 = Arc::clone(&editor_state);
     let state_cloned_4 = Arc::clone(&editor_state);
     let state_cloned_5 = Arc::clone(&editor_state);
+    let state_cloned_6 = Arc::clone(&editor_state);
+    let state_cloned_7 = Arc::clone(&editor_state);
+    let state_cloned_8 = Arc::clone(&editor_state);
+    let state_cloned_9 = Arc::clone(&editor_state);
+    let state_cloned_10 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
@@ -208,6 +216,8 @@ pub fn sequence_panel(
 
     let select_active = create_rw_signal(true);
     let pan_active = create_rw_signal(false);
+
+    let sequence_duration_input = create_rw_signal(String::new());
 
     create_effect({
         let editor_cloned_6 = Arc::clone(&editor_cloned_6);
@@ -243,6 +253,26 @@ pub fn sequence_panel(
             new_layers.sort_by(|a, b| b.initial_layer_index.cmp(&a.initial_layer_index));
 
             layers.set(new_layers);
+
+            drop(editor);
+
+            let editor_state = state_cloned_7.lock().unwrap();
+            let saved_state = editor_state
+                .record_state
+                .saved_state
+                .as_ref()
+                .expect("Couldn't get saved state");
+            let timeline_sequence = saved_state
+                .timeline_state
+                .timeline_sequences
+                .iter()
+                .find(|ts| ts.sequence_id == selected_sequence_id.get_untracked())
+                .expect("Couldn't find timeline sequences");
+
+            let initial_duration = timeline_sequence.duration_ms / 1000;
+            sequence_duration_input.set(initial_duration.to_string());
+
+            drop(editor_state);
         }
     });
 
@@ -355,83 +385,43 @@ pub fn sequence_panel(
                 drop(editor);
             })
             .style(|s| s.margin_bottom(5.0)),
-            v_stack((
-                simple_button("Generate Animation".to_string(), move |_| {
-                    // hook into CommonMotion2D run_motion_inference
-                    let mut editor = editor_cloned_4.lock().unwrap();
+            v_stack((simple_button("Generate Animation".to_string(), move |_| {
+                // hook into CommonMotion2D run_motion_inference
+                let mut editor = editor_cloned_4.lock().unwrap();
 
-                    let predicted_keyframes = editor.run_motion_inference();
+                let predicted_keyframes = editor.run_motion_inference();
 
-                    let mut new_sequence = selected_sequence_data.get();
-                    new_sequence.polygon_motion_paths = predicted_keyframes.clone();
+                let mut new_sequence = selected_sequence_data.get();
+                new_sequence.polygon_motion_paths = predicted_keyframes.clone();
 
-                    selected_sequence_data.set(new_sequence);
+                selected_sequence_data.set(new_sequence);
 
-                    editor.update_motion_paths(&selected_sequence_data.get());
-                    println!("Motion Paths updated!");
+                editor.update_motion_paths(&selected_sequence_data.get());
+                println!("Motion Paths updated!");
 
-                    drop(editor);
+                drop(editor);
 
-                    let mut editor_state = state_cloned_4.lock().unwrap();
+                let mut editor_state = state_cloned_4.lock().unwrap();
 
-                    let mut saved_state = editor_state
-                        .record_state
-                        .saved_state
-                        .as_mut()
-                        .expect("Couldn't get Saved State");
+                let mut saved_state = editor_state
+                    .record_state
+                    .saved_state
+                    .as_mut()
+                    .expect("Couldn't get Saved State");
 
-                    saved_state.sequences.iter_mut().for_each(|s| {
-                        if s.id == selected_sequence_id.get() {
-                            s.polygon_motion_paths = predicted_keyframes.clone();
-                        }
-                    });
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    if s.id == selected_sequence_id.get() {
+                        s.polygon_motion_paths = predicted_keyframes.clone();
+                    }
+                });
 
-                    save_saved_state_raw(saved_state.clone());
+                save_saved_state_raw(saved_state.clone());
 
-                    editor_state.record_state.saved_state = Some(saved_state.clone());
+                editor_state.record_state.saved_state = Some(saved_state.clone());
 
-                    drop(editor_state);
-                })
-                .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE)),
-                // maybe not needed after all
-                // h_stack((
-                //     toggle_button(
-                //         "Layout",
-                //         "translate",
-                //         "layout".to_string(),
-                //         {
-                //             let state_cloned_4 = state_cloned_4.clone();
-
-                //             move |_| {
-                //                 let mut state_helper = state_cloned_4.lock().unwrap();
-
-                //                 local_mode.set("layout".to_string());
-                //                 state_helper.active_sequence_mode.set("layout".to_string());
-                //             }
-                //         },
-                //         local_mode,
-                //     )
-                //     .style(|s| s.margin_right(4.0)),
-                //     toggle_button(
-                //         "Keyframes",
-                //         "scale",
-                //         "keyframes".to_string(),
-                //         {
-                //             let state_cloned_5 = state_cloned_5.clone();
-
-                //             move |_| {
-                //                 let mut state_helper = state_cloned_5.lock().unwrap();
-
-                //                 local_mode.set("keyframes".to_string());
-                //                 state_helper
-                //                     .active_sequence_mode
-                //                     .set("keyframes".to_string());
-                //             }
-                //         },
-                //         local_mode,
-                //     ),
-                // )),
-            ))
+                drop(editor_state);
+            })
+            .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE)),))
             .style(|s| s.margin_bottom(5.0)),
             h_stack((
                 small_button(
@@ -460,6 +450,101 @@ pub fn sequence_panel(
                     },
                     pan_active,
                 ),
+            ))
+            .style(|s| s.margin_bottom(5.0)),
+            v_stack((
+                debounce_input(
+                    "Target Duration".to_string(),
+                    &sequence_duration_input.get(),
+                    "Seconds",
+                    move |_| {},
+                    state_cloned_6,
+                    "target_duration".to_string(),
+                ),
+                h_stack((
+                    simple_button("Shrink / Stretch".to_string(), move |_| {
+                        // TODO: integrate with undo/redo
+
+                        let mut editor_state = state_cloned_8.lock().unwrap();
+
+                        let target_duration = string_to_f32(&sequence_duration_input.get())
+                            .expect("Couldn't get duration");
+
+                        let target_keyframes = editor_state
+                            .scale_keyframes(selected_sequence_id.get(), target_duration);
+
+                        let mut new_sequence = selected_sequence_data.get();
+                        new_sequence.polygon_motion_paths = target_keyframes.clone();
+
+                        selected_sequence_data.set(new_sequence);
+
+                        let mut saved_state = editor_state
+                            .record_state
+                            .saved_state
+                            .as_mut()
+                            .expect("Couldn't get Saved State");
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id.get() {
+                                s.polygon_motion_paths = target_keyframes.clone();
+                            }
+                        });
+
+                        saved_state
+                            .timeline_state
+                            .timeline_sequences
+                            .iter_mut()
+                            .for_each(|ts| {
+                                if ts.sequence_id == selected_sequence_id.get() {
+                                    ts.duration_ms = target_duration as i32 * 1000;
+                                }
+                            });
+
+                        save_saved_state_raw(saved_state.clone());
+
+                        editor_state.record_state.saved_state = Some(saved_state.clone());
+
+                        drop(editor_state);
+                    }),
+                    simple_button("Cut / Extend".to_string(), move |_| {
+                        let mut editor_state = state_cloned_9.lock().unwrap();
+
+                        let target_duration = string_to_f32(&sequence_duration_input.get())
+                            .expect("Couldn't get duration");
+
+                        let mut saved_state = editor_state
+                            .record_state
+                            .saved_state
+                            .as_mut()
+                            .expect("Couldn't get Saved State");
+
+                        saved_state
+                            .sequences
+                            .iter_mut()
+                            .filter(|s| s.id == selected_sequence_id.get())
+                            .for_each(|s| {
+                                s.polygon_motion_paths.iter_mut().for_each(|pm| {
+                                    pm.duration = Duration::from_secs(target_duration as u64);
+                                });
+                            });
+
+                        saved_state
+                            .timeline_state
+                            .timeline_sequences
+                            .iter_mut()
+                            .for_each(|ts| {
+                                if ts.sequence_id == selected_sequence_id.get() {
+                                    ts.duration_ms = target_duration as i32 * 1000;
+                                }
+                            });
+
+                        save_saved_state_raw(saved_state.clone());
+
+                        editor_state.record_state.saved_state = Some(saved_state.clone());
+
+                        drop(editor_state);
+                    }),
+                )),
             ))
             .style(|s| s.margin_bottom(5.0)),
             stack((
