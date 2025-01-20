@@ -218,6 +218,7 @@ pub fn sequence_panel(
     let pan_active = create_rw_signal(false);
 
     let sequence_duration_input = create_rw_signal(String::new());
+    let target_duration_signal = create_rw_signal(String::new());
 
     create_effect({
         let editor_cloned_6 = Arc::clone(&editor_cloned_6);
@@ -457,17 +458,22 @@ pub fn sequence_panel(
                     "Target Duration".to_string(),
                     &sequence_duration_input.get(),
                     "Seconds",
-                    move |_| {},
+                    move |target_dur| {
+                        target_duration_signal.set(target_dur);
+                    },
                     state_cloned_6,
                     "target_duration".to_string(),
                 ),
                 h_stack((
                     simple_button("Shrink / Stretch".to_string(), move |_| {
                         // TODO: integrate with undo/redo
+                        if target_duration_signal.get().len() < 1 {
+                            return;
+                        }
 
                         let mut editor_state = state_cloned_8.lock().unwrap();
 
-                        let target_duration = string_to_f32(&sequence_duration_input.get())
+                        let target_duration = string_to_f32(&target_duration_signal.get())
                             .expect("Couldn't get duration");
 
                         let target_keyframes = editor_state
@@ -507,9 +513,13 @@ pub fn sequence_panel(
                         drop(editor_state);
                     }),
                     simple_button("Cut / Extend".to_string(), move |_| {
+                        if target_duration_signal.get().len() < 1 {
+                            return;
+                        }
+
                         let mut editor_state = state_cloned_9.lock().unwrap();
 
-                        let target_duration = string_to_f32(&sequence_duration_input.get())
+                        let target_duration = string_to_f32(&target_duration_signal.get())
                             .expect("Couldn't get duration");
 
                         let mut saved_state = editor_state
