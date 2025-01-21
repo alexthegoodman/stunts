@@ -288,8 +288,11 @@ fn handle_cursor_moved(
                 width: viewport.width as u32,
                 height: viewport.height as u32,
             };
+
             // println!("window size {:?}", window_size);
-            // println!("positions {:?} {:?}", positionX, positionY);
+            // println!("Physical Position {:?} {:?}", positionX, positionY);
+            // println!("Logical Position {:?} {:?}", logPosX, logPoxY); // logical position is scaled differently than window_size units
+
             editor.handle_mouse_move(
                 &window_size,
                 &gpu_resources.device,
@@ -381,12 +384,29 @@ fn handle_window_resize(
         camera.window_size.width = size.width;
         camera.window_size.height = size.height;
 
-        // editor.update_date_from_window_resize(&window_size, &gpu_resources.device);
+        let mut camera_binding = editor
+            .camera_binding
+            .as_mut()
+            .expect("Couldn't get camera binding");
+        camera_binding.update(&gpu_resources.queue, &camera);
 
-        gpu_helper
-            .lock()
-            .unwrap()
-            .recreate_depth_view(&gpu_resources, size.width, size.height);
+        gpu_resources.queue.write_buffer(
+            &editor
+                .window_size_buffer
+                .as_ref()
+                .expect("Couldn't get window size buffer"),
+            0,
+            bytemuck::cast_slice(&[WindowSizeShader {
+                width: window_size.width as f32,
+                height: window_size.height as f32,
+            }]),
+        );
+
+        let mut gpu_helper = gpu_helper.lock().unwrap();
+
+        gpu_helper.recreate_depth_view(&gpu_resources, size.width, size.height);
+
+        drop(gpu_helper);
     }))
 }
 
@@ -487,6 +507,8 @@ async fn main() {
     // Calculate a reasonable window size (e.g., 80% of the screen size)
     let window_width = (monitor_size.width.into_integer() as f32 * 0.8) as u32;
     let window_height = (monitor_size.height.into_integer() as f32 * 0.8) as u32;
+
+    println!("Window Size {:?}x{:?}", window_width, window_height);
 
     let window_size = WindowSize {
         width: window_width,
@@ -696,13 +718,15 @@ async fn main() {
                     gpu_resources
                         .device
                         .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                            label: None,
+                            label: Some("Window Size Buffer"),
                             contents: bytemuck::cast_slice(&[WindowSizeShader {
                                 width: window_size.width as f32,
                                 height: window_size.height as f32,
                             }]),
-                            usage: wgpu::BufferUsages::UNIFORM,
+                            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
                         });
+
+                let window_size_buffer = Arc::new(window_size_buffer);
 
                 let window_size_bind_group_layout = gpu_resources.device.create_bind_group_layout(
                     &wgpu::BindGroupLayoutDescriptor {
@@ -719,6 +743,8 @@ async fn main() {
                         }],
                     },
                 );
+
+                let window_size_bind_group_layout = Arc::new(window_size_bind_group_layout);
 
                 let window_size_bind_group =
                     gpu_resources
@@ -913,6 +939,8 @@ async fn main() {
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.model_bind_group_layout = Some(model_bind_group_layout);
                 editor.window_size_bind_group = Some(window_size_bind_group);
+                editor.window_size_bind_group_layout = Some(window_size_bind_group_layout);
+                editor.window_size_buffer = Some(window_size_buffer);
                 window_handle.gpu_resources = Some(gpu_resources);
                 // window_handle.gpu_helper = Some(gpu_clonsed2);
                 editor.window = window_handle.window.clone();
