@@ -367,31 +367,44 @@ fn handle_window_resize(
     viewport: std::sync::Arc<Mutex<Viewport>>,
 ) -> Option<Box<dyn FnMut(PhysicalSize<u32>, LogicalSize<f64>)>> {
     Some(Box::new(move |size, logical_size| {
-        let mut editor = editor.lock().unwrap();
+        let mut editor_g = editor.lock().unwrap();
 
         let window_size = WindowSize {
             width: size.width,
             height: size.height,
         };
 
+        // println!("window 1 {:?}", window_size);
+
         let mut viewport = viewport.lock().unwrap();
 
         viewport.width = size.width as f32;
         viewport.height = size.height as f32;
 
-        let mut camera = editor.camera.expect("Couldn't get camera on resize");
+        let mut camera = editor_g
+            .camera
+            .as_mut()
+            .expect("Couldn't get camera on resize");
 
         camera.window_size.width = size.width;
         camera.window_size.height = size.height;
 
-        let mut camera_binding = editor
+        drop(editor_g);
+
+        let mut editor_g = editor.lock().unwrap();
+
+        let mut camera = editor_g.camera.expect("Couldn't get camera on resize");
+
+        // println!("window 2 {:?}", camera.window_size);
+
+        let mut camera_binding = editor_g
             .camera_binding
             .as_mut()
             .expect("Couldn't get camera binding");
         camera_binding.update(&gpu_resources.queue, &camera);
 
         gpu_resources.queue.write_buffer(
-            &editor
+            &editor_g
                 .window_size_buffer
                 .as_ref()
                 .expect("Couldn't get window size buffer"),
@@ -401,6 +414,8 @@ fn handle_window_resize(
                 height: window_size.height as f32,
             }]),
         );
+
+        drop(editor_g);
 
         let mut gpu_helper = gpu_helper.lock().unwrap();
 
