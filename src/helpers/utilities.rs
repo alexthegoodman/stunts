@@ -14,6 +14,7 @@ use stunts_engine::animations::KeyframeValue;
 use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
 use stunts_engine::animations::UIKeyframe;
+use stunts_engine::editor::PathType;
 use stunts_engine::polygon::SavedPoint;
 use stunts_engine::polygon::SavedPolygonConfig;
 use stunts_engine::polygon::SavedStroke;
@@ -441,6 +442,7 @@ fn parse_motion_paths(
                     time: Duration::from_secs_f32(time),
                     value: KeyframeValue::Position(pos),
                     easing: EasingType::Linear,
+                    path_type: PathType::Linear,
                 })
                 .collect(),
             depth: 0,
