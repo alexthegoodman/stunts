@@ -213,7 +213,7 @@ where
         let name = name.clone();
         move |_| {
             if !signal_registered.get() {
-                println!("register signal effect...");
+                // println!("register signal effect...");
 
                 let mut editor_state = editor_state.lock().unwrap();
                 editor_state.register_signal(name.to_string(), value);

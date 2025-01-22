@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use bytemuck::Contiguous;
 use cgmath::Vector4;
-use editor_state::{EditorState, PolygonEdit, RecordState};
+use editor_state::{EditorState, ObjectEdit, RecordState};
 use floem::common::{nav_button, option_button, rgb_to_wgpu, small_button};
 use floem::kurbo::Size;
 use floem::window::WindowConfig;
@@ -311,7 +311,7 @@ fn handle_mouse_input(
     gpu_resources: std::sync::Arc<GpuResources>,
     // window_size: WindowSize,
     viewport: std::sync::Arc<Mutex<Viewport>>,
-    record: Arc<Mutex<Record<PolygonEdit>>>,
+    record: Arc<Mutex<Record<ObjectEdit>>>,
 ) -> Option<Box<dyn Fn(MouseButton, ElementState)>> {
     Some(Box::new(move |button, state| {
         let mut editor_orig = Arc::clone(&editor);
@@ -339,7 +339,7 @@ fn handle_mouse_input(
 
             //     let mut editor_state = editor_state.lock().unwrap();
 
-            //     let edit = PolygonEdit {
+            //     let edit = ObjectEdit {
             //         polygon_id: edit_config.polygon_id,
             //         old_value: edit_config.old_value,
             //         new_value: edit_config.new_value,

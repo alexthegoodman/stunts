@@ -291,6 +291,8 @@ pub fn properties_view(
                 )
                 .style(move |s| s.width(quarters)),
             )),
+            label(|| "Path Settings").style(|s| s.margin_bottom(5.0)),
+            // add curve settings (linear, bezier) and control points for bezier
         ))
         .style(move |s| s.width(aside_width)),
     ))

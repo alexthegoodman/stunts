@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 // use common_vector::basic::wgpu_to_human;
-// use common_vector::editor::{InputValue, PolygonProperty};
+// use common_vector::editor::{InputValue, ObjectProperty};
 // use common_vector::{basic::string_to_f32, editor::Editor};
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
@@ -12,7 +12,7 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, UIKeyframe,
 };
 use stunts_engine::editor::{
-    color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, PolygonProperty,
+    color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, ObjectProperty,
 };
 use stunts_engine::polygon::SavedPolygonConfig;
 use stunts_engine::st_image::SavedStImageConfig;
@@ -25,15 +25,16 @@ use crate::helpers::saved_state::SavedState;
 use crate::helpers::utilities::save_saved_state_raw;
 
 #[derive(Debug)]
-pub struct PolygonEdit {
-    pub polygon_id: Uuid,
+pub struct ObjectEdit {
+    pub object_id: Uuid,
+    pub object_type: ObjectType,
     pub field_name: String,
-    pub old_value: PolygonProperty,
-    pub new_value: PolygonProperty,
+    pub old_value: ObjectProperty,
+    pub new_value: ObjectProperty,
     pub signal: Option<RwSignal<String>>,
 }
 
-impl Edit for PolygonEdit {
+impl Edit for ObjectEdit {
     type Target = RecordState;
     type Output = ();
 
@@ -45,8 +46,8 @@ impl Edit for PolygonEdit {
             .expect("Couldn't get saved state");
 
         match &self.new_value {
-            PolygonProperty::Width(w) => {
-                editor.update_polygon(self.polygon_id, "width", InputValue::Number(*w));
+            ObjectProperty::Width(w) => {
+                editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
 
                 let mut width = w.to_string();
                 self.signal.expect("signal error").set(width);
@@ -54,7 +55,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.dimensions = (*w as i32, p.dimensions.1);
                         }
                     });
@@ -63,8 +64,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Height(h) => {
-                editor.update_polygon(self.polygon_id, "height", InputValue::Number(*h));
+            ObjectProperty::Height(h) => {
+                editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
 
                 let mut height = h.to_string();
                 self.signal.expect("signal error").set(height);
@@ -72,7 +73,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.dimensions = (p.dimensions.0, *h as i32);
                         }
                     });
@@ -81,8 +82,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Red(h) => {
-                editor.update_polygon(self.polygon_id, "red", InputValue::Number(*h));
+            ObjectProperty::Red(h) => {
+                editor.update_polygon(self.object_id, "red", InputValue::Number(*h));
 
                 let mut red = h.to_string();
                 self.signal.expect("signal error").set(red);
@@ -90,7 +91,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[0] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -99,8 +100,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Green(h) => {
-                editor.update_polygon(self.polygon_id, "green", InputValue::Number(*h));
+            ObjectProperty::Green(h) => {
+                editor.update_polygon(self.object_id, "green", InputValue::Number(*h));
 
                 let mut green = h.to_string();
                 self.signal.expect("signal error").set(green);
@@ -108,7 +109,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[1] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -117,8 +118,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Blue(h) => {
-                editor.update_polygon(self.polygon_id, "blue", InputValue::Number(*h));
+            ObjectProperty::Blue(h) => {
+                editor.update_polygon(self.object_id, "blue", InputValue::Number(*h));
 
                 let mut blue = h.to_string();
                 self.signal.expect("signal error").set(blue);
@@ -126,7 +127,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[2] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -135,8 +136,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::BorderRadius(h) => {
-                editor.update_polygon(self.polygon_id, "border_radius", InputValue::Number(*h));
+            ObjectProperty::BorderRadius(h) => {
+                editor.update_polygon(self.object_id, "border_radius", InputValue::Number(*h));
 
                 let mut border_radius = h.to_string();
                 self.signal.expect("signal error").set(border_radius);
@@ -144,7 +145,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.border_radius = *h as i32;
                         }
                     });
@@ -153,8 +154,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeThickness(h) => {
-                editor.update_polygon(self.polygon_id, "stroke_thickness", InputValue::Number(*h));
+            ObjectProperty::StrokeThickness(h) => {
+                editor.update_polygon(self.object_id, "stroke_thickness", InputValue::Number(*h));
 
                 let mut stroke_thickness = h.to_string();
                 self.signal.expect("signal error").set(stroke_thickness);
@@ -162,7 +163,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.thickness = *h as i32;
                         }
                     });
@@ -171,8 +172,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeRed(h) => {
-                editor.update_polygon(self.polygon_id, "stroke_red", InputValue::Number(*h));
+            ObjectProperty::StrokeRed(h) => {
+                editor.update_polygon(self.object_id, "stroke_red", InputValue::Number(*h));
 
                 let mut stroke_red = h.to_string();
                 self.signal.expect("signal error").set(stroke_red);
@@ -180,7 +181,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[0] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -189,8 +190,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeGreen(h) => {
-                editor.update_polygon(self.polygon_id, "stroke_green", InputValue::Number(*h));
+            ObjectProperty::StrokeGreen(h) => {
+                editor.update_polygon(self.object_id, "stroke_green", InputValue::Number(*h));
 
                 let mut stroke_green = h.to_string();
                 self.signal.expect("signal error").set(stroke_green);
@@ -198,7 +199,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[1] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -207,8 +208,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeBlue(h) => {
-                editor.update_polygon(self.polygon_id, "stroke_blue", InputValue::Number(*h));
+            ObjectProperty::StrokeBlue(h) => {
+                editor.update_polygon(self.object_id, "stroke_blue", InputValue::Number(*h));
 
                 let mut stroke_blue = h.to_string();
                 self.signal.expect("signal error").set(stroke_blue);
@@ -216,7 +217,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[2] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -224,8 +225,8 @@ impl Edit for PolygonEdit {
                 });
 
                 save_saved_state_raw(saved_state.clone());
-            } // PolygonProperty::Points(w) => {
-              //     editor.update_polygon(self.polygon_id, "points", InputValue::Points(w.clone()));
+            } // ObjectProperty::Points(w) => {
+              //     editor.update_polygon(self.object_id, "points", InputValue::Points(w.clone()));
               // }
         }
     }
@@ -238,8 +239,8 @@ impl Edit for PolygonEdit {
             .expect("Couldn't get saved state");
 
         match &self.old_value {
-            PolygonProperty::Width(w) => {
-                editor.update_polygon(self.polygon_id, "width", InputValue::Number(*w));
+            ObjectProperty::Width(w) => {
+                editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
 
                 let mut width = w.to_string();
                 self.signal.expect("signal error").set(width);
@@ -247,7 +248,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.dimensions = (*w as i32, p.dimensions.1);
                         }
                     });
@@ -256,8 +257,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Height(h) => {
-                editor.update_polygon(self.polygon_id, "height", InputValue::Number(*h));
+            ObjectProperty::Height(h) => {
+                editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
 
                 let mut height = h.to_string();
                 self.signal.expect("signal error").set(height);
@@ -265,7 +266,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.dimensions = (p.dimensions.0, *h as i32);
                         }
                     });
@@ -274,11 +275,11 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Red(h) => {
+            ObjectProperty::Red(h) => {
                 // let mut stroke_green = h.to_string();
                 let red_human = wgpu_to_human(*h);
 
-                editor.update_polygon(self.polygon_id, "red", InputValue::Number(red_human));
+                editor.update_polygon(self.object_id, "red", InputValue::Number(red_human));
 
                 self.signal
                     .expect("signal error")
@@ -287,7 +288,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[0] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -296,11 +297,11 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Green(h) => {
+            ObjectProperty::Green(h) => {
                 // let mut stroke_green = h.to_string();
                 let green_human = wgpu_to_human(*h);
 
-                editor.update_polygon(self.polygon_id, "green", InputValue::Number(green_human));
+                editor.update_polygon(self.object_id, "green", InputValue::Number(green_human));
 
                 self.signal
                     .expect("signal error")
@@ -309,7 +310,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[1] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -318,11 +319,11 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::Blue(h) => {
+            ObjectProperty::Blue(h) => {
                 // let mut stroke_green = h.to_string();
                 let blue_human = wgpu_to_human(*h);
 
-                editor.update_polygon(self.polygon_id, "blue", InputValue::Number(blue_human));
+                editor.update_polygon(self.object_id, "blue", InputValue::Number(blue_human));
 
                 self.signal
                     .expect("signal error")
@@ -331,7 +332,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.fill[2] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -340,8 +341,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::BorderRadius(h) => {
-                editor.update_polygon(self.polygon_id, "border_radius", InputValue::Number(*h));
+            ObjectProperty::BorderRadius(h) => {
+                editor.update_polygon(self.object_id, "border_radius", InputValue::Number(*h));
 
                 let mut border_radius = h.to_string();
                 self.signal.expect("signal error").set(border_radius);
@@ -349,7 +350,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.border_radius = *h as i32;
                         }
                     });
@@ -358,8 +359,8 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeThickness(h) => {
-                editor.update_polygon(self.polygon_id, "stroke_thickness", InputValue::Number(*h));
+            ObjectProperty::StrokeThickness(h) => {
+                editor.update_polygon(self.object_id, "stroke_thickness", InputValue::Number(*h));
 
                 let mut stroke_thickness = h.to_string();
                 self.signal.expect("signal error").set(stroke_thickness);
@@ -367,7 +368,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.thickness = *h as i32;
                         }
                     });
@@ -376,11 +377,11 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeRed(h) => {
+            ObjectProperty::StrokeRed(h) => {
                 // let mut stroke_red = h.to_string();
                 let red_human = wgpu_to_human(*h);
 
-                editor.update_polygon(self.polygon_id, "stroke_red", InputValue::Number(red_human));
+                editor.update_polygon(self.object_id, "stroke_red", InputValue::Number(red_human));
 
                 self.signal
                     .expect("signal error")
@@ -389,7 +390,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[0] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -398,12 +399,12 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeGreen(h) => {
+            ObjectProperty::StrokeGreen(h) => {
                 // let mut stroke_green = h.to_string();
                 let green_human = wgpu_to_human(*h);
 
                 editor.update_polygon(
-                    self.polygon_id,
+                    self.object_id,
                     "stroke_green",
                     InputValue::Number(green_human),
                 );
@@ -415,7 +416,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[1] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -424,12 +425,12 @@ impl Edit for PolygonEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
-            PolygonProperty::StrokeBlue(h) => {
+            ObjectProperty::StrokeBlue(h) => {
                 // let mut stroke_blue = h.to_string();
                 let blue_human = wgpu_to_human(*h);
 
                 editor.update_polygon(
-                    self.polygon_id,
+                    self.object_id,
                     "stroke_blue",
                     InputValue::Number(blue_human),
                 );
@@ -441,7 +442,7 @@ impl Edit for PolygonEdit {
                 saved_state.sequences.iter_mut().for_each(|s| {
                     // if s.id == selected_sequence_id.get() {
                     s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.polygon_id.to_string() {
+                        if p.id == self.object_id.to_string() {
                             p.stroke.fill[2] = color_to_wgpu(*h) as i32;
                         }
                     });
@@ -449,8 +450,8 @@ impl Edit for PolygonEdit {
                 });
 
                 save_saved_state_raw(saved_state.clone());
-            } // PolygonProperty::Points(w) => {
-              //     editor.update_polygon(self.polygon_id, "points", InputValue::Points(w.clone()));
+            } // ObjectProperty::Points(w) => {
+              //     editor.update_polygon(self.object_id, "points", InputValue::Points(w.clone()));
               // }
         }
     }
@@ -458,7 +459,7 @@ impl Edit for PolygonEdit {
 
 pub struct EditorState {
     pub editor: Arc<Mutex<Editor>>,
-    pub record: Arc<Mutex<Record<PolygonEdit>>>,
+    pub record: Arc<Mutex<Record<ObjectEdit>>>,
     pub record_state: RecordState,
     pub polygon_selected: bool,
     pub selected_polygon_id: Uuid,
@@ -476,13 +477,13 @@ pub struct EditorState {
 
 pub struct RecordState {
     pub editor: Arc<Mutex<Editor>>,
-    // pub record: Arc<Mutex<Record<PolygonEdit>>>,
+    // pub record: Arc<Mutex<Record<ObjectEdit>>>,
     // pub editor_state: EditorState,
     pub saved_state: Option<SavedState>,
 }
 
 impl EditorState {
-    pub fn new(editor: Arc<Mutex<Editor>>, record: Arc<Mutex<Record<PolygonEdit>>>) -> Self {
+    pub fn new(editor: Arc<Mutex<Editor>>, record: Arc<Mutex<Record<ObjectEdit>>>) -> Self {
         // let sequence_timeline_state = TimelineState::new();
 
         Self {
@@ -859,10 +860,11 @@ impl EditorState {
             editor.get_polygon_width(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::Width(old_width),
-            new_value: PolygonProperty::Width(new_width),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::Width(old_width),
+            new_value: ObjectProperty::Width(new_width),
             field_name: "width".to_string(),
             signal: Some(
                 self.value_signals
@@ -889,10 +891,11 @@ impl EditorState {
             editor.get_polygon_height(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::Height(old_height),
-            new_value: PolygonProperty::Height(new_height),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::Height(old_height),
+            new_value: ObjectProperty::Height(new_height),
             field_name: "height".to_string(),
             signal: Some(
                 self.value_signals
@@ -918,10 +921,11 @@ impl EditorState {
             editor.get_polygon_red(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::Red(old_red),
-            new_value: PolygonProperty::Red(new_red),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::Red(old_red),
+            new_value: ObjectProperty::Red(new_red),
             field_name: "red".to_string(),
             signal: Some(
                 self.value_signals
@@ -948,10 +952,11 @@ impl EditorState {
             editor.get_polygon_green(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::Green(old_green),
-            new_value: PolygonProperty::Green(new_green),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::Green(old_green),
+            new_value: ObjectProperty::Green(new_green),
             field_name: "green".to_string(),
             signal: Some(
                 self.value_signals
@@ -977,10 +982,11 @@ impl EditorState {
             editor.get_polygon_blue(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::Blue(old_blue),
-            new_value: PolygonProperty::Blue(new_blue),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::Blue(old_blue),
+            new_value: ObjectProperty::Blue(new_blue),
             field_name: "blue".to_string(),
             signal: Some(
                 self.value_signals
@@ -1007,10 +1013,11 @@ impl EditorState {
             editor.get_polygon_border_radius(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::BorderRadius(old_border_radius),
-            new_value: PolygonProperty::BorderRadius(new_border_radius),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::BorderRadius(old_border_radius),
+            new_value: ObjectProperty::BorderRadius(new_border_radius),
             field_name: "border_radius".to_string(),
             signal: Some(
                 self.value_signals
@@ -1040,10 +1047,11 @@ impl EditorState {
             editor.get_polygon_stroke_thickness(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::StrokeThickness(old_stroke_thickness),
-            new_value: PolygonProperty::StrokeThickness(new_stroke_thickness),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::StrokeThickness(old_stroke_thickness),
+            new_value: ObjectProperty::StrokeThickness(new_stroke_thickness),
             field_name: "stroke_thickness".to_string(),
             signal: Some(
                 self.value_signals
@@ -1070,10 +1078,11 @@ impl EditorState {
             editor.get_polygon_stroke_red(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::StrokeRed(old_stroke_red),
-            new_value: PolygonProperty::StrokeRed(new_stroke_red),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::StrokeRed(old_stroke_red),
+            new_value: ObjectProperty::StrokeRed(new_stroke_red),
             field_name: "stroke_red".to_string(),
             signal: Some(
                 self.value_signals
@@ -1100,10 +1109,11 @@ impl EditorState {
             editor.get_polygon_stroke_green(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::StrokeGreen(old_stroke_green),
-            new_value: PolygonProperty::StrokeGreen(new_stroke_green),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::StrokeGreen(old_stroke_green),
+            new_value: ObjectProperty::StrokeGreen(new_stroke_green),
             field_name: "stroke_green".to_string(),
             signal: Some(
                 self.value_signals
@@ -1130,10 +1140,11 @@ impl EditorState {
             editor.get_polygon_stroke_blue(self.selected_polygon_id)
         };
 
-        let edit = PolygonEdit {
-            polygon_id: self.selected_polygon_id,
-            old_value: PolygonProperty::StrokeBlue(old_stroke_blue),
-            new_value: PolygonProperty::StrokeBlue(new_stroke_blue),
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            old_value: ObjectProperty::StrokeBlue(old_stroke_blue),
+            new_value: ObjectProperty::StrokeBlue(new_stroke_blue),
             field_name: "stroke_blue".to_string(),
             signal: Some(
                 self.value_signals
