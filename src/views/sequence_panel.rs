@@ -169,7 +169,7 @@ where
             .box_shadow_spread(2)
     })
     .style(|s| {
-        s.width(220.0)
+        s.width(260.0)
             .border_radius(15.0)
             .align_items(AlignItems::Center)
             .padding_vert(8)
@@ -571,6 +571,7 @@ pub fn sequence_panel(
                 .for_each(|p| {
                     p.keyframes.iter_mut().for_each(|k| match k.value {
                         KeyframeValue::Position(pos) => {
+                            k.id = Uuid::new_v4().to_string();
                             k.value = KeyframeValue::Position([
                                 pos[0] + new_offset as i32,
                                 pos[1] + new_offset as i32,

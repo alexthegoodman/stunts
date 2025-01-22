@@ -36,35 +36,48 @@ pub fn build_object_timeline(
     selected_sequence_data: RwSignal<Sequence>,
     pixels_per_s: i32,
 ) -> impl View {
-    dyn_stack(
-        move || selected_sequence_data.get().polygon_motion_paths,
-        move |timeline_animation| timeline_animation.id.clone(),
-        {
-            move |animation| {
-                container(stack((
-                    // background
-                    container((empty()))
-                        .style(|s| {
-                            s.width(700.0)
-                                .height(60)
-                                .background(Color::rgb8(200, 150, 100))
-                                .z_index(1)
-                        })
-                        .style(|s| s.absolute().margin_left(0.0)),
-                    // timeline_sequences
-                    timeline_object_track(
-                        editor.clone(),
-                        editor_state.clone(),
-                        selected_sequence_data,
-                        pixels_per_s,
-                        animation,
-                    ),
-                )))
-                .style(|s| s.position(Position::Relative).height(60))
+    dyn_container(
+        move || selected_sequence_data.get(),
+        move |data| {
+            let editor = editor.clone();
+            let editor_state = editor_state.clone();
+
+            if data.id.len() > 0 && data.polygon_motion_paths.len() > 0 {
+                dyn_stack(
+                    move || data.polygon_motion_paths.clone(),
+                    move |timeline_animation| timeline_animation.id.clone(),
+                    {
+                        move |animation| {
+                            container(stack((
+                                // background
+                                container((empty()))
+                                    .style(|s| {
+                                        s.width(700.0)
+                                            .height(60)
+                                            .background(Color::rgb8(200, 150, 100))
+                                            .z_index(1)
+                                    })
+                                    .style(|s| s.absolute().margin_left(0.0)),
+                                // timeline_sequences
+                                timeline_object_track(
+                                    editor.clone(),
+                                    editor_state.clone(),
+                                    selected_sequence_data,
+                                    pixels_per_s,
+                                    animation,
+                                ),
+                            )))
+                            .style(|s| s.position(Position::Relative).height(60))
+                        }
+                    },
+                )
+                .style(|s| s.flex_col().gap(1.0))
+                .into_any()
+            } else {
+                container((empty())).into_any()
             }
         },
     )
-    .style(|s| s.flex_col().gap(1.0))
 }
 
 pub fn timeline_object_track(
