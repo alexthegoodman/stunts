@@ -47,40 +47,120 @@ impl Edit for ObjectEdit {
 
         match &self.new_value {
             ObjectProperty::Width(w) => {
-                editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
+                match self.object_type {
+                    ObjectType::Polygon => {
+                        editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
 
-                let mut width = w.to_string();
-                self.signal.expect("signal error").set(width);
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.dimensions = (*w as i32, p.dimensions.1);
-                        }
-                    });
-                    // }
-                });
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_polygons.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as i32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
 
-                save_saved_state_raw(saved_state.clone());
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::TextItem => {
+                        editor.update_text(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_text_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as i32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::ImageItem => {
+                        editor.update_image(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as u32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                }
             }
             ObjectProperty::Height(h) => {
-                editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
+                match self.object_type {
+                    ObjectType::Polygon => {
+                        editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
 
-                let mut height = h.to_string();
-                self.signal.expect("signal error").set(height);
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() {
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.dimensions = (p.dimensions.0, *h as i32);
-                        }
-                    });
-                    // }
-                });
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_polygons.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as i32);
+                                }
+                            });
+                            // }
+                        });
 
-                save_saved_state_raw(saved_state.clone());
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::TextItem => {
+                        editor.update_text(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_text_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as i32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::ImageItem => {
+                        editor.update_image(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as u32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                }
             }
             ObjectProperty::Red(h) => {
                 editor.update_polygon(self.object_id, "red", InputValue::Number(*h));
@@ -238,42 +318,123 @@ impl Edit for ObjectEdit {
             .as_mut()
             .expect("Couldn't get saved state");
 
+        // TODO: everything is the same as edit(), except supplying old_value, might want to make DRY
         match &self.old_value {
             ObjectProperty::Width(w) => {
-                editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
+                match self.object_type {
+                    ObjectType::Polygon => {
+                        editor.update_polygon(self.object_id, "width", InputValue::Number(*w));
 
-                let mut width = w.to_string();
-                self.signal.expect("signal error").set(width);
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.dimensions = (*w as i32, p.dimensions.1);
-                        }
-                    });
-                    // }
-                });
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_polygons.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as i32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
 
-                save_saved_state_raw(saved_state.clone());
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::TextItem => {
+                        editor.update_text(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_text_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as i32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::ImageItem => {
+                        editor.update_image(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as u32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                }
             }
             ObjectProperty::Height(h) => {
-                editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
+                match self.object_type {
+                    ObjectType::Polygon => {
+                        editor.update_polygon(self.object_id, "height", InputValue::Number(*h));
 
-                let mut height = h.to_string();
-                self.signal.expect("signal error").set(height);
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() {
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.dimensions = (p.dimensions.0, *h as i32);
-                        }
-                    });
-                    // }
-                });
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_polygons.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as i32);
+                                }
+                            });
+                            // }
+                        });
 
-                save_saved_state_raw(saved_state.clone());
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::TextItem => {
+                        editor.update_text(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_text_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as i32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::ImageItem => {
+                        editor.update_image(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as u32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                }
             }
             ObjectProperty::Red(h) => {
                 // let mut stroke_green = h.to_string();
@@ -851,18 +1012,28 @@ impl EditorState {
         signals.insert(name + &self.selected_polygon_id.to_string(), signal);
     }
 
-    pub fn update_width(&mut self, new_width_str: &str) -> Result<(), String> {
+    pub fn update_width(
+        &mut self,
+        new_width_str: &str,
+        object_type: ObjectType,
+    ) -> Result<(), String> {
         let new_width =
             string_to_f32(new_width_str).map_err(|_| "Couldn't convert string to f32")?;
 
+        let object_id = match object_type {
+            ObjectType::Polygon => self.selected_polygon_id,
+            ObjectType::TextItem => self.selected_text_id,
+            ObjectType::ImageItem => self.selected_image_id,
+        };
+
         let old_width = {
             let editor = self.record_state.editor.lock().unwrap();
-            editor.get_polygon_width(self.selected_polygon_id)
+            editor.get_object_width(object_id, object_type.clone())
         };
 
         let edit = ObjectEdit {
-            object_id: self.selected_polygon_id,
-            object_type: ObjectType::Polygon,
+            object_id,
+            object_type,
             old_value: ObjectProperty::Width(old_width),
             new_value: ObjectProperty::Width(new_width),
             field_name: "width".to_string(),
@@ -870,7 +1041,7 @@ impl EditorState {
                 self.value_signals
                     .lock()
                     .unwrap()
-                    .get(&format!("width{}", self.selected_polygon_id))
+                    .get(&format!("width{}", object_id))
                     .cloned()
                     .expect("Couldn't get width value signal"),
             ),
@@ -882,18 +1053,22 @@ impl EditorState {
         Ok(())
     }
 
-    pub fn update_height(&mut self, new_height_str: &str) -> Result<(), String> {
+    pub fn update_height(
+        &mut self,
+        new_height_str: &str,
+        object_type: ObjectType,
+    ) -> Result<(), String> {
         let new_height =
             string_to_f32(new_height_str).map_err(|_| "Couldn't convert string to f32")?;
 
         let old_height = {
             let editor = self.editor.lock().unwrap();
-            editor.get_polygon_height(self.selected_polygon_id)
+            editor.get_object_height(self.selected_polygon_id, object_type.clone())
         };
 
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
-            object_type: ObjectType::Polygon,
+            object_type,
             old_value: ObjectProperty::Height(old_height),
             new_value: ObjectProperty::Height(new_height),
             field_name: "height".to_string(),
