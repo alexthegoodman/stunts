@@ -1260,6 +1260,17 @@ pub fn project_view(
                                     let gpu_cloned3 = gpu_cloned3.clone();
                                     let viewport_cloned3 = viewport_cloned3.clone();
 
+                                    let mut object_type = ObjectType::Polygon;
+                                    if polygon_selected.get() {
+                                        object_type = ObjectType::Polygon;
+                                    }
+                                    if text_selected.get() {
+                                        object_type = ObjectType::TextItem;
+                                    }
+                                    if image_selected.get() {
+                                        object_type = ObjectType::ImageItem;
+                                    }
+
                                     keyframe_properties_view(
                                         state_cloned3,
                                         gpu_cloned3,
@@ -1274,6 +1285,7 @@ pub fn project_view(
                                         animation_data,
                                         sequence_selected,
                                         selected_sequence_data,
+                                        object_type,
                                     )
                                     .into_any()
                                 } else {

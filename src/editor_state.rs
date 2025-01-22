@@ -1007,9 +1007,25 @@ impl EditorState {
     }
 
     // Helper method to register a new signal
-    pub fn register_signal(&mut self, name: String, signal: RwSignal<String>) {
+    pub fn register_signal(
+        &mut self,
+        name: String,
+        signal: RwSignal<String>,
+        signal_type: ObjectType,
+    ) {
         let mut signals = self.value_signals.lock().unwrap();
-        signals.insert(name + &self.selected_polygon_id.to_string(), signal);
+
+        match signal_type {
+            ObjectType::Polygon => {
+                signals.insert(name + &self.selected_polygon_id.to_string(), signal);
+            }
+            ObjectType::TextItem => {
+                signals.insert(name + &self.selected_text_id.to_string(), signal);
+            }
+            ObjectType::ImageItem => {
+                signals.insert(name + &self.selected_image_id.to_string(), signal);
+            }
+        }
     }
 
     pub fn update_width(
@@ -1061,13 +1077,19 @@ impl EditorState {
         let new_height =
             string_to_f32(new_height_str).map_err(|_| "Couldn't convert string to f32")?;
 
+        let object_id = match object_type {
+            ObjectType::Polygon => self.selected_polygon_id,
+            ObjectType::TextItem => self.selected_text_id,
+            ObjectType::ImageItem => self.selected_image_id,
+        };
+
         let old_height = {
             let editor = self.editor.lock().unwrap();
-            editor.get_object_height(self.selected_polygon_id, object_type.clone())
+            editor.get_object_height(object_id, object_type.clone())
         };
 
         let edit = ObjectEdit {
-            object_id: self.selected_polygon_id,
+            object_id,
             object_type,
             old_value: ObjectProperty::Height(old_height),
             new_value: ObjectProperty::Height(new_height),
@@ -1076,9 +1098,9 @@ impl EditorState {
                 self.value_signals
                     .lock()
                     .unwrap()
-                    .get(&format!("height{}", self.selected_polygon_id))
+                    .get(&format!("height{}", object_id))
                     .cloned()
-                    .expect("Couldn't get width value signal"),
+                    .expect("Couldn't get height value signal"),
             ),
         };
 

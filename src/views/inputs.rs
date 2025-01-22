@@ -28,6 +28,7 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
+use stunts_engine::animations::ObjectType;
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::spawn_local;
@@ -62,6 +63,7 @@ pub fn styled_input(
     // mut values: HashMap<String, RwSignal<String>>,
     mut editor_state: Arc<Mutex<EditorState>>,
     name: String,
+    signal_type: ObjectType,
 ) -> impl IntoView {
     let value = create_rw_signal(initial_value.to_string());
 
@@ -69,10 +71,11 @@ pub fn styled_input(
 
     create_effect({
         let name = name.clone();
+
         move |_| {
             // need to value.set in undos defined in properties_panel
             let mut editor_state = editor_state.lock().unwrap();
-            editor_state.register_signal(name.to_string(), value);
+            editor_state.register_signal(name.to_string(), value, signal_type.clone());
         }
     });
 
@@ -154,6 +157,7 @@ pub fn debounce_input<F>(
     on_event_stop: F,
     mut editor_state: Arc<Mutex<EditorState>>,
     name: String,
+    signal_type: ObjectType,
 ) -> impl IntoView
 where
     F: Fn(String) + Clone + 'static,
@@ -186,7 +190,7 @@ where
     let debounced_value = create_rw_signal(initial_value.to_string());
     let previous_value = create_rw_signal(initial_value.to_string());
 
-    debounce_action(filtered_value, Duration::from_millis(300), move || {
+    debounce_action(filtered_value, Duration::from_millis(600), move || {
         println!("debounced action...");
         // debounced_value.set(filtered_value.get_untracked());
         // if let Ok(editor_state) = state_3.lock() {
@@ -211,12 +215,13 @@ where
 
     create_effect({
         let name = name.clone();
+
         move |_| {
             if !signal_registered.get() {
                 // println!("register signal effect...");
 
                 let mut editor_state = editor_state.lock().unwrap();
-                editor_state.register_signal(name.to_string(), value);
+                editor_state.register_signal(name.to_string(), value, signal_type.clone());
                 signal_registered.set(true);
             }
         }

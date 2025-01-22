@@ -103,6 +103,7 @@ pub fn properties_view(
                     },
                     editor_state,
                     "width".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(halfs).margin_right(5.0)),
                 debounce_input(
@@ -125,6 +126,7 @@ pub fn properties_view(
                     },
                     editor_state2,
                     "height".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(halfs)),
             )),
@@ -144,6 +146,7 @@ pub fn properties_view(
                     },
                     editor_state3,
                     "red".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(thirds).margin_right(5.0)),
                 debounce_input(
@@ -161,6 +164,7 @@ pub fn properties_view(
                     },
                     editor_state4,
                     "green".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(thirds).margin_right(5.0)),
                 debounce_input(
@@ -178,6 +182,7 @@ pub fn properties_view(
                     },
                     editor_state5,
                     "blue".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(thirds)),
             ))
@@ -212,6 +217,7 @@ pub fn properties_view(
                 },
                 editor_state6,
                 "border_radius".to_string(),
+                ObjectType::Polygon,
             ),
             label(|| "Stroke").style(|s| s.margin_bottom(5.0)),
             h_stack((
@@ -235,6 +241,7 @@ pub fn properties_view(
                     },
                     editor_state7,
                     "stroke_thickness".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
                 debounce_input(
@@ -253,6 +260,7 @@ pub fn properties_view(
                     },
                     editor_state10,
                     "stroke_red".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
                 debounce_input(
@@ -271,6 +279,7 @@ pub fn properties_view(
                     },
                     editor_state8,
                     "stroke_green".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(quarters).margin_right(5.0)),
                 debounce_input(
@@ -289,6 +298,7 @@ pub fn properties_view(
                     },
                     editor_state9,
                     "stroke_blue".to_string(),
+                    ObjectType::Polygon,
                 )
                 .style(move |s| s.width(quarters)),
             )),
@@ -499,6 +509,7 @@ pub fn text_properties_view(
                                 },
                                 editor_state,
                                 "width".to_string(),
+                                ObjectType::TextItem,
                             )
                             .style(move |s| s.width(halfs).margin_right(5.0)),
                             debounce_input(
@@ -516,6 +527,7 @@ pub fn text_properties_view(
                                 },
                                 editor_state2,
                                 "height".to_string(),
+                                ObjectType::TextItem,
                             )
                             .style(move |s| s.width(halfs)),
                         )),))
@@ -561,6 +573,7 @@ pub fn text_properties_view(
                                 },
                                 editor_state6,
                                 "font_size".to_string(),
+                                ObjectType::TextItem,
                             )
                             .style(move |s| s.width(260.0)),
                             inline_dropdown(
@@ -642,6 +655,7 @@ pub fn image_properties_view(
                 },
                 editor_state,
                 "width".to_string(),
+                ObjectType::ImageItem,
             )
             .style(move |s| s.width(halfs).margin_right(5.0)),
             debounce_input(
@@ -659,6 +673,7 @@ pub fn image_properties_view(
                 },
                 editor_state2,
                 "height".to_string(),
+                ObjectType::ImageItem,
             )
             .style(move |s| s.width(halfs)),
         )),))

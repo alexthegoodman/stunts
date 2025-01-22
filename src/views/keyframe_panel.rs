@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 use stunts_engine::animations::AnimationData;
 use stunts_engine::animations::KeyframeValue;
+use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
 use stunts_engine::animations::UIKeyframe;
 use stunts_engine::editor::string_to_f32;
@@ -125,6 +126,7 @@ pub fn keyframe_properties_view(
     animation_data: RwSignal<Option<AnimationData>>,
     sequence_selected: RwSignal<bool>,
     selected_sequence_data: RwSignal<Sequence>,
+    object_type: ObjectType,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_state_cloned = Arc::clone(&editor_state);
@@ -203,6 +205,7 @@ pub fn keyframe_properties_view(
                         },
                         editor_state_cloned,
                         "x".to_string(),
+                        object_type.clone(),
                     )
                     .style(move |s| s.width(halfs).margin_right(5.0)),
                     debounce_input(
@@ -251,6 +254,7 @@ pub fn keyframe_properties_view(
                         },
                         editor_state_cloned2,
                         "y".to_string(),
+                        object_type.clone(),
                     )
                     .style(move |s| s.width(halfs)),
                 ))
@@ -307,6 +311,7 @@ pub fn keyframe_properties_view(
                     }),
                     editor_state_cloned3,
                     "rotation".to_string(),
+                    object_type,
                 ),
             ))
             .style(|s| card_styles(s))),
@@ -360,6 +365,7 @@ pub fn keyframe_properties_view(
                     }),
                     editor_state_cloned4,
                     "scale".to_string(),
+                    object_type,
                 ),
             ))
             .style(|s| card_styles(s))),
@@ -413,6 +419,7 @@ pub fn keyframe_properties_view(
                     }),
                     editor_state_cloned5,
                     "opacity".to_string(),
+                    object_type,
                 ),
             ))
             .style(|s| card_styles(s))),
