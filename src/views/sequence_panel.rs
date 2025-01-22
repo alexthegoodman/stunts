@@ -409,6 +409,9 @@ pub fn sequence_panel(
 
             let new_id = Uuid::new_v4();
             let new_offset = 50.0;
+            let mut new_polygon_config = None;
+            let mut new_image_config = None;
+            let mut new_text_config = None;
 
             // duplicate relevant object and layer
             match kind {
@@ -449,6 +452,8 @@ pub fn sequence_panel(
                     layers.update(|l| {
                         l.push(duplicated_layer);
                     });
+
+                    new_polygon_config = Some(polygon_config);
                 }
                 LayerKind::Text => {
                     let mut existing_text = editor
@@ -493,6 +498,8 @@ pub fn sequence_panel(
                     layers.update(|l| {
                         l.push(duplicated_layer);
                     });
+
+                    new_text_config = Some(text_config);
                 }
                 LayerKind::Image => {
                     let mut existing_image = editor
@@ -531,6 +538,8 @@ pub fn sequence_panel(
                     layers.update(|l| {
                         l.push(duplicated_layer);
                     });
+
+                    new_image_config = Some(image_config);
                 }
             };
 
@@ -577,7 +586,85 @@ pub fn sequence_panel(
                 .iter_mut()
                 .find(|s| s.id == selected_sequence_id.get())
                 .expect("Couldn't find selected sequence");
+
             saved_sequence.polygon_motion_paths.push(animation.clone());
+
+            match kind {
+                LayerKind::Polygon => {
+                    let polygon_config = new_polygon_config.expect("Couldn't get new config");
+
+                    saved_sequence.active_polygons.push(SavedPolygonConfig {
+                        id: polygon_config.id.to_string().clone(),
+                        name: polygon_config.name.clone(),
+                        dimensions: (
+                            polygon_config.dimensions.0 as i32,
+                            polygon_config.dimensions.1 as i32,
+                        ),
+                        fill: [
+                            polygon_config.fill[0] as i32,
+                            polygon_config.fill[1] as i32,
+                            polygon_config.fill[2] as i32,
+                            polygon_config.fill[3] as i32,
+                        ],
+                        border_radius: polygon_config.border_radius as i32, // multiply by 100?
+                        position: SavedPoint {
+                            x: polygon_config.position.x as i32,
+                            y: polygon_config.position.y as i32,
+                        },
+                        stroke: SavedStroke {
+                            thickness: polygon_config.stroke.thickness as i32,
+                            fill: [
+                                polygon_config.stroke.fill[0] as i32,
+                                polygon_config.stroke.fill[1] as i32,
+                                polygon_config.stroke.fill[2] as i32,
+                                polygon_config.stroke.fill[3] as i32,
+                            ],
+                        },
+                        layer: polygon_config.layer.clone(),
+                    });
+                }
+                LayerKind::Text => {
+                    let text_config = new_text_config.expect("Couldn't get new config");
+
+                    saved_sequence
+                        .active_text_items
+                        .push(SavedTextRendererConfig {
+                            id: text_config.id.to_string().clone(),
+                            name: text_config.name.clone(),
+                            text: text_config.text.clone(),
+                            font_family: text_config.font_family.clone(),
+                            dimensions: (
+                                text_config.dimensions.0 as i32,
+                                text_config.dimensions.1 as i32,
+                            ),
+                            position: SavedPoint {
+                                x: text_config.position.x as i32,
+                                y: text_config.position.y as i32,
+                            },
+                            layer: text_config.layer.clone(),
+                            color: text_config.color.clone(),
+                            font_size: text_config.font_size.clone(),
+                        });
+                }
+                LayerKind::Image => {
+                    let image_config = new_image_config.expect("Couldn't get new config");
+
+                    saved_sequence.active_image_items.push(SavedStImageConfig {
+                        id: image_config.id.to_string().clone(),
+                        name: image_config.name.clone(),
+                        path: image_config.path,
+                        dimensions: (image_config.dimensions.0, image_config.dimensions.1),
+                        position: SavedPoint {
+                            x: image_config.position.x as i32,
+                            y: image_config.position.y as i32,
+                        },
+                        layer: image_config.layer.clone(),
+                    });
+                }
+            }
+
+            // no need to update the unused sequence, use this one
+            let sequence = saved_sequence.clone();
 
             drop(editor_state);
 
@@ -714,7 +801,17 @@ pub fn sequence_panel(
             // update selected_sequence_data
             selected_sequence_data.set(sequence);
 
-            // update layers and save saved state
+            // update layers
+            let mut current_layers = layers.get();
+            let layer_index = current_layers
+                .iter()
+                .position(|l| l.instance_id == object_id)
+                .expect("Couldn't find matching layer");
+            current_layers.remove(layer_index);
+
+            layers.set(current_layers);
+
+            // update layer ordering and save saved state
             on_items_updated();
         }
     };
