@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use crossbeam::queue;
 use floem::common::{
-    card_styles, create_icon, option_button, simple_button, small_button, toggle_button,
+    card_styles, create_icon, icon_button, option_button, simple_button, small_button,
+    toggle_button,
 };
 use floem::peniko::Color;
 use floem::reactive::{create_effect, create_rw_signal, SignalUpdate};
@@ -22,11 +23,12 @@ use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport,
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
 };
-use stunts_engine::st_image::{SavedStImageConfig, StImageConfig};
-use stunts_engine::text_due::{SavedTextRendererConfig, TextRendererConfig};
+use stunts_engine::st_image::{SavedStImageConfig, StImage, StImageConfig};
+use stunts_engine::text_due::{SavedTextRendererConfig, TextRenderer, TextRendererConfig};
 use uuid::Uuid;
 
 use crate::editor_state::{self, EditorState};
+use crate::helpers::saved_state;
 use crate::helpers::utilities::save_saved_state_raw;
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
@@ -78,30 +80,45 @@ impl Layer {
     }
 }
 
-pub fn sortable_item<F>(
+pub fn sortable_item<F, FB, FC>(
     editor: std::sync::Arc<Mutex<Editor>>,
     sortable_items: RwSignal<Vec<Layer>>,
     dragger_id: RwSignal<Uuid>,
     item_id: Uuid,
+    kind: LayerKind,
     layer_name: String,
     icon_name: &'static str,
     on_items_updated: F,
+    on_item_duplicated: FB,
+    on_item_deleted: FC,
 ) -> impl IntoView
 where
     F: Fn() + Clone + 'static,
+    FB: Fn(Uuid, LayerKind) + Clone + 'static,
+    FC: Fn(Uuid, LayerKind) + Clone + 'static,
 {
     h_stack((
-        svg(create_icon(icon_name))
-            .style(|s| s.width(24).height(24).color(Color::BLACK))
-            .style(|s| s.margin_right(7.0))
-            .on_event_stop(
-                floem::event::EventListener::PointerDown,
-                |_| { /* Disable dragging for this view */ },
-            ),
-        label(move || layer_name.to_string())
-            .style(|s| s.selectable(false).cursor(CursorStyle::RowResize)),
+        h_stack((
+            svg(create_icon(icon_name))
+                .style(|s| s.width(24).height(24).color(Color::BLACK))
+                .style(|s| s.margin_right(7.0).selectable(false)),
+            // .on_event_stop(
+            //     floem::event::EventListener::PointerDown,
+            //     |_| { /* Disable dragging for this view */ },
+            // ),
+            label(move || layer_name.to_string())
+                .style(|s| s.selectable(false).cursor(CursorStyle::RowResize)),
+        )),
+        h_stack((
+            icon_button("copy", "Duplicate".to_string(), move |_| {
+                on_item_duplicated(item_id, kind);
+            }),
+            icon_button("trash", "Delete".to_string(), move |_| {
+                on_item_deleted(item_id, kind);
+            }),
+        )),
     ))
-    .style(|s| s.selectable(false).cursor(CursorStyle::RowResize))
+    .style(|s| s.justify_between().cursor(CursorStyle::RowResize))
     .draggable()
     .on_event(floem::event::EventListener::DragStart, move |_| {
         dragger_id.set(item_id);
@@ -197,14 +214,18 @@ pub fn sequence_panel(
     let editor_cloned_8 = Arc::clone(&editor);
     let editor_cloned_9 = Arc::clone(&editor);
     let editor_cloned_10 = Arc::clone(&editor);
+    let editor_cloned_11 = Arc::clone(&editor);
+    let editor_cloned_12 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
     let viewport_cloned_2 = Arc::clone(&viewport);
     let gpu_cloned_3 = Arc::clone(&gpu_helper);
+    let gpu_cloned_4 = Arc::clone(&gpu_helper);
     let viewport_cloned_3 = Arc::clone(&viewport);
     let viewport_cloned_4 = Arc::clone(&viewport);
     let viewport_cloned_5 = Arc::clone(&viewport);
+    let viewport_cloned_6 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
     let local_mode = create_rw_signal("layout".to_string());
@@ -286,6 +307,7 @@ pub fn sequence_panel(
         }
     });
 
+    // this function can be reused for resetting layers to correctness and save it out
     let on_items_updated = move || {
         // update layers for objects in sequence in saved state and editor
         let updated_layers = layers.get();
@@ -367,9 +389,340 @@ pub fn sequence_panel(
         drop(editor_state);
     };
 
+    let on_item_duplicated = {
+        let on_items_updated = on_items_updated.clone();
+
+        move |object_id, kind| {
+            let mut editor = editor_cloned_11.lock().unwrap();
+            let viewport = viewport_cloned_6.lock().unwrap();
+            let camera = editor.camera.expect("Couldn't get camera");
+            let gpu_helper = gpu_cloned_4.lock().unwrap();
+            let gpu_resources = gpu_helper
+                .gpu_resources
+                .as_ref()
+                .expect("Couldn't get gpu resources");
+
+            let window_size = WindowSize {
+                width: viewport.width as u32,
+                height: viewport.height as u32,
+            };
+
+            let new_id = Uuid::new_v4();
+            let new_offset = 50.0;
+
+            // duplicate relevant object and layer
+            match kind {
+                LayerKind::Polygon => {
+                    let mut existing_polygon = editor
+                        .polygons
+                        .iter()
+                        .find(|p| p.id == object_id)
+                        .expect("Couldn't find matching polygon");
+
+                    let mut polygon_config: PolygonConfig = existing_polygon.to_config();
+
+                    polygon_config.id = new_id;
+                    polygon_config.position = Point {
+                        x: polygon_config.position.x + new_offset,
+                        y: polygon_config.position.y + new_offset,
+                    };
+
+                    let mut duplicated_polygon = Polygon::from_config(
+                        &polygon_config,
+                        &window_size,
+                        &gpu_resources.device,
+                        &gpu_resources.queue,
+                        &editor
+                            .model_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get model bind group layout"),
+                        &camera,
+                        selected_sequence_id.get(),
+                    );
+
+                    duplicated_polygon.hidden = false;
+
+                    editor.polygons.push(duplicated_polygon);
+
+                    let duplicated_layer: Layer = Layer::from_polygon_config(&polygon_config);
+
+                    layers.update(|l| {
+                        l.push(duplicated_layer);
+                    });
+                }
+                LayerKind::Text => {
+                    let mut existing_text = editor
+                        .text_items
+                        .iter()
+                        .find(|p| p.id == object_id)
+                        .expect("Couldn't find matching text");
+
+                    let mut text_config: TextRendererConfig = existing_text.to_config();
+
+                    text_config.id = new_id;
+                    text_config.position = Point {
+                        x: text_config.position.x + new_offset,
+                        y: text_config.position.y + new_offset,
+                    };
+
+                    let font_data = editor
+                        .font_manager
+                        .get_font_by_name(&text_config.font_family)
+                        .expect("Couldn't get font family");
+
+                    let mut duplicated_text = TextRenderer::from_config(
+                        &text_config,
+                        &window_size,
+                        &gpu_resources.device,
+                        &gpu_resources.queue,
+                        &editor
+                            .model_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get model bind group layout"),
+                        &camera,
+                        selected_sequence_id.get(),
+                        font_data,
+                    );
+
+                    duplicated_text.hidden = false;
+
+                    editor.text_items.push(duplicated_text);
+
+                    let duplicated_layer: Layer = Layer::from_text_config(&text_config);
+
+                    layers.update(|l| {
+                        l.push(duplicated_layer);
+                    });
+                }
+                LayerKind::Image => {
+                    let mut existing_image = editor
+                        .image_items
+                        .iter()
+                        .find(|p| p.id == object_id.to_string())
+                        .expect("Couldn't find matching image");
+
+                    let mut image_config: StImageConfig = existing_image.to_config();
+
+                    image_config.id = new_id.to_string();
+                    image_config.position = Point {
+                        x: image_config.position.x + new_offset,
+                        y: image_config.position.y + new_offset,
+                    };
+
+                    let mut duplicated_image = StImage::from_config(
+                        &image_config,
+                        &window_size,
+                        &gpu_resources.device,
+                        &gpu_resources.queue,
+                        &editor
+                            .model_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get model bind group layout"),
+                        &camera,
+                        selected_sequence_id.get(),
+                    );
+
+                    duplicated_image.hidden = false;
+
+                    editor.image_items.push(duplicated_image);
+
+                    let duplicated_layer: Layer = Layer::from_image_config(&image_config);
+
+                    layers.update(|l| {
+                        l.push(duplicated_layer);
+                    });
+                }
+            };
+
+            drop(viewport);
+            drop(gpu_helper);
+            drop(editor);
+
+            // update duplicated object motion path with offset akin to object itself
+            let mut editor_state = state_cloned_8.lock().unwrap();
+            let saved_state = editor_state
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get saved state");
+            let mut sequence = selected_sequence_data.get();
+
+            let animation = sequence
+                .polygon_motion_paths
+                .iter_mut()
+                .find(|pm| pm.polygon_id == object_id.to_string())
+                .expect("Couldn't get matching path");
+
+            animation.polygon_id = new_id.to_string();
+
+            animation
+                .properties
+                .iter_mut()
+                .filter(|p| p.name == "Position".to_string())
+                .for_each(|p| {
+                    p.keyframes.iter_mut().for_each(|k| match k.value {
+                        KeyframeValue::Position(pos) => {
+                            k.value = KeyframeValue::Position([
+                                pos[0] + new_offset as i32,
+                                pos[1] + new_offset as i32,
+                            ])
+                        }
+                        _ => {}
+                    });
+                });
+
+            // duplicate relevant motion paths
+            let saved_sequence = saved_state
+                .sequences
+                .iter_mut()
+                .find(|s| s.id == selected_sequence_id.get())
+                .expect("Couldn't find selected sequence");
+            saved_sequence.polygon_motion_paths.push(animation.clone());
+
+            drop(editor_state);
+
+            // rerender motion paths
+            let mut editor = editor_cloned_11.lock().unwrap();
+
+            editor.update_motion_paths(&sequence);
+
+            drop(editor);
+
+            // also set selected_sequence_data
+            selected_sequence_data.set(sequence);
+
+            // update layer ordering and save saved state
+            on_items_updated();
+        }
+    };
+
+    // TODO: handle case where object is currently selected
+    let on_item_deleted = {
+        let on_items_updated = on_items_updated.clone();
+
+        move |object_id, kind| {
+            let mut editor = editor_cloned_12.lock().unwrap();
+
+            // update editor / renderer (remove relevant object)
+            match kind {
+                LayerKind::Polygon => {
+                    let index = editor
+                        .polygons
+                        .iter()
+                        .position(|p| p.id == object_id)
+                        .expect("Couldn't match object");
+
+                    editor.polygons.swap_remove(index);
+                }
+                LayerKind::Text => {
+                    let index = editor
+                        .text_items
+                        .iter()
+                        .position(|p| p.id == object_id)
+                        .expect("Couldn't match object");
+
+                    editor.text_items.swap_remove(index);
+                }
+                LayerKind::Image => {
+                    let index = editor
+                        .image_items
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't match object");
+
+                    editor.image_items.swap_remove(index);
+                }
+            }
+
+            drop(editor);
+
+            // update saved state (remove object and related animation path)
+            let mut editor_state = state_cloned_10.lock().unwrap();
+            let mut saved_state = editor_state
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get saved state");
+            let mut sequence = selected_sequence_data.get();
+
+            match kind {
+                LayerKind::Polygon => {
+                    let object_index = sequence
+                        .active_polygons
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    let path_index = sequence
+                        .polygon_motion_paths
+                        .iter()
+                        .position(|p| p.polygon_id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    sequence.active_polygons.remove(object_index);
+                    sequence.polygon_motion_paths.remove(path_index);
+                }
+                LayerKind::Text => {
+                    let object_index = sequence
+                        .active_text_items
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    let path_index = sequence
+                        .polygon_motion_paths
+                        .iter()
+                        .position(|p| p.polygon_id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    sequence.active_text_items.remove(object_index);
+                    sequence.polygon_motion_paths.remove(path_index);
+                }
+                LayerKind::Image => {
+                    let object_index = sequence
+                        .active_image_items
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    let path_index = sequence
+                        .polygon_motion_paths
+                        .iter()
+                        .position(|p| p.polygon_id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    sequence.active_image_items.remove(object_index);
+                    sequence.polygon_motion_paths.remove(path_index);
+                }
+            }
+
+            saved_state.sequences.iter_mut().for_each(|s| {
+                if s.id == selected_sequence_id.get() {
+                    *s = sequence.clone();
+                }
+            });
+
+            drop(editor_state);
+
+            // rerender motion paths
+            let mut editor = editor_cloned_12.lock().unwrap();
+
+            editor.update_motion_paths(&sequence);
+
+            drop(editor);
+
+            // update selected_sequence_data
+            selected_sequence_data.set(sequence);
+
+            // update layers and save saved state
+            on_items_updated();
+        }
+    };
+
     v_stack((
         v_stack((
-            label(move || format!("Update Sequence")).style(|s| s.margin_bottom(10)),
+            label(move || format!("Update Sequence"))
+                .style(|s| s.font_size(14.0).margin_bottom(10)),
             simple_button("Back to Sequence List".to_string(), move |_| {
                 sequence_selected.set(false);
 
@@ -863,7 +1216,7 @@ pub fn sequence_panel(
                 .z_index(1)
         }),
         v_stack((
-            label(|| "Scene").style(|s| s.font_size(14.0).margin_bottom(15.0)),
+            label(|| "Scene").style(|s| s.font_size(14.0).margin_bottom(10.0)),
             scroll(
                 dyn_stack(
                     move || layers.get(),
@@ -871,6 +1224,9 @@ pub fn sequence_panel(
                     move |layer| {
                         let editor = editor_cloned_7.clone();
                         let on_items_updated = on_items_updated.clone();
+                        let on_item_duplicated = on_item_duplicated.clone();
+                        let on_item_deleted = on_item_deleted.clone();
+
                         let icon_name = match layer.instance_kind {
                             LayerKind::Polygon => "triangle",
                             LayerKind::Text => "sphere",
@@ -885,13 +1241,16 @@ pub fn sequence_panel(
                             layers,
                             dragger_id,
                             layer.instance_id,
+                            layer.instance_kind,
                             layer.instance_name.clone(),
                             icon_name,
                             on_items_updated,
+                            on_item_duplicated,
+                            on_item_deleted,
                         )
                     },
                 )
-                .style(|s: floem::style::Style| s.flex_col().column_gap(5).padding(10))
+                .style(|s: floem::style::Style| s.flex_col().column_gap(2))
                 .into_view(),
             )
             .style(move |s| s.height(window_height.get() / 2.0 - 190.0)),
