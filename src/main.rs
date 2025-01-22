@@ -199,11 +199,6 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                                 .transform
                                 .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
                         }
-                    } else if editor.is_playing {
-                        // still need to be careful of playback performance
-                        polygon
-                            .transform
-                            .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
                     }
 
                     render_pass.set_bind_group(1, &polygon.bind_group, &[]);
