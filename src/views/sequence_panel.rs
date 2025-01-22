@@ -1237,11 +1237,12 @@ pub fn sequence_panel(
                         };
 
                         let gpu_helper = gpu_cloned_2.lock().unwrap();
-                        let device = &gpu_helper
+                        let gpu_resources = gpu_helper
                             .gpu_resources
                             .as_ref()
-                            .expect("Couldn't get gpu resources")
-                            .device;
+                            .expect("Couldn't get gpu resources");
+                        let device = &gpu_resources.device;
+                        let queue = &gpu_resources.queue;
                         let viewport = viewport_cloned_2.lock().unwrap();
                         let window_size = WindowSize {
                             width: viewport.width as u32,
@@ -1251,6 +1252,7 @@ pub fn sequence_panel(
                         editor.add_text_item(
                             &window_size,
                             &device,
+                            &queue,
                             text_config.clone(),
                             new_text.clone(),
                             new_id,

@@ -192,9 +192,20 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
 
                 // draw static (internal) polygons
                 for (poly_index, polygon) in editor.static_polygons.iter().enumerate() {
-                    polygon
-                        .transform
-                        .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    // uniform buffers are pricier, no reason to over-update when idle
+                    if let Some(dragging_id) = editor.dragging_path_handle {
+                        if dragging_id == polygon.id {
+                            polygon
+                                .transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+                    } else if editor.is_playing {
+                        // still need to be careful of playback performance
+                        polygon
+                            .transform
+                            .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                    }
+
                     render_pass.set_bind_group(1, &polygon.bind_group, &[]);
                     render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
@@ -207,9 +218,22 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // draw polygons
                 for (poly_index, polygon) in editor.polygons.iter().enumerate() {
                     if !polygon.hidden {
-                        polygon
-                            .transform
-                            .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        // uniform buffers are pricier, no reason to over-update when idle
+                        // also need to remember to update uniform buffers after changes like scale, rotation, position
+                        if let Some(dragging_id) = editor.dragging_polygon {
+                            if dragging_id == polygon.id {
+                                polygon.transform.update_uniform_buffer(
+                                    &gpu_resources.queue,
+                                    &camera.window_size,
+                                );
+                            }
+                        } else if editor.is_playing {
+                            // still need to be careful of playback performance
+                            polygon
+                                .transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+
                         render_pass.set_bind_group(1, &polygon.bind_group, &[]);
                         render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
@@ -223,9 +247,21 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // draw text items
                 for (text_index, text_item) in editor.text_items.iter().enumerate() {
                     if !text_item.hidden {
-                        text_item
-                            .transform
-                            .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        // uniform buffers are pricier, no reason to over-update when idle
+                        if let Some(dragging_id) = editor.dragging_text {
+                            if dragging_id == text_item.id {
+                                text_item.transform.update_uniform_buffer(
+                                    &gpu_resources.queue,
+                                    &camera.window_size,
+                                );
+                            }
+                        } else if editor.is_playing {
+                            // still need to be careful of playback performance
+                            text_item
+                                .transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+
                         render_pass.set_bind_group(1, &text_item.bind_group, &[]);
                         render_pass.set_vertex_buffer(0, text_item.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
@@ -239,9 +275,21 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // draw image items
                 for (image_index, st_image) in editor.image_items.iter().enumerate() {
                     if !st_image.hidden {
-                        st_image
-                            .transform
-                            .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        // uniform buffers are pricier, no reason to over-update when idle
+                        if let Some(dragging_id) = editor.dragging_image {
+                            if dragging_id.to_string() == st_image.id {
+                                st_image.transform.update_uniform_buffer(
+                                    &gpu_resources.queue,
+                                    &camera.window_size,
+                                );
+                            }
+                        } else if editor.is_playing {
+                            // still need to be careful of playback performance
+                            st_image
+                                .transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+
                         render_pass.set_bind_group(1, &st_image.bind_group, &[]);
                         render_pass.set_vertex_buffer(0, st_image.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
