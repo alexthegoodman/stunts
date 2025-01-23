@@ -288,11 +288,12 @@ pub fn sequence_panel(
                 .timeline_state
                 .timeline_sequences
                 .iter()
-                .find(|ts| ts.sequence_id == selected_sequence_id.get_untracked())
-                .expect("Couldn't find timeline sequences");
+                .find(|ts| ts.sequence_id == selected_sequence_id.get_untracked());
 
-            let initial_duration = timeline_sequence.duration_ms / 1000;
-            sequence_duration_input.set(initial_duration.to_string());
+            if let Some(sequence) = timeline_sequence {
+                let initial_duration = sequence.duration_ms / 1000;
+                sequence_duration_input.set(initial_duration.to_string());
+            }
 
             drop(editor_state);
         }
