@@ -945,7 +945,7 @@ async fn main() {
                         fill: rgb_to_wgpu(0, 0, 0, 1.0),
                     },
                     0.0,
-                    -99, // camera far is -100
+                    -89, // camera far is -100
                     "Canvas Background".to_string(),
                     Uuid::new_v4(),
                     Uuid::nil(),
