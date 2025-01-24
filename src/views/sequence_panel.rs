@@ -108,7 +108,8 @@ where
             // ),
             label(move || layer_name.to_string())
                 .style(|s| s.selectable(false).cursor(CursorStyle::RowResize)),
-        )),
+        ))
+        .style(|s| s.align_items(AlignItems::Center)),
         h_stack((
             icon_button("copy", "Duplicate".to_string(), move |_| {
                 on_item_duplicated(item_id, kind);
@@ -1329,9 +1330,9 @@ pub fn sequence_panel(
                         let on_item_deleted = on_item_deleted.clone();
 
                         let icon_name = match layer.instance_kind {
-                            LayerKind::Polygon => "triangle",
-                            LayerKind::Text => "sphere",
-                            LayerKind::Image => "triangle",
+                            LayerKind::Polygon => "square",
+                            LayerKind::Text => "text",
+                            LayerKind::Image => "image",
                             // LayerKind::Path =>
                             //         // LayerKind::Imag(data) =>
                             //         // LayerKind::Text =>

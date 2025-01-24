@@ -311,8 +311,10 @@ pub fn timeline_sequence_track(
                     s.absolute()
                         .inset_left(left_signal.get())
                         .width(width)
-                        .height_full()
+                        // .height_full()
+                        .height(40.0)
                         .selectable(false)
+                        .border_radius(5.0)
                         // .cursor(CursorStyle::ColResize)
                         .background(if track_type == TrackType::Audio {
                             Color::rgb8(200, 100, 100)
