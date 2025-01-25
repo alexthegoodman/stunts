@@ -1180,6 +1180,7 @@ pub fn project_view(
                                                 selected_polygon_id,
                                                 selected_polygon_data,
                                                 selected_sequence_id,
+                                                selected_sequence_data,
                                             ),
                                         ))
                                         .style(|s| card_styles(s))),
@@ -1211,6 +1212,7 @@ pub fn project_view(
                                                 selected_text_id,
                                                 selected_text_data,
                                                 selected_sequence_id,
+                                                selected_sequence_data,
                                             ),
                                         ))
                                         .style(|s| card_styles(s))),
@@ -1242,6 +1244,7 @@ pub fn project_view(
                                                 selected_image_id,
                                                 selected_image_data,
                                                 selected_sequence_id,
+                                                selected_sequence_data,
                                             ),
                                         ))
                                         .style(|s| card_styles(s))),

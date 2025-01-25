@@ -3,7 +3,9 @@ use floem::common::simple_button;
 use floem::common::small_button;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 use stunts_engine::animations::ObjectType;
+use stunts_engine::animations::Sequence;
 use stunts_engine::editor::color_to_wgpu;
 use stunts_engine::editor::string_to_f32;
 use stunts_engine::editor::wgpu_to_human;
@@ -35,6 +37,145 @@ use super::inputs::inline_dropdown;
 use super::inputs::styled_input;
 use super::inputs::DropdownOption;
 
+pub fn keyframe_tools(
+    editor_state: Arc<Mutex<EditorState>>,
+    selected_polygon_id: RwSignal<Uuid>,
+    selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
+    object_type: ObjectType,
+) -> impl IntoView {
+    let editor_state2 = Arc::clone(&editor_state);
+    let editor_state3 = Arc::clone(&editor_state);
+    let editor_state4 = Arc::clone(&editor_state);
+
+    let sequence_duration_input = create_rw_signal(String::new());
+    let target_duration_signal = create_rw_signal(String::new());
+
+    v_stack((
+        label(|| "Update Keyframes").style(|s| s.margin_bottom(5.0)),
+        v_stack((
+            debounce_input(
+                "Target Duration".to_string(),
+                &sequence_duration_input.get(),
+                "Seconds",
+                move |target_dur| {
+                    target_duration_signal.set(target_dur);
+                },
+                editor_state4,
+                "target_duration".to_string(),
+                object_type,
+            ),
+            h_stack((
+                simple_button("Shrink / Stretch".to_string(), move |_| {
+                    // TODO: integrate with undo/redo
+                    if target_duration_signal.get().len() < 1 {
+                        return;
+                    }
+
+                    let mut editor_state = editor_state2.lock().unwrap();
+                    let saved_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get saved state");
+                    let selected_sequence = saved_state
+                        .sequences
+                        .iter()
+                        .find(|s| s.id == selected_sequence_id.get())
+                        .expect("Couldn't get selected sequence");
+                    let current_animation_path = selected_sequence
+                        .polygon_motion_paths
+                        .iter()
+                        .find(|p| p.polygon_id == selected_polygon_id.get().to_string())
+                        .expect("Couldn't find matching polygon");
+
+                    let target_duration = string_to_f32(&target_duration_signal.get())
+                        .expect("Couldn't get duration");
+
+                    let motion_path = current_animation_path.clone();
+
+                    drop(editor_state);
+
+                    let mut editor_state = editor_state2.lock().unwrap();
+
+                    let target_keyframes = editor_state
+                        .scale_animation(motion_path, Duration::from_secs_f32(target_duration));
+
+                    let saved_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get saved state");
+
+                    let mut new_sequence = selected_sequence_data.get();
+                    let polygon_path = new_sequence
+                        .polygon_motion_paths
+                        .iter_mut()
+                        .find(|pm| pm.polygon_id == selected_polygon_id.get().to_string())
+                        .expect("Couldn't find amtching polygon path");
+                    *polygon_path = target_keyframes.clone();
+
+                    selected_sequence_data.set(new_sequence);
+
+                    saved_state.sequences.iter_mut().for_each(|s| {
+                        if s.id == selected_sequence_id.get() {
+                            s.duration_ms = target_duration as i32 * 1000;
+                            let polygon_path = s
+                                .polygon_motion_paths
+                                .iter_mut()
+                                .find(|pm| pm.polygon_id == selected_polygon_id.get().to_string())
+                                .expect("Couldn't find amtching polygon path");
+                            *polygon_path = target_keyframes.clone();
+                        }
+                    });
+
+                    save_saved_state_raw(saved_state.clone());
+
+                    editor_state.record_state.saved_state = Some(saved_state.clone());
+
+                    drop(editor_state);
+                }),
+                simple_button("Cut / Extend".to_string(), move |_| {
+                    if target_duration_signal.get().len() < 1 {
+                        return;
+                    }
+
+                    // TODO: needs to actually cut off keyframes? and update motion paths?
+
+                    let mut editor_state = editor_state3.lock().unwrap();
+
+                    let target_duration = string_to_f32(&target_duration_signal.get())
+                        .expect("Couldn't get duration");
+
+                    let mut saved_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get Saved State");
+
+                    saved_state
+                        .sequences
+                        .iter_mut()
+                        .filter(|s| s.id == selected_sequence_id.get())
+                        .for_each(|s| {
+                            s.duration_ms = target_duration as i32 * 1000;
+                            // s.polygon_motion_paths.iter_mut().for_each(|pm| {
+                            //     pm.duration = Duration::from_secs(target_duration as u64);
+                            // });
+                        });
+
+                    save_saved_state_raw(saved_state.clone());
+
+                    editor_state.record_state.saved_state = Some(saved_state.clone());
+
+                    drop(editor_state);
+                }),
+            )),
+        ))
+        .style(|s| s.margin_bottom(5.0)),
+    ))
+}
+
 pub fn properties_view(
     editor_state: Arc<Mutex<EditorState>>,
     gpu_helper: Arc<Mutex<GpuHelper>>,
@@ -44,6 +185,7 @@ pub fn properties_view(
     selected_polygon_id: RwSignal<Uuid>,
     selected_polygon_data: RwSignal<PolygonConfig>,
     selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
@@ -65,6 +207,9 @@ pub fn properties_view(
     let editor_state18 = Arc::clone(&editor_state);
     let editor_state19 = Arc::clone(&editor_state);
     let editor_state20 = Arc::clone(&editor_state);
+    let editor_state21 = Arc::clone(&editor_state);
+    let editor_state22 = Arc::clone(&editor_state);
+    let editor_state23 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -302,8 +447,13 @@ pub fn properties_view(
                 )
                 .style(move |s| s.width(quarters)),
             )),
-            label(|| "Path Settings").style(|s| s.margin_bottom(5.0)),
-            // add curve settings (linear, bezier) and control points for bezier
+            keyframe_tools(
+                editor_state22,
+                selected_polygon_id,
+                selected_sequence_id,
+                selected_sequence_data,
+                ObjectType::Polygon,
+            ),
         ))
         .style(move |s| s.width(aside_width)),
     ))
@@ -326,6 +476,7 @@ pub fn text_properties_view(
     selected_text_id: RwSignal<Uuid>,
     selected_text_data: RwSignal<TextRendererConfig>,
     selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned2 = Arc::clone(&editor);
@@ -337,6 +488,7 @@ pub fn text_properties_view(
     let editor_state6 = Arc::clone(&editor_state);
     let editor_state7 = Arc::clone(&editor_state);
     let editor_state8 = Arc::clone(&editor_state);
+    let editor_state9 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -487,6 +639,7 @@ pub fn text_properties_view(
                 let editor_cloned3 = editor_cloned3.clone();
                 let editor_state7 = editor_state7.clone();
                 let editor_state8 = editor_state8.clone();
+                let editor_state9 = editor_state9.clone();
 
                 if defaults_are_set {
                     v_stack((
@@ -584,6 +737,13 @@ pub fn text_properties_view(
                             ),
                             rgb_view_debounced(on_color_update, init_red, init_green, init_blue),
                         )),
+                        keyframe_tools(
+                            editor_state9,
+                            selected_text_id,
+                            selected_sequence_id,
+                            selected_sequence_data,
+                            ObjectType::TextItem,
+                        ),
                     ))
                 } else {
                     v_stack((empty(),))
@@ -610,19 +770,13 @@ pub fn image_properties_view(
     selected_image_id: RwSignal<Uuid>,
     selected_image_data: RwSignal<StImageConfig>,
     selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
     let editor_state4 = Arc::clone(&editor_state);
-    // let editor_state3 = Arc::clone(&editor_state);
-    // let editor_state4 = Arc::clone(&editor_state);
-    // let editor_state5 = Arc::clone(&editor_state);
-    // let editor_state6 = Arc::clone(&editor_state);
-    // let editor_state7 = Arc::clone(&editor_state);
-    // let editor_state8 = Arc::clone(&editor_state);
-    // let editor_state9 = Arc::clone(&editor_state);
-    // let editor_state10 = Arc::clone(&editor_state);
+    let editor_state5 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -636,47 +790,56 @@ pub fn image_properties_view(
         simple_button("Back to Sequence".to_string(), move |_| {
             image_selected.set(false);
         }),
-        v_stack((h_stack((
-            debounce_input(
-                "Width:".to_string(),
-                &selected_image_data.read().borrow().dimensions.0.to_string(),
-                "Enter width",
-                move |value| {
-                    let mut editor_state = editor_state3.lock().unwrap();
+        v_stack((
+            h_stack((
+                debounce_input(
+                    "Width:".to_string(),
+                    &selected_image_data.read().borrow().dimensions.0.to_string(),
+                    "Enter width",
+                    move |value| {
+                        let mut editor_state = editor_state3.lock().unwrap();
 
-                    // NOTE: editor_state actions are hooked into undo/redo as well as file save
-                    editor_state
-                        .update_width(&value, ObjectType::ImageItem)
-                        .expect("Couldn't update width");
+                        // NOTE: editor_state actions are hooked into undo/redo as well as file save
+                        editor_state
+                            .update_width(&value, ObjectType::ImageItem)
+                            .expect("Couldn't update width");
 
-                    drop(editor_state);
+                        drop(editor_state);
 
-                    // TODO: should update selected_polygon_data?
-                },
-                editor_state,
-                "width".to_string(),
+                        // TODO: should update selected_polygon_data?
+                    },
+                    editor_state,
+                    "width".to_string(),
+                    ObjectType::ImageItem,
+                )
+                .style(move |s| s.width(halfs).margin_right(5.0)),
+                debounce_input(
+                    "Height:".to_string(),
+                    &selected_image_data.read().borrow().dimensions.1.to_string(),
+                    "Enter height",
+                    move |value| {
+                        let mut editor_state = editor_state4.lock().unwrap();
+
+                        editor_state
+                            .update_height(&value, ObjectType::ImageItem)
+                            .expect("Couldn't update height");
+
+                        drop(editor_state);
+                    },
+                    editor_state2,
+                    "height".to_string(),
+                    ObjectType::ImageItem,
+                )
+                .style(move |s| s.width(halfs)),
+            )),
+            keyframe_tools(
+                editor_state5,
+                selected_image_id,
+                selected_sequence_id,
+                selected_sequence_data,
                 ObjectType::ImageItem,
-            )
-            .style(move |s| s.width(halfs).margin_right(5.0)),
-            debounce_input(
-                "Height:".to_string(),
-                &selected_image_data.read().borrow().dimensions.1.to_string(),
-                "Enter height",
-                move |value| {
-                    let mut editor_state = editor_state4.lock().unwrap();
-
-                    editor_state
-                        .update_height(&value, ObjectType::ImageItem)
-                        .expect("Couldn't update height");
-
-                    drop(editor_state);
-                },
-                editor_state2,
-                "height".to_string(),
-                ObjectType::ImageItem,
-            )
-            .style(move |s| s.width(halfs)),
-        )),))
+            ),
+        ))
         .style(move |s| s.width(aside_width)),
     ))
     // .style(|s| card_styles(s))

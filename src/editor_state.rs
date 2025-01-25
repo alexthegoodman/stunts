@@ -929,27 +929,38 @@ impl EditorState {
             .find(|a| a.id == selected_sequence_id)
         {
             for animation in sequence.polygon_motion_paths.clone() {
-                let original_duration = animation.duration;
-                let scale_factor = target_duration.as_secs_f32() / original_duration.as_secs_f32();
-
-                // Create a new animation with scaled keyframes
-                let mut new_animation = animation.clone();
-                new_animation.duration = target_duration;
-
-                // Scale each property's keyframes
-                for property in &mut new_animation.properties {
-                    for keyframe in &mut property.keyframes {
-                        let original_time_secs = keyframe.time.as_secs_f32();
-                        let new_time_secs = original_time_secs * scale_factor;
-                        keyframe.time = Duration::from_secs_f32(new_time_secs);
-                    }
-                }
-
+                let new_animation = self.scale_animation(animation, target_duration);
                 animations.push(new_animation);
             }
         }
 
         animations
+    }
+
+    pub fn scale_animation(
+        &self,
+        animation: AnimationData,
+        target_duration: Duration,
+    ) -> AnimationData {
+        let original_duration = animation.duration;
+        let scale_factor = target_duration.as_secs_f32() / original_duration.as_secs_f32();
+
+        // Create a new animation with scaled keyframes
+        let mut new_animation = animation.clone();
+        new_animation.duration = target_duration;
+
+        // Scale each property's keyframes
+        for property in &mut new_animation.properties {
+            for keyframe in &mut property.keyframes {
+                let original_time_secs = keyframe.time.as_secs_f32();
+                let new_time_secs = original_time_secs * scale_factor;
+                keyframe.time = Duration::from_secs_f32(new_time_secs);
+            }
+        }
+
+        // animations.push(new_animation);
+
+        new_animation
     }
 
     pub fn add_saved_polygon(
