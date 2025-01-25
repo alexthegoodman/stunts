@@ -352,7 +352,8 @@ pub fn sequences_view(
                                 println!("Motion Paths restored!");
 
                                 // EventPropagation::Continue
-                            }),
+                            })
+                            .style(|s| s.margin_right(2.0)),
                             simple_button("Duplicate".to_string(), move |_| {
                                 println!("Duplicating sequence...");
 
@@ -384,7 +385,8 @@ pub fn sequences_view(
                                 sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
                                 println!("Sequence duplicated!");
-                            }),
+                            })
+                            .style(|s| s.margin_right(2.0)),
                             simple_button("Add to Timeline".to_string(), {
                                 let item_cloned = item_cloned2.clone();
 
@@ -456,14 +458,14 @@ pub fn sequences_view(
                                 }
                             }),
                         ))
+                        .style(|s| s.margin_bottom(2.0))
                     },
                 )
                 .style(|s| {
-                    s.flex_col()
-                        .width(260.0)
-                        .padding_vert(15.0)
-                        .padding_horiz(20.0)
-                        .background(Color::LIGHT_BLUE)
+                    s.flex_col().width(260.0)
+                    // .padding_vert(15.0)
+                    // .padding_horiz(20.0)
+                    // .background(Color::LIGHT_BLUE)
                 })
             })
             .style(|s| s.height(400.0)),
