@@ -18,6 +18,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::sync::Arc;
 use std::sync::Mutex;
+use stunts_engine::animations::Sequence;
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Point;
 use stunts_engine::timelines::SavedTimelineStateConfig;
@@ -92,6 +93,36 @@ use crate::helpers::utilities::save_saved_state_raw;
 //         }
 //     }
 // }
+
+use std::cmp::max;
+
+fn calculate_end_time(
+    sequences: &Vec<Sequence>,
+    timeline_sequences: &Vec<TimelineSequence>,
+) -> Result<i32, &'static str> {
+    // if durations.len() != start_times.len() {
+    //     return Err("Durations and start times arrays must have the same length.");
+    // }
+
+    if timeline_sequences.is_empty() {
+        return Ok(0);
+    }
+
+    let mut end_time = 0;
+
+    for i in 0..timeline_sequences.len() {
+        if let Some(timeline_sequences) = timeline_sequences.get(i) {
+            if let Some(sequences) = sequences.get(i) {
+                end_time = max(
+                    end_time,
+                    timeline_sequences.start_time_ms + sequences.duration_ms,
+                );
+            }
+        }
+    }
+
+    Ok(end_time)
+}
 
 pub fn build_timeline(
     editor: Arc<Mutex<Editor>>,

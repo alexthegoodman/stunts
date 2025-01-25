@@ -8,6 +8,7 @@ use floem::peniko::ColorStops;
 use floem::peniko::Extend;
 use floem::peniko::Gradient;
 use floem::peniko::GradientKind;
+use floem::reactive::create_effect;
 use floem::reactive::create_rw_signal;
 use floem::reactive::RwSignal;
 use floem::reactive::SignalGet;
@@ -40,50 +41,89 @@ pub fn build_object_timeline(
     editor_state: Arc<Mutex<EditorState>>,
     // timeline_animations: RwSignal<Vec<AnimationData>>,
     selected_sequence_data: RwSignal<Sequence>,
-    pixels_per_s: i32,
+    deafult_pixels_per_s: i32,
 ) -> impl View {
-    dyn_container(
-        move || selected_sequence_data.get(),
-        move |data| {
-            let editor = editor.clone();
-            let editor_state = editor_state.clone();
+    let editor_state2 = Arc::clone(&editor_state);
+    let pixels_per_s = create_rw_signal(deafult_pixels_per_s);
+    let timeline_width = create_rw_signal(700);
 
-            if data.id.len() > 0 && data.polygon_motion_paths.len() > 0 {
-                dyn_stack(
-                    move || data.polygon_motion_paths.clone(),
-                    move |timeline_animation| timeline_animation.id.clone(),
-                    {
-                        move |animation| {
-                            container(stack((
-                                // background
-                                container((empty()))
-                                    .style(|s| {
-                                        s.width(700.0)
-                                            .height(50)
-                                            .background(Color::rgb8(200, 150, 100))
-                                            .z_index(1)
-                                    })
-                                    .style(|s| s.absolute().margin_left(0.0)),
-                                // timeline_sequences
-                                timeline_object_track(
-                                    editor.clone(),
-                                    editor_state.clone(),
-                                    selected_sequence_data,
-                                    pixels_per_s,
-                                    animation,
-                                ),
-                            )))
-                            .style(|s| s.position(Position::Relative).height(50))
-                        }
-                    },
-                )
-                .style(|s| s.flex_col().gap(1.0))
-                .into_any()
-            } else {
-                container((empty())).into_any()
-            }
-        },
-    )
+    create_effect(move |_| {
+        // determine the pixels per s
+        let sequence_data = selected_sequence_data.get();
+
+        let total_s = sequence_data.duration_ms / 1000;
+        let new_per_s = timeline_width.get() / total_s;
+
+        pixels_per_s.set(new_per_s);
+    });
+
+    v_stack((
+        // Tick marks for the timeline
+        container(dyn_stack(
+            move || {
+                let total_s = selected_sequence_data.get().duration_ms / 1000;
+                (0..=total_s).collect::<Vec<_>>() // Create a tick for each second
+            },
+            move |time| time.to_string(), // Unique identifier
+            move |time| {
+                let pixels_per_second = pixels_per_s.get();
+                container((label(move || time.to_string())))
+                    .style(move |s| {
+                        s.width(1.0)
+                            .height(20.0)
+                            .background(Color::rgb8(50, 50, 50)) // Tick mark color
+                            .position(Position::Absolute)
+                            .margin_left((time * pixels_per_second) as f32)
+                    })
+                    .style(|s| s.margin_top(0.0))
+            },
+        ))
+        .style(|s| s.height(20).position(Position::Relative)),
+        // tracks
+        dyn_container(
+            move || selected_sequence_data.get(),
+            move |data| {
+                let editor = editor.clone();
+                let editor_state = editor_state.clone();
+                let timeline_width = timeline_width.clone();
+
+                if data.id.len() > 0 && data.polygon_motion_paths.len() > 0 {
+                    dyn_stack(
+                        move || data.polygon_motion_paths.clone(),
+                        move |timeline_animation| timeline_animation.id.clone(),
+                        {
+                            move |animation| {
+                                container(stack((
+                                    // background
+                                    container((empty()))
+                                        .style(move |s| {
+                                            s.width(timeline_width.get())
+                                                .height(50)
+                                                .background(Color::rgb8(200, 150, 100))
+                                                .z_index(1)
+                                        })
+                                        .style(|s| s.absolute().margin_left(0.0)),
+                                    // timeline_sequences
+                                    timeline_object_track(
+                                        editor.clone(),
+                                        editor_state.clone(),
+                                        selected_sequence_data,
+                                        pixels_per_s,
+                                        animation,
+                                    ),
+                                )))
+                                .style(|s| s.position(Position::Relative).height(50))
+                            }
+                        },
+                    )
+                    .style(|s| s.flex_col().gap(1.0))
+                    .into_any()
+                } else {
+                    container((empty())).into_any()
+                }
+            },
+        ),
+    ))
 }
 
 pub fn timeline_object_track(
@@ -91,7 +131,7 @@ pub fn timeline_object_track(
     editor_state: Arc<Mutex<EditorState>>,
     // timeline_animations: RwSignal<Vec<AnimationData>>,
     selected_sequence_data: RwSignal<Sequence>,
-    pixels_per_s: i32,
+    pixels_per_s: RwSignal<i32>,
     animation: AnimationData,
 ) -> impl View {
     // let state_2 = state.clone();
@@ -99,7 +139,7 @@ pub fn timeline_object_track(
     let dragger_id = create_rw_signal(String::new());
 
     let animation_id = animation.id.clone();
-    let pixels_per_ms = pixels_per_s as f32 / 1000.0;
+    let pixels_per_ms = pixels_per_s.get() as f32 / 1000.0;
     let left = animation.start_time_ms as f32 * pixels_per_ms;
     let left_signal = create_rw_signal(left);
     let width = animation.duration.as_millis() as f32 * pixels_per_ms;

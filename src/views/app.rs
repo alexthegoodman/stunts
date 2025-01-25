@@ -383,6 +383,8 @@ pub fn project_view(
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
     let selected_keyframes: RwSignal<Vec<UIKeyframe>> = create_rw_signal(Vec::new());
 
+    let pixels_per_s = create_rw_signal(10);
+
     let image_selected_ref = Arc::new(Mutex::new(image_selected));
     let selected_image_id_ref = Arc::new(Mutex::new(selected_image_id));
     let selected_image_data_ref = Arc::new(Mutex::new(selected_image_data));
