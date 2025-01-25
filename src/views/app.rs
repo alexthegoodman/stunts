@@ -61,7 +61,7 @@ use stunts_engine::animations::{
 
 use super::aside::tab_interface;
 use super::editor_settings::editor_settings;
-use super::inputs::styled_input;
+use super::inputs::{play_sequence_button, styled_input};
 use super::keyframe_panel::keyframe_properties_view;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::object_timeline::build_object_timeline;
@@ -300,6 +300,7 @@ pub fn project_view(
     let editor_cloned8 = Arc::clone(&editor);
     let editor_cloned9 = Arc::clone(&editor);
     let editor_cloned10 = Arc::clone(&editor);
+    let editor_cloned11 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
@@ -1089,13 +1090,16 @@ pub fn project_view(
                             selected_sequence_id,
                             selected_sequence_data,
                         ),
-                        container((build_object_timeline(
-                            editor_cloned10.clone(),
-                            state_cloned10.clone(),
-                            selected_sequence_data,
-                            10,
-                        ),))
-                        .style(|s| s.margin_top(425.0).margin_left(25.0)),
+                        v_stack((
+                            play_sequence_button(editor_cloned11.clone(), selected_sequence_data),
+                            build_object_timeline(
+                                editor_cloned10.clone(),
+                                state_cloned10.clone(),
+                                selected_sequence_data,
+                                10,
+                            ),
+                        ))
+                        .style(|s| s.margin_top(450.0).margin_left(25.0)),
                     ))
                     .into_any()
                 } else {
@@ -1300,27 +1304,7 @@ pub fn project_view(
                             },
                         ),
                         v_stack((
-                            simple_button("Play Sequence".to_string(), move |_| {
-                                let mut editor = editor_cloned4.lock().unwrap();
-
-                                if editor.is_playing {
-                                    println!("Pause Sequence...");
-
-                                    editor.is_playing = false;
-                                    editor.start_playing_time = None;
-                                } else {
-                                    println!("Play Sequence...");
-
-                                    let now = std::time::Instant::now();
-                                    editor.start_playing_time = Some(now);
-
-                                    editor.current_sequence_data =
-                                        Some(selected_sequence_data.get());
-                                    editor.is_playing = true;
-                                }
-
-                                // EventPropagation::Continue
-                            }),
+                            play_sequence_button(editor_cloned4, selected_sequence_data),
                             keyframe_timeline,
                         ))
                         .style(|s| s.margin_top(425.0)),

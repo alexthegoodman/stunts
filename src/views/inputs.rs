@@ -28,7 +28,8 @@ use floem::window::WindowConfig;
 use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
-use stunts_engine::animations::ObjectType;
+use stunts_engine::animations::{ObjectType, Sequence};
+use stunts_engine::editor::{Editor, Viewport};
 use tokio::runtime::Runtime;
 use tokio::spawn;
 use tokio::task::spawn_local;
@@ -408,4 +409,35 @@ where
         ),
         label(move || label_text.get()),
     ))
+}
+
+pub fn play_sequence_button(
+    // editor_state: Arc<Mutex<EditorState>>,
+    editor: std::sync::Arc<Mutex<Editor>>,
+    // viewport: std::sync::Arc<Mutex<Viewport>>,
+    selected_sequence_data: RwSignal<Sequence>,
+) -> impl IntoView {
+    simple_button("Play Sequence".to_string(), move |_| {
+        let mut editor = editor.lock().unwrap();
+
+        if editor.is_playing {
+            println!("Pause Sequence...");
+
+            editor.is_playing = false;
+            editor.start_playing_time = None;
+
+            // should return objects to the startup positions and state
+            editor.reset_sequence_objects();
+        } else {
+            println!("Play Sequence...");
+
+            let now = std::time::Instant::now();
+            editor.start_playing_time = Some(now);
+
+            editor.current_sequence_data = Some(selected_sequence_data.get());
+            editor.is_playing = true;
+        }
+
+        // EventPropagation::Continue
+    })
 }

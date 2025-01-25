@@ -53,9 +53,16 @@ pub fn keyframe_tools(
     let target_duration_signal = create_rw_signal(String::new());
 
     create_effect(move |_| {
-        let current_duration = selected_sequence_data.get().duration_ms / 1000;
+        // let current_duration = selected_sequence_data.get().duration_ms / 1000;
+        let sequence_data = selected_sequence_data.get();
+        let current_duration = sequence_data
+            .polygon_motion_paths
+            .iter()
+            .find(|pm| pm.polygon_id == selected_polygon_id.get().to_string())
+            .map(|pm| pm.duration)
+            .expect("Couldn't find original duration");
 
-        sequence_duration_input.set(current_duration.to_string());
+        sequence_duration_input.set(current_duration.as_secs().to_string());
     });
 
     v_stack((
