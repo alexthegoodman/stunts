@@ -167,59 +167,18 @@ where
     let state_2 = Arc::clone(&editor_state);
     let state_3 = Arc::clone(&editor_state);
 
-    let debounce_count = create_rw_signal(0);
     let signal_registered = create_rw_signal(false);
 
-    // // Set up debounced action
-    // debounce_action(filtered_value, Duration::from_millis(300), move || {
-    //     println!("debounced action...");
-    //     let new_count = debounce_count.get() + 1;
-    //     debounce_count.set(new_count);
-    // });
-
-    // create_effect(move |_| {
-    //     let count = debounce_count.get();
-    //     if count > 0 {
-    //         println!("debounce_count effect...");
-    //         if let Ok(editor_state) = state_3.lock() {
-    //             on_event_stop(editor_state, filtered_value.get_untracked());
-    //         }
-    //     }
-    // });
-
-    let debounced_value = create_rw_signal(initial_value.to_string());
-    let previous_value = create_rw_signal(initial_value.to_string());
-
-    debounce_action(filtered_value, Duration::from_millis(600), move || {
+    debounce_action(filtered_value, Duration::from_millis(300), move || {
         println!("debounced action...");
-        // debounced_value.set(filtered_value.get_untracked());
-        // if let Ok(editor_state) = state_3.lock() {
         on_event_stop(filtered_value.get_untracked());
-        // }
     });
-
-    // create_effect(move |_| {
-    //     let new_value = debounced_value.get();
-    //     let prev_value = previous_value.get_untracked();
-
-    //     // Only proceed if the value has actually changed
-    //     // editor_state
-    //     if new_value != prev_value {
-    //         println!("value changed from '{}' to '{}'", prev_value, new_value);
-    //         if let Ok(editor_state) = state_3.lock() {
-    //             on_event_stop(editor_state, new_value.clone());
-    //         }
-    //         previous_value.set(new_value);
-    //     }
-    // });
 
     create_effect({
         let name = name.clone();
 
         move |_| {
             if !signal_registered.get() {
-                // println!("register signal effect...");
-
                 let mut editor_state = editor_state.lock().unwrap();
                 editor_state.register_signal(name.to_string(), value, signal_type.clone());
                 signal_registered.set(true);

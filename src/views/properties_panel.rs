@@ -47,9 +47,16 @@ pub fn keyframe_tools(
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
     let editor_state4 = Arc::clone(&editor_state);
+    let editor_state5 = Arc::clone(&editor_state);
 
     let sequence_duration_input = create_rw_signal(String::new());
     let target_duration_signal = create_rw_signal(String::new());
+
+    create_effect(move |_| {
+        let current_duration = selected_sequence_data.get().duration_ms / 1000;
+
+        sequence_duration_input.set(current_duration.to_string());
+    });
 
     v_stack((
         label(|| "Update Keyframes").style(|s| s.margin_bottom(5.0)),

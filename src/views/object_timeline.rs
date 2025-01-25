@@ -313,7 +313,14 @@ pub fn timeline_object_track(
                     }
                 }
             })
-            .style(|s| s.absolute().inset_right(5).inset_top(5).selectable(false)),
+            .style(move |s| {
+                s.absolute()
+                    .inset_left(width - 100.0)
+                    .inset_top(5)
+                    .font_size(10.0)
+                    .height(20.0)
+                    .selectable(false)
+            }),
         ))
         .on_event(EventListener::DragStart, {
             // let state = state.clone();
