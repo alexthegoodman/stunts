@@ -1,4 +1,5 @@
 use cgmath::Vector2;
+use floem::common::simple_button;
 use floem::event::EventListener;
 use floem::event::EventPropagation;
 use floem::kurbo::Point as KurboPoint;
@@ -22,6 +23,7 @@ use floem::IntoView;
 use floem::View;
 use serde::Deserialize;
 use serde::Serialize;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use stunts_engine::animations::AnimationData;
@@ -29,9 +31,13 @@ use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Point;
+use stunts_engine::polygon::PolygonConfig;
+use stunts_engine::st_image::StImageConfig;
+use stunts_engine::text_due::TextRendererConfig;
 use stunts_engine::timelines::SavedTimelineStateConfig;
 use stunts_engine::timelines::TimelineSequence;
 use stunts_engine::timelines::TrackType;
+use uuid::Uuid;
 
 use crate::editor_state::EditorState;
 use crate::helpers::utilities::save_saved_state_raw;
@@ -135,6 +141,7 @@ pub fn timeline_object_track(
     animation: AnimationData,
 ) -> impl View {
     // let state_2 = state.clone();
+    let editor_cloned = Arc::clone(&editor);
 
     let dragger_id = create_rw_signal(String::new());
 
@@ -191,105 +198,221 @@ pub fn timeline_object_track(
     };
 
     container(
-        container(label(move || small_label.clone()).style(|s| s.padding(5).selectable(false)))
-            .on_event(EventListener::DragStart, {
-                // let state = state.clone();
+        container((
+            label(move || small_label.clone()).style(|s| s.padding(5).selectable(false)),
+            simple_button("Edit Keyframes".to_string(), move |_| {
+                let mut editor = editor_cloned.lock().unwrap();
 
-                move |evt| {
-                    dragger_id.set(animation_id.clone());
+                // call click handler
+                match animation.object_type {
+                    ObjectType::Polygon => {
+                        let related_polygon = editor
+                            .polygons
+                            .iter()
+                            .find(|p| p.id.to_string() == related_object_id)
+                            .expect("Couldn't find polygon");
 
-                    EventPropagation::Continue
-                }
-            })
-            .on_event(EventListener::DragEnd, {
-                // let state = state.clone();
-                let editor = editor.clone();
-                let editor_state = editor_state.clone();
-
-                move |evt| {
-                    if let (id) = dragger_id.get() {
-                        // more definitive
-                        let editor = editor.lock().unwrap();
-                        // let camera = editor.camera.expect("Couldn't get camera");
-
-                        let position = Point {
-                            x: editor.last_screen.x - 600.0, // 600.0 for sidebar
-                            y: editor.last_screen.y - 400.0, // 400.0 for size of canvas
-                        };
-
-                        println!("drag_end {:?}", position);
-
-                        let mut new_time_ms = 0;
-                        if position.x != 0.0 {
-                            new_time_ms = (position.x / pixels_per_ms) as i32;
+                        if (editor.handle_polygon_click.is_some()) {
+                            let handler_creator = editor
+                                .handle_polygon_click
+                                .as_ref()
+                                .expect("Couldn't get handler");
+                            let mut handle_click = handler_creator().expect("Couldn't get handler");
+                            handle_click(
+                                related_polygon.id,
+                                PolygonConfig {
+                                    id: related_polygon.id,
+                                    name: related_polygon.name.clone(),
+                                    points: related_polygon.points.clone(),
+                                    dimensions: related_polygon.dimensions,
+                                    position: Point {
+                                        x: related_polygon.transform.position.x,
+                                        y: related_polygon.transform.position.y,
+                                    },
+                                    border_radius: related_polygon.border_radius,
+                                    fill: related_polygon.fill,
+                                    stroke: related_polygon.stroke,
+                                    layer: related_polygon.layer,
+                                },
+                            );
+                            editor.selected_polygon_id = related_polygon.id;
                         }
-
-                        drop(editor);
-
-                        // state.get().move_timeline_sequence(&id, new_time_ms);
-
-                        let mut anims: Vec<AnimationData> =
-                            selected_sequence_data.get().polygon_motion_paths;
-
-                        anims.iter_mut().for_each(|ad| {
-                            if ad.id == id {
-                                ad.start_time_ms = new_time_ms;
-                            }
-                        });
-
-                        selected_sequence_data.update(|s| {
-                            s.polygon_motion_paths = anims.clone();
-                        });
-
-                        // export_play_timeline_config.set(Some(SavedTimelineStateConfig {
-                        //     timeline_sequences: timeline_sequences.get(),
-                        // }));
-
-                        left_signal.set(new_time_ms as f32 * pixels_per_ms);
-
-                        // update the saved_state
-                        let mut editor_state = editor_state.lock().unwrap();
-                        let mut new_state = editor_state
-                            .record_state
-                            .saved_state
-                            .as_mut()
-                            .expect("Couldn't get Saved State")
-                            .clone();
-
-                        new_state.sequences.iter_mut().for_each(move |s| {
-                            if s.id == selected_sequence_data.get().id {
-                                s.polygon_motion_paths = anims.clone();
-                            }
-                        });
-
-                        editor_state.record_state.saved_state = Some(new_state.clone());
-
-                        save_saved_state_raw(new_state.clone());
                     }
-                    EventPropagation::Continue
+                    ObjectType::TextItem => {
+                        let related_text = editor
+                            .text_items
+                            .iter()
+                            .find(|p| p.id.to_string() == related_object_id)
+                            .expect("Couldn't find polygon");
+
+                        if (editor.handle_text_click.is_some()) {
+                            let handler_creator = editor
+                                .handle_text_click
+                                .as_ref()
+                                .expect("Couldn't get handler");
+                            let mut handle_click = handler_creator().expect("Couldn't get handler");
+                            handle_click(
+                                related_text.id,
+                                TextRendererConfig {
+                                    id: related_text.id,
+                                    name: related_text.name.clone(),
+                                    text: related_text.text.clone(),
+                                    font_family: related_text.font_family.clone(),
+                                    // points: polygon.points.clone(),
+                                    dimensions: related_text.dimensions,
+                                    position: Point {
+                                        x: related_text.transform.position.x,
+                                        y: related_text.transform.position.y,
+                                    },
+                                    layer: related_text.layer,
+                                    color: related_text.color,
+                                    font_size: related_text.font_size, // border_radius: polygon.border_radius,
+                                                                       // fill: polygon.fill,
+                                                                       // stroke: polygon.stroke,
+                                },
+                            );
+                            editor.selected_polygon_id = related_text.id; // TODO: separate property for each object type?
+                                                                          // polygon.old_points = Some(polygon.points.clone());
+                        }
+                    }
+                    ObjectType::ImageItem => {
+                        let related_image = editor
+                            .image_items
+                            .iter()
+                            .find(|p| p.id.to_string() == related_object_id)
+                            .expect("Couldn't find polygon");
+
+                        if (editor.handle_image_click.is_some()) {
+                            let handler_creator = editor
+                                .handle_image_click
+                                .as_ref()
+                                .expect("Couldn't get handler");
+                            let mut handle_click = handler_creator().expect("Couldn't get handler");
+                            let uuid = Uuid::from_str(&related_image.id.clone())
+                                .expect("Couldn't convert string to uuid");
+                            handle_click(
+                                uuid,
+                                StImageConfig {
+                                    id: related_image.id.clone(),
+                                    name: related_image.name.clone(),
+                                    path: related_image.path.clone(),
+                                    // points: polygon.points.clone(),
+                                    dimensions: related_image.dimensions,
+                                    position: Point {
+                                        x: related_image.transform.position.x,
+                                        y: related_image.transform.position.y,
+                                    },
+                                    layer: related_image.layer, // border_radius: polygon.border_radius,
+                                                                // fill: polygon.fill,
+                                                                // stroke: polygon.stroke,
+                                },
+                            );
+                            editor.selected_polygon_id = uuid; // TODO: separate property for each object type?
+                                                               // polygon.old_points = Some(polygon.points.clone());
+                        }
+                    }
                 }
             })
-            .style(move |s| {
-                s.absolute()
-                    .inset_left(left_signal.get())
-                    .width(width)
-                    .height(40.0)
-                    .selectable(false)
-                    .border_radius(5.0)
-                    // .cursor(CursorStyle::ColResize)
-                    // .background(Color::rgb8(100, 200, 100))
-                    .background(gradient.clone())
-                    .cursor(CursorStyle::Pointer)
-                    .z_index(5)
-            })
-            .draggable()
-            .dragging_style(|s| {
-                s.box_shadow_blur(3)
-                    .box_shadow_color(Color::rgba(100.0, 100.0, 100.0, 0.5))
-                    .box_shadow_spread(2)
-                    .position(Position::Relative)
-            })
-            .into_view(),
+            .style(|s| s.absolute().inset_right(5).inset_top(5).selectable(false)),
+        ))
+        .on_event(EventListener::DragStart, {
+            // let state = state.clone();
+
+            move |evt| {
+                dragger_id.set(animation_id.clone());
+
+                EventPropagation::Continue
+            }
+        })
+        .on_event(EventListener::DragEnd, {
+            // let state = state.clone();
+            let editor = editor.clone();
+            let editor_state = editor_state.clone();
+
+            move |evt| {
+                if let (id) = dragger_id.get() {
+                    // more definitive
+                    let editor = editor.lock().unwrap();
+                    // let camera = editor.camera.expect("Couldn't get camera");
+
+                    let position = Point {
+                        x: editor.last_screen.x - 600.0, // 600.0 for sidebar
+                        y: editor.last_screen.y - 400.0, // 400.0 for size of canvas
+                    };
+
+                    println!("drag_end {:?}", position);
+
+                    let mut new_time_ms = 0;
+                    if position.x != 0.0 {
+                        new_time_ms = (position.x / pixels_per_ms) as i32;
+                    }
+
+                    drop(editor);
+
+                    // state.get().move_timeline_sequence(&id, new_time_ms);
+
+                    let mut anims: Vec<AnimationData> =
+                        selected_sequence_data.get().polygon_motion_paths;
+
+                    anims.iter_mut().for_each(|ad| {
+                        if ad.id == id {
+                            ad.start_time_ms = new_time_ms;
+                        }
+                    });
+
+                    selected_sequence_data.update(|s| {
+                        s.polygon_motion_paths = anims.clone();
+                    });
+
+                    // export_play_timeline_config.set(Some(SavedTimelineStateConfig {
+                    //     timeline_sequences: timeline_sequences.get(),
+                    // }));
+
+                    left_signal.set(new_time_ms as f32 * pixels_per_ms);
+
+                    // update the saved_state
+                    let mut editor_state = editor_state.lock().unwrap();
+                    let mut new_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_mut()
+                        .expect("Couldn't get Saved State")
+                        .clone();
+
+                    new_state.sequences.iter_mut().for_each(move |s| {
+                        if s.id == selected_sequence_data.get().id {
+                            s.polygon_motion_paths = anims.clone();
+                        }
+                    });
+
+                    editor_state.record_state.saved_state = Some(new_state.clone());
+
+                    save_saved_state_raw(new_state.clone());
+                }
+                EventPropagation::Continue
+            }
+        })
+        .style(move |s| {
+            s.absolute()
+                .inset_left(left_signal.get())
+                .width(width)
+                .height(40.0)
+                .selectable(false)
+                .border_radius(5.0)
+                // .cursor(CursorStyle::ColResize)
+                // .background(Color::rgb8(100, 200, 100))
+                .background(gradient.clone())
+                .cursor(CursorStyle::Pointer)
+                .z_index(5)
+        })
+        .draggable()
+        .dragging_style(|s| {
+            s.box_shadow_blur(3)
+                .box_shadow_color(Color::rgba(100.0, 100.0, 100.0, 0.5))
+                .box_shadow_spread(2)
+                .position(Position::Relative)
+        })
+        .into_view(),
     )
     .style(|s: floem::style::Style| s.display(Display::Block).padding(5))
     .style(|s| s.absolute().margin_left(0.0).height(50))
