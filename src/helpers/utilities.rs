@@ -341,6 +341,7 @@ pub fn parse_animation_data(content: &str) -> Result<Vec<Sequence>, Box<dyn std:
         let sequence = Sequence {
             id: Uuid::new_v4().to_string(),
             name: "Imported Seq".to_string(),
+            duration_ms: 20000,
             active_polygons,
             polygon_motion_paths: motion_paths,
             active_text_items: Vec::new(),
