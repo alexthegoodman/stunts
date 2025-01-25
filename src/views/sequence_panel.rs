@@ -279,24 +279,24 @@ pub fn sequence_panel(
 
             drop(editor);
 
-            let editor_state = state_cloned_7.lock().unwrap();
-            let saved_state = editor_state
-                .record_state
-                .saved_state
-                .as_ref()
-                .expect("Couldn't get saved state");
-            let timeline_sequence = saved_state
-                .timeline_state
-                .timeline_sequences
-                .iter()
-                .find(|ts| ts.sequence_id == selected_sequence_id.get_untracked());
+            // let editor_state = state_cloned_7.lock().unwrap();
+            // let saved_state = editor_state
+            //     .record_state
+            //     .saved_state
+            //     .as_ref()
+            //     .expect("Couldn't get saved state");
+            // let timeline_sequence = saved_state
+            //     .timeline_state
+            //     .timeline_sequences
+            //     .iter()
+            //     .find(|ts| ts.sequence_id == selected_sequence_id.get_untracked());
 
-            if let Some(sequence) = timeline_sequence {
-                let initial_duration = sequence.duration_ms / 1000;
-                sequence_duration_input.set(initial_duration.to_string());
-            }
+            // if let Some(sequence) = timeline_sequence {
+            //     let initial_duration = sequence.duration_ms / 1000;
+            //     sequence_duration_input.set(initial_duration.to_string());
+            // }
 
-            drop(editor_state);
+            // drop(editor_state);
         }
     });
 

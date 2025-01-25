@@ -67,6 +67,7 @@ pub fn sequences_view(
     // let sequences: RwSignal<im::Vector<Sequence>> = create_rw_signal(im::Vector::new());
     let sequences: RwSignal<im::Vector<String>> = create_rw_signal(im::Vector::new());
     let sequence_quick_access: RwSignal<HashMap<String, String>> = create_rw_signal(HashMap::new());
+    let sequence_durations: RwSignal<HashMap<String, i32>> = create_rw_signal(HashMap::new());
 
     // let sequence_timeline_signal = create_rw_signal(TimelineState::new());
     let timeline_sequences: RwSignal<Vec<TimelineSequence>> = create_rw_signal(Vec::new());
@@ -103,8 +104,16 @@ pub fn sequences_view(
             })
             .collect();
 
+        let sequence_durs = saved_state
+            .sequences
+            .clone()
+            .into_iter()
+            .map(|s| (s.id, s.duration_ms))
+            .collect();
+
         sequences.set(im_sequences);
         sequence_quick_access.set(qa_sequences);
+        sequence_durations.set(sequence_durs);
 
         // initialize TimelineState based on stored config if exists or saved sequences if not
         if saved_state.timeline_state.timeline_sequences.len() > 0 {
@@ -150,6 +159,7 @@ pub fn sequences_view(
                 let new_sequence = Sequence {
                     id: new_sequence_id.clone(),
                     name: "New Sequence".to_string(),
+                    duration_ms: 20000,
                     active_polygons: Vec::new(),
                     polygon_motion_paths: Vec::new(),
                     active_text_items: Vec::new(),
@@ -391,6 +401,7 @@ pub fn sequences_view(
                                     // let sequence_timeline_state = sequence_timeline_state;
 
                                     let mut existing_timeline = timeline_sequences.get();
+                                    let sequence_durations = sequence_durations.get();
 
                                     // Find the sequence that ends at the latest point in time
                                     let start_time = if existing_timeline.is_empty() {
@@ -398,7 +409,13 @@ pub fn sequences_view(
                                     } else {
                                         existing_timeline
                                             .iter()
-                                            .map(|seq| seq.start_time_ms + seq.duration_ms)
+                                            .map(|seq| {
+                                                let duration_ms = sequence_durations
+                                                    .get(&seq.sequence_id)
+                                                    .expect("Couldn't get duration");
+
+                                                seq.start_time_ms + duration_ms
+                                            })
                                             .max()
                                             .unwrap_or(0)
                                     };
@@ -408,7 +425,7 @@ pub fn sequences_view(
                                         sequence_id: item_cloned.clone(),
                                         track_type: TrackType::Video,
                                         start_time_ms: start_time,
-                                        duration_ms: 20000,
+                                        // duration_ms: 20000,
                                     });
 
                                     timeline_sequences.set(existing_timeline);
@@ -589,6 +606,7 @@ pub fn sequences_view(
                 export_play_timeline_config,
                 10,
                 sequence_quick_access,
+                sequence_durations,
             ),
         ))
         .style(|s| s.margin_top(425.0).margin_left(25.0)),

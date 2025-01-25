@@ -261,13 +261,28 @@ pub fn export_widget(
 
                 let sequences = new_state.sequences.clone();
 
-                // let timeline_state = sequence_timeline_signal.get();
-                // let saved_timeline_state_config = sequence_timeline.clone();
                 let saved_timeline_state_config =
                     sequence_timeline.get().expect("Couldn't get a timeline");
-                let total_duration_s: f64 = saved_timeline_state_config
-                    .clone()
-                    .timeline_sequences
+
+                // get total duration of sequences that are in both the timleine and the saved state
+                let matching_sequences = sequences
+                    .iter()
+                    .filter(|s| {
+                        saved_timeline_state_config
+                            .timeline_sequences
+                            .iter()
+                            .any(|ts| ts.id == s.id)
+                    })
+                    .collect::<Vec<&Sequence>>();
+
+                // let total_duration_s: f64 = saved_timeline_state_config
+                //     .clone()
+                //     .timeline_sequences
+                //     .iter()
+                //     .map(|s| s.duration_ms as f64 / 1000.0)
+                //     .sum();
+
+                let total_duration_s = matching_sequences
                     .iter()
                     .map(|s| s.duration_ms as f64 / 1000.0)
                     .sum();

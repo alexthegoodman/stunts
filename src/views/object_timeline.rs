@@ -137,7 +137,7 @@ pub fn timeline_object_track(
             start: KurboPoint::new(50.0, 0.0), // Start further left
             end: KurboPoint::new(200.0, 50.0), // End further right to allow more space
         },
-        extend: Extend::Pad,
+        extend: Extend::Repeat,
         stops: ColorStops::from_vec(vec![
             ColorStop {
                 offset: 0.5,

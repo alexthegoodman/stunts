@@ -102,6 +102,7 @@ pub fn build_timeline(
     export_play_timeline_config: RwSignal<Option<SavedTimelineStateConfig>>,
     pixels_per_s: i32,
     sequence_quick_access: RwSignal<HashMap<String, String>>,
+    sequence_durations: RwSignal<HashMap<String, i32>>,
 ) -> impl View {
     // TODO: many tracks
     v_stack((
@@ -127,6 +128,7 @@ pub fn build_timeline(
                 TrackType::Audio,
                 pixels_per_s,
                 sequence_quick_access,
+                sequence_durations,
             ),
         )))
         .style(|s| s.position(Position::Relative).height(50)),
@@ -152,6 +154,7 @@ pub fn build_timeline(
                 TrackType::Video,
                 pixels_per_s,
                 sequence_quick_access,
+                sequence_durations,
             ),
         )))
         .style(|s| s.position(Position::Relative).height(50)),
@@ -168,6 +171,7 @@ pub fn timeline_sequence_track(
     track_type: TrackType,
     pixels_per_s: i32,
     sequence_quick_access: RwSignal<HashMap<String, String>>,
+    sequence_durations: RwSignal<HashMap<String, i32>>,
 ) -> impl View {
     // let state_2 = state.clone();
 
@@ -182,12 +186,19 @@ pub fn timeline_sequence_track(
 
             move |seq: TimelineSequence| {
                 let seq_id = seq.id.clone();
+                let seq_seq_id = seq.sequence_id.clone();
                 let track_type = track_type.clone();
                 let pixels_per_ms = pixels_per_s as f32 / 1000.0;
                 let left = seq.start_time_ms as f32 * pixels_per_ms;
                 let left_signal = create_rw_signal(left);
                 // println!("seq {:?} {:?}", seq_id, left);
-                let width = seq.duration_ms as f32 * pixels_per_ms;
+                // let width = seq.duration_ms as f32 * pixels_per_ms;
+                let sequence_durations = sequence_durations.get();
+                let matching_duration = sequence_durations
+                    .get(&seq_seq_id)
+                    .expect("Couldn't find matching duration")
+                    .clone();
+                let width = matching_duration as f32 * pixels_per_ms;
 
                 if (seq.track_type != track_type) {
                     return container((empty())).into_view();
