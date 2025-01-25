@@ -111,7 +111,7 @@ pub fn build_timeline(
             container((empty()))
                 .style(|s| {
                     s.width(700.0)
-                        .height(60)
+                        .height(50)
                         .background(Color::rgb8(100, 150, 200))
                         .z_index(1)
                 })
@@ -129,14 +129,14 @@ pub fn build_timeline(
                 sequence_quick_access,
             ),
         )))
-        .style(|s| s.position(Position::Relative).height(60)),
+        .style(|s| s.position(Position::Relative).height(50)),
         // Video track
         container(stack((
             // background
             container((empty()))
                 .style(|s| {
                     s.width(700.0)
-                        .height(60)
+                        .height(50)
                         .background(Color::rgb8(200, 150, 100))
                         .z_index(1)
                 })
@@ -154,7 +154,7 @@ pub fn build_timeline(
                 sequence_quick_access,
             ),
         )))
-        .style(|s| s.position(Position::Relative).height(60)),
+        .style(|s| s.position(Position::Relative).height(50)),
     ))
 }
 
@@ -387,6 +387,6 @@ pub fn timeline_sequence_track(
             }
         },
     )
-    .style(|s: floem::style::Style| s.display(Display::Block).padding(10))
-    .style(|s| s.absolute().margin_left(0.0).height(60))
+    .style(|s: floem::style::Style| s.display(Display::Block).padding(5))
+    .style(|s| s.absolute().margin_left(0.0).height(50))
 }

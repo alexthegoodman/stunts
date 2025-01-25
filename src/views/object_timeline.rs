@@ -1,7 +1,13 @@
 use cgmath::Vector2;
 use floem::event::EventListener;
 use floem::event::EventPropagation;
+use floem::kurbo::Point as KurboPoint;
 use floem::peniko::Color;
+use floem::peniko::ColorStop;
+use floem::peniko::ColorStops;
+use floem::peniko::Extend;
+use floem::peniko::Gradient;
+use floem::peniko::GradientKind;
 use floem::reactive::create_rw_signal;
 use floem::reactive::RwSignal;
 use floem::reactive::SignalGet;
@@ -53,7 +59,7 @@ pub fn build_object_timeline(
                                 container((empty()))
                                     .style(|s| {
                                         s.width(700.0)
-                                            .height(60)
+                                            .height(50)
                                             .background(Color::rgb8(200, 150, 100))
                                             .z_index(1)
                                     })
@@ -67,7 +73,7 @@ pub fn build_object_timeline(
                                     animation,
                                 ),
                             )))
-                            .style(|s| s.position(Position::Relative).height(60))
+                            .style(|s| s.position(Position::Relative).height(50))
                         }
                     },
                 )
@@ -98,11 +104,50 @@ pub fn timeline_object_track(
     let left_signal = create_rw_signal(left);
     let width = animation.duration.as_millis() as f32 * pixels_per_ms;
 
-    // TODO: grab related item from saved_data and its name? create a quick access signal
+    let sequence_data = selected_sequence_data.get();
+    let related_object_id = animation.polygon_id;
+
     let small_label = match animation.object_type {
-        ObjectType::Polygon => "Polygon".to_string(),
-        ObjectType::ImageItem => "Image".to_string(),
-        ObjectType::TextItem => "Text".to_string(),
+        ObjectType::Polygon => sequence_data
+            .active_polygons
+            .iter()
+            .find(|p| p.id == related_object_id)
+            .expect("Couldn't find polygon")
+            .name
+            .clone(),
+        ObjectType::ImageItem => sequence_data
+            .active_image_items
+            .iter()
+            .find(|p| p.id == related_object_id)
+            .expect("Couldn't find image")
+            .name
+            .clone(),
+        ObjectType::TextItem => sequence_data
+            .active_text_items
+            .iter()
+            .find(|p| p.id == related_object_id)
+            .expect("Couldn't find text item")
+            .name
+            .clone(),
+    };
+
+    // Linear gradient from left to right
+    let gradient = Gradient {
+        kind: GradientKind::Linear {
+            start: KurboPoint::new(50.0, 0.0), // Start further left
+            end: KurboPoint::new(200.0, 50.0), // End further right to allow more space
+        },
+        extend: Extend::Pad,
+        stops: ColorStops::from_vec(vec![
+            ColorStop {
+                offset: 0.5,
+                color: Color::rgb8(153, 199, 162),
+            },
+            ColorStop {
+                offset: 1.0,
+                color: Color::rgb8(200, 204, 124),
+            },
+        ]),
     };
 
     container(
@@ -192,7 +237,8 @@ pub fn timeline_object_track(
                     .selectable(false)
                     .border_radius(5.0)
                     // .cursor(CursorStyle::ColResize)
-                    .background(Color::rgb8(100, 200, 100))
+                    // .background(Color::rgb8(100, 200, 100))
+                    .background(gradient.clone())
                     .cursor(CursorStyle::Pointer)
                     .z_index(5)
             })
@@ -205,6 +251,6 @@ pub fn timeline_object_track(
             })
             .into_view(),
     )
-    .style(|s: floem::style::Style| s.display(Display::Block).padding(10))
-    .style(|s| s.absolute().margin_left(0.0).height(60))
+    .style(|s: floem::style::Style| s.display(Display::Block).padding(5))
+    .style(|s| s.absolute().margin_left(0.0).height(50))
 }
