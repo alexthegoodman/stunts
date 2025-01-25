@@ -315,7 +315,7 @@ pub fn timeline_object_track(
             })
             .style(move |s| {
                 s.absolute()
-                    .inset_left(width - 100.0)
+                    .inset_left(width - 90.0)
                     .inset_top(5)
                     .font_size(10.0)
                     .height(20.0)

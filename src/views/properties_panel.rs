@@ -126,7 +126,7 @@ pub fn keyframe_tools(
 
                     saved_state.sequences.iter_mut().for_each(|s| {
                         if s.id == selected_sequence_id.get() {
-                            s.duration_ms = target_duration as i32 * 1000;
+                            // s.duration_ms = target_duration as i32 * 1000; // no
                             let polygon_path = s
                                 .polygon_motion_paths
                                 .iter_mut()
