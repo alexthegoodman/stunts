@@ -495,6 +495,7 @@ pub fn text_properties_view(
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned2 = Arc::clone(&editor);
     let editor_cloned3 = Arc::clone(&editor);
+    let editor_cloned4 = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
     let editor_state4 = Arc::clone(&editor_state);
@@ -503,6 +504,8 @@ pub fn text_properties_view(
     let editor_state7 = Arc::clone(&editor_state);
     let editor_state8 = Arc::clone(&editor_state);
     let editor_state9 = Arc::clone(&editor_state);
+    let editor_state10 = Arc::clone(&editor_state);
+    let editor_state11 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -651,9 +654,12 @@ pub fn text_properties_view(
                 let editor_state5 = editor_state5.clone();
                 let editor_state6 = editor_state6.clone();
                 let editor_cloned3 = editor_cloned3.clone();
+                let editor_cloned4 = editor_cloned4.clone();
                 let editor_state7 = editor_state7.clone();
                 let editor_state8 = editor_state8.clone();
                 let editor_state9 = editor_state9.clone();
+                let editor_state10 = editor_state10.clone();
+                let editor_state11 = editor_state11.clone();
 
                 if defaults_are_set {
                     v_stack((
@@ -700,6 +706,47 @@ pub fn text_properties_view(
                         )),))
                         .style(move |s| s.width(aside_width)),
                         v_stack((
+                            debounce_input(
+                                "Text Content:".to_string(),
+                                &selected_text_data.read().borrow().text.clone(),
+                                "Enter content",
+                                move |value| {
+                                    // TODO: wrap up in editor_state for undo/redo
+
+                                    let mut editor = editor_cloned4.lock().unwrap();
+
+                                    editor
+                                        .update_text_content(selected_text_id.get(), value.clone());
+
+                                    drop(editor);
+
+                                    let mut editor_state = editor_state10.lock().unwrap();
+
+                                    let mut saved_state = editor_state
+                                        .record_state
+                                        .saved_state
+                                        .as_mut()
+                                        .expect("Couldn't get Saved State");
+
+                                    saved_state.sequences.iter_mut().for_each(|s| {
+                                        if s.id == selected_sequence_id.get() {
+                                            s.active_text_items.iter_mut().for_each(|p| {
+                                                if p.id == selected_text_id.get().to_string() {
+                                                    p.text = value.clone();
+                                                }
+                                            });
+                                        }
+                                    });
+
+                                    save_saved_state_raw(saved_state.clone());
+
+                                    drop(editor_state);
+                                },
+                                editor_state11,
+                                "text_content".to_string(),
+                                ObjectType::TextItem,
+                            )
+                            .style(move |s| s.width(260.0)),
                             debounce_input(
                                 "Font Size:".to_string(),
                                 &selected_text_data.read().borrow().font_size.to_string(),
