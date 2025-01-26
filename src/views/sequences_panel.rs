@@ -164,6 +164,7 @@ pub fn sequences_view(
                     polygon_motion_paths: Vec::new(),
                     active_text_items: Vec::new(),
                     active_image_items: Vec::new(),
+                    active_video_items: Vec::new(),
                 };
 
                 let mut editor_state = state_cloned.lock().unwrap();
@@ -195,7 +196,8 @@ pub fn sequences_view(
                 sequences.update(|s| s.push_back(new_sequence_id.clone()));
 
                 // EventPropagation::Continue
-            }),
+            })
+            .style(|s| s.margin_bottom(5.0)),
             // simple_button("TMP: Import Sequences".to_string(), move |_| {
             //     println!("Import Sequences...");
 
@@ -319,6 +321,9 @@ pub fn sequences_view(
                                 editor.text_items.iter_mut().for_each(|t| {
                                     t.hidden = true;
                                 });
+                                editor.video_items.iter_mut().for_each(|t| {
+                                    t.hidden = true;
+                                });
 
                                 saved_sequence.active_polygons.iter().for_each(|ap| {
                                     let polygon = editor
@@ -343,6 +348,14 @@ pub fn sequences_view(
                                         .find(|t| t.id.to_string() == tr.id)
                                         .expect("Couldn't find image");
                                     text.hidden = false;
+                                });
+                                saved_sequence.active_video_items.iter().for_each(|tr| {
+                                    let video = editor
+                                        .video_items
+                                        .iter_mut()
+                                        .find(|t| t.id.to_string() == tr.id)
+                                        .expect("Couldn't find image");
+                                    video.hidden = false;
                                 });
 
                                 println!("Objects restored!");
@@ -546,6 +559,14 @@ pub fn sequences_view(
                                     .expect("Couldn't find image");
                                 text.hidden = false;
                             });
+                            s.active_video_items.iter().for_each(|tr| {
+                                let video = editor
+                                    .video_items
+                                    .iter_mut()
+                                    .find(|t| t.id.to_string() == tr.id)
+                                    .expect("Couldn't find image");
+                                video.hidden = false;
+                            });
                         } else {
                             s.active_polygons.iter().for_each(|ap| {
                                 let polygon = editor
@@ -570,6 +591,14 @@ pub fn sequences_view(
                                     .find(|t| t.id.to_string() == tr.id)
                                     .expect("Couldn't find image");
                                 text.hidden = true;
+                            });
+                            s.active_video_items.iter().for_each(|tr| {
+                                let video = editor
+                                    .video_items
+                                    .iter_mut()
+                                    .find(|t| t.id.to_string() == tr.id)
+                                    .expect("Couldn't find image");
+                                video.hidden = true;
                             });
                         }
                     });

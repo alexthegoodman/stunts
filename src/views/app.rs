@@ -336,6 +336,7 @@ pub fn project_view(
         polygon_motion_paths: Vec::new(),
         active_text_items: Vec::new(),
         active_image_items: Vec::new(),
+        active_video_items: Vec::new(),
     });
 
     // set
@@ -479,7 +480,7 @@ pub fn project_view(
 
                         drop(editor_state);
                     }
-                }) as Box<dyn FnMut(Uuid, PolygonConfig) + Send>,
+                }) as Box<dyn FnMut(Uuid, PolygonConfig)>,
             )
         }
     });
@@ -555,7 +556,7 @@ pub fn project_view(
 
                     drop(editor_state);
                 }
-            }) as Box<dyn FnMut(Uuid, StImageConfig) + Send>)
+            }) as Box<dyn FnMut(Uuid, StImageConfig)>)
         }
     });
 
@@ -631,7 +632,7 @@ pub fn project_view(
 
                         drop(editor_state);
                     }
-                }) as Box<dyn FnMut(Uuid, TextRendererConfig) + Send>,
+                }) as Box<dyn FnMut(Uuid, TextRendererConfig)>,
             )
         }
     });
@@ -732,6 +733,16 @@ pub fn project_view(
                                             }
                                         });
                                     }
+                                    ObjectType::VideoItem => {
+                                        s.active_video_items.iter_mut().for_each(|si| {
+                                            if si.id == object_id.to_string() {
+                                                si.position = SavedPoint {
+                                                    x: point.x as i32,
+                                                    y: point.y as i32,
+                                                }
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         });
@@ -754,9 +765,7 @@ pub fn project_view(
 
                 (selected_sequence_data.get(), selected_keyframes.get())
             })
-                as Box<
-                    dyn FnMut(Uuid, Point) -> (Sequence, Vec<UIKeyframe>) + Send,
-                >)
+                as Box<dyn FnMut(Uuid, Point) -> (Sequence, Vec<UIKeyframe>)>)
         }
     });
 
@@ -993,7 +1002,7 @@ pub fn project_view(
 
                     (selected_sequence_data.get(), selected_keyframes.get())
                 })
-                    as Box<dyn FnMut(Uuid, Uuid, Point) -> (Sequence, Vec<UIKeyframe>) + Send>,
+                    as Box<dyn FnMut(Uuid, Uuid, Point) -> (Sequence, Vec<UIKeyframe>)>,
             )
         }
     });
@@ -1034,6 +1043,7 @@ pub fn project_view(
             editor.polygons = Vec::new();
             editor.text_items = Vec::new();
             editor.image_items = Vec::new();
+            editor.video_items = Vec::new();
 
             let gpu_helper = gpu_cloned3.lock().unwrap();
             let gpu_resources = gpu_helper

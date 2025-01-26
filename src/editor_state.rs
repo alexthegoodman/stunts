@@ -16,6 +16,7 @@ use stunts_engine::editor::{
 };
 use stunts_engine::polygon::SavedPolygonConfig;
 use stunts_engine::st_image::SavedStImageConfig;
+use stunts_engine::st_video::SavedStVideoConfig;
 use stunts_engine::text_due::SavedTextRendererConfig;
 use undo::Edit;
 use undo::Record;
@@ -102,6 +103,24 @@ impl Edit for ObjectEdit {
 
                         save_saved_state_raw(saved_state.clone());
                     }
+                    ObjectType::VideoItem => {
+                        editor.update_video(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_video_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as u32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
                 }
             }
             ObjectProperty::Height(h) => {
@@ -151,6 +170,24 @@ impl Edit for ObjectEdit {
                         saved_state.sequences.iter_mut().for_each(|s| {
                             // if s.id == selected_sequence_id.get() {
                             s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as u32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::VideoItem => {
+                        editor.update_video(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_video_items.iter_mut().for_each(|p| {
                                 if p.id == self.object_id.to_string() {
                                     p.dimensions = (p.dimensions.0, *h as u32);
                                 }
@@ -376,6 +413,24 @@ impl Edit for ObjectEdit {
 
                         save_saved_state_raw(saved_state.clone());
                     }
+                    ObjectType::VideoItem => {
+                        editor.update_video(self.object_id, "width", InputValue::Number(*w));
+
+                        let mut width = w.to_string();
+                        self.signal.expect("signal error").set(width);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() { // would be more efficient for many sequences
+                            s.active_video_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (*w as u32, p.dimensions.1);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
                 }
             }
             ObjectProperty::Height(h) => {
@@ -425,6 +480,24 @@ impl Edit for ObjectEdit {
                         saved_state.sequences.iter_mut().for_each(|s| {
                             // if s.id == selected_sequence_id.get() {
                             s.active_image_items.iter_mut().for_each(|p| {
+                                if p.id == self.object_id.to_string() {
+                                    p.dimensions = (p.dimensions.0, *h as u32);
+                                }
+                            });
+                            // }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                    ObjectType::VideoItem => {
+                        editor.update_video(self.object_id, "height", InputValue::Number(*h));
+
+                        let mut height = h.to_string();
+                        self.signal.expect("signal error").set(height);
+
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            // if s.id == selected_sequence_id.get() {
+                            s.active_video_items.iter_mut().for_each(|p| {
                                 if p.id == self.object_id.to_string() {
                                     p.dimensions = (p.dimensions.0, *h as u32);
                                 }
@@ -628,6 +701,8 @@ pub struct EditorState {
     pub selected_text_id: Uuid,
     pub image_selected: bool,
     pub selected_image_id: Uuid,
+    pub video_selected: bool,
+    pub selected_video_id: Uuid,
     pub value_signals: Arc<Mutex<HashMap<String, RwSignal<String>>>>,
     pub current_modifiers: ModifiersState,
     // pub saved_state: Option<SavedState>,
@@ -661,6 +736,8 @@ impl EditorState {
             selected_text_id: Uuid::nil(),
             image_selected: false,
             selected_image_id: Uuid::nil(),
+            video_selected: false,
+            selected_video_id: Uuid::nil(),
             value_signals: Arc::new(Mutex::new(HashMap::new())),
             current_modifiers: ModifiersState::empty(),
             // saved_state: None,
@@ -1041,6 +1118,32 @@ impl EditorState {
         self.record_state.saved_state = Some(saved_state.clone());
     }
 
+    pub fn add_saved_video_item(
+        &mut self,
+        selected_sequence_id: String,
+        savable_video_item: SavedStVideoConfig,
+    ) {
+        let new_motion_path =
+            self.save_default_keyframes(savable_video_item.id.clone(), ObjectType::VideoItem);
+
+        let mut saved_state = self
+            .record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State");
+
+        saved_state.sequences.iter_mut().for_each(|s| {
+            if s.id == selected_sequence_id {
+                s.active_video_items.push(savable_video_item.clone());
+                s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
+            }
+        });
+
+        save_saved_state_raw(saved_state.clone());
+
+        self.record_state.saved_state = Some(saved_state.clone());
+    }
+
     // Helper method to register a new signal
     pub fn register_signal(
         &mut self,
@@ -1060,6 +1163,9 @@ impl EditorState {
             ObjectType::ImageItem => {
                 signals.insert(name + &self.selected_image_id.to_string(), signal);
             }
+            ObjectType::VideoItem => {
+                signals.insert(name + &self.selected_video_id.to_string(), signal);
+            }
         }
     }
 
@@ -1075,6 +1181,7 @@ impl EditorState {
             ObjectType::Polygon => self.selected_polygon_id,
             ObjectType::TextItem => self.selected_text_id,
             ObjectType::ImageItem => self.selected_image_id,
+            ObjectType::VideoItem => self.selected_video_id,
         };
 
         let old_width = {
@@ -1116,6 +1223,7 @@ impl EditorState {
             ObjectType::Polygon => self.selected_polygon_id,
             ObjectType::TextItem => self.selected_text_id,
             ObjectType::ImageItem => self.selected_image_id,
+            ObjectType::VideoItem => self.selected_video_id,
         };
 
         let old_height = {

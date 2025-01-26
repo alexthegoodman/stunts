@@ -33,6 +33,7 @@ use stunts_engine::editor::Editor;
 use stunts_engine::editor::Point;
 use stunts_engine::polygon::PolygonConfig;
 use stunts_engine::st_image::StImageConfig;
+use stunts_engine::st_video::StVideoConfig;
 use stunts_engine::text_due::TextRendererConfig;
 use stunts_engine::timelines::SavedTimelineStateConfig;
 use stunts_engine::timelines::TimelineSequence;
@@ -176,6 +177,13 @@ pub fn timeline_object_track(
             .expect("Couldn't find text item")
             .name
             .clone(),
+        ObjectType::VideoItem => sequence_data
+            .active_video_items
+            .iter()
+            .find(|p| p.id == related_object_id)
+            .expect("Couldn't find text item")
+            .name
+            .clone(),
     };
 
     // Linear gradient from left to right
@@ -308,6 +316,42 @@ pub fn timeline_object_track(
                                 },
                             );
                             editor.selected_polygon_id = uuid; // TODO: separate property for each object type?
+                                                               // polygon.old_points = Some(polygon.points.clone());
+                        }
+                    }
+                    ObjectType::VideoItem => {
+                        let related_video = editor
+                            .video_items
+                            .iter()
+                            .find(|p| p.id.to_string() == related_object_id)
+                            .expect("Couldn't find video");
+
+                        if (editor.handle_video_click.is_some()) {
+                            let handler_creator = editor
+                                .handle_video_click
+                                .as_ref()
+                                .expect("Couldn't get handler");
+                            let mut handle_click = handler_creator().expect("Couldn't get handler");
+                            let uuid = Uuid::from_str(&related_video.id.clone())
+                                .expect("Couldn't convert string to uuid");
+                            handle_click(
+                                uuid,
+                                StVideoConfig {
+                                    id: related_video.id.clone(),
+                                    name: related_video.name.clone(),
+                                    path: related_video.path.clone(),
+                                    // points: polygon.points.clone(),
+                                    dimensions: related_video.dimensions,
+                                    position: Point {
+                                        x: related_video.transform.position.x,
+                                        y: related_video.transform.position.y,
+                                    },
+                                    layer: related_video.layer, // border_radius: polygon.border_radius,
+                                                                // fill: polygon.fill,
+                                                                // stroke: polygon.stroke,
+                                },
+                            );
+                            editor.selected_polygon_id = uuid; // TODO: separate property for each object type? or combine in to object_id? currently its polygon for all types
                                                                // polygon.old_points = Some(polygon.points.clone());
                         }
                     }

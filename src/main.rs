@@ -295,6 +295,34 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     }
                 }
 
+                // draw video items
+                for (video_index, st_video) in editor.video_items.iter().enumerate() {
+                    if !st_video.hidden {
+                        // uniform buffers are pricier, no reason to over-update when idle
+                        if let Some(dragging_id) = editor.dragging_video {
+                            if dragging_id.to_string() == st_video.id {
+                                st_video.transform.update_uniform_buffer(
+                                    &gpu_resources.queue,
+                                    &camera.window_size,
+                                );
+                            }
+                        } else if editor.is_playing {
+                            // still need to be careful of playback performance
+                            st_video
+                                .transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+
+                        render_pass.set_bind_group(1, &st_video.bind_group, &[]);
+                        render_pass.set_vertex_buffer(0, st_video.vertex_buffer.slice(..));
+                        render_pass.set_index_buffer(
+                            st_video.index_buffer.slice(..),
+                            wgpu::IndexFormat::Uint32,
+                        );
+                        render_pass.draw_indexed(0..st_video.indices.len() as u32, 0, 0..1);
+                    }
+                }
+
                 if let Some(dot) = &editor.cursor_dot {
                     dot.transform
                         .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);

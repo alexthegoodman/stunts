@@ -24,6 +24,7 @@ use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
 };
 use stunts_engine::st_image::{SavedStImageConfig, StImage, StImageConfig};
+use stunts_engine::st_video::{SavedStVideoConfig, StVideoConfig};
 use stunts_engine::text_due::{SavedTextRendererConfig, TextRenderer, TextRendererConfig};
 use uuid::Uuid;
 
@@ -205,6 +206,7 @@ pub fn sequence_panel(
     let state_cloned_8 = Arc::clone(&editor_state);
     let state_cloned_9 = Arc::clone(&editor_state);
     let state_cloned_10 = Arc::clone(&editor_state);
+    let state_cloned_11 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
@@ -217,16 +219,19 @@ pub fn sequence_panel(
     let editor_cloned_10 = Arc::clone(&editor);
     let editor_cloned_11 = Arc::clone(&editor);
     let editor_cloned_12 = Arc::clone(&editor);
+    let editor_cloned_13 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
     let viewport_cloned_2 = Arc::clone(&viewport);
     let gpu_cloned_3 = Arc::clone(&gpu_helper);
     let gpu_cloned_4 = Arc::clone(&gpu_helper);
+    let gpu_cloned_5 = Arc::clone(&gpu_helper);
     let viewport_cloned_3 = Arc::clone(&viewport);
     let viewport_cloned_4 = Arc::clone(&viewport);
     let viewport_cloned_5 = Arc::clone(&viewport);
     let viewport_cloned_6 = Arc::clone(&viewport);
+    let viewport_cloned_7 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
     let local_mode = create_rw_signal("layout".to_string());
@@ -270,6 +275,13 @@ pub fn sequence_panel(
                     new_layers.push(new_layer);
                 }
             });
+            // editor.video_items.iter().for_each(|video| {
+            //     if !video.hidden {
+            //         let video_config: StVideoConfig = video.to_config();
+            //         let new_layer: Layer = Layer::from_image_config(&video_config);
+            //         new_layers.push(new_layer);
+            //     }
+            // });
 
             // sort layers by layer_index property, lower values should come first in the list
             // but reverse the order because the UI outputs the first one first, thus it displays last
@@ -1289,14 +1301,90 @@ pub fn sequence_panel(
                     }),
                     false,
                 ),
-                // option_button(
-                //     "Add Video",
-                //     "video",
-                //     Some(move || {
-                //         // import with decoder
-                //     }),
-                //     false,
-                // ),
+                option_button(
+                    "Add Video",
+                    "video",
+                    Some(move || {
+                        if let Some(path) = rfd::FileDialog::new()
+                            .add_filter("videos", &["mp4"])
+                            .pick_file()
+                        {
+                            // add a rendererstate polygon + video pair?
+
+                            let mut editor = editor_cloned_13.lock().unwrap();
+
+                            let mut rng = rand::thread_rng();
+                            let random_number_800 = rng.gen_range(0..=800);
+                            let random_number_450 = rng.gen_range(0..=450);
+
+                            let new_id = Uuid::new_v4();
+
+                            let position = Point {
+                                x: random_number_800 as f32 + 600.0,
+                                y: random_number_450 as f32 + 50.0,
+                            };
+
+                            let video_config = StVideoConfig {
+                                id: new_id.clone().to_string(),
+                                name: "New Video Item".to_string(),
+                                dimensions: (400, 225), // 16:9
+                                position,
+                                path: path.to_str().expect("Couldn't get path string").to_string(),
+                                layer: -1,
+                            };
+
+                            let gpu_helper = gpu_cloned_5.lock().unwrap();
+                            let gpu_resources = gpu_helper
+                                .gpu_resources
+                                .as_ref()
+                                .expect("Couldn't get gpu resources");
+                            let device = &gpu_resources.device;
+                            let queue = &gpu_resources.queue;
+                            let viewport = viewport_cloned_7.lock().unwrap();
+                            let window_size = WindowSize {
+                                width: viewport.width as u32,
+                                height: viewport.height as u32,
+                            };
+
+                            editor.add_video_item(
+                                &window_size,
+                                &device,
+                                &queue,
+                                video_config.clone(),
+                                &path,
+                                new_id,
+                                selected_sequence_id.get(),
+                            );
+
+                            drop(viewport);
+                            drop(gpu_helper);
+                            drop(editor);
+
+                            let mut editor_state = state_cloned_11.lock().unwrap();
+                            editor_state.add_saved_video_item(
+                                selected_sequence_id.get(),
+                                SavedStVideoConfig {
+                                    id: video_config.id.to_string().clone(),
+                                    name: video_config.name.clone(),
+                                    path: path
+                                        .to_str()
+                                        .expect("Couldn't get path as string")
+                                        .to_string(),
+                                    dimensions: (
+                                        video_config.dimensions.0,
+                                        video_config.dimensions.1,
+                                    ),
+                                    position: SavedPoint {
+                                        x: position.x as i32,
+                                        y: position.y as i32,
+                                    },
+                                    layer: video_config.layer.clone(),
+                                },
+                            );
+                        }
+                    }),
+                    false,
+                ),
             ))
             .style(|s| {
                 s.flex()

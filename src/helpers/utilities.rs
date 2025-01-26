@@ -346,6 +346,7 @@ pub fn parse_animation_data(content: &str) -> Result<Vec<Sequence>, Box<dyn std:
             polygon_motion_paths: motion_paths,
             active_text_items: Vec::new(),
             active_image_items: Vec::new(),
+            active_video_items: Vec::new(),
         };
 
         result.push(sequence);
