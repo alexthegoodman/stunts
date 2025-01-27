@@ -10,6 +10,7 @@ use serde_with::serde_as;
 use stunts_engine::animations::AnimationData;
 use stunts_engine::animations::AnimationProperty;
 use stunts_engine::animations::EasingType;
+use stunts_engine::animations::KeyType;
 use stunts_engine::animations::KeyframeValue;
 use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
@@ -445,6 +446,7 @@ fn parse_motion_paths(
                     value: KeyframeValue::Position(pos),
                     easing: EasingType::Linear,
                     path_type: PathType::Linear,
+                    key_type: KeyType::Frame,
                 })
                 .collect(),
             depth: 0,

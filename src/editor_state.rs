@@ -9,7 +9,7 @@ use std::time::Duration;
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, UIKeyframe,
+    AnimationData, AnimationProperty, EasingType, KeyType, KeyframeValue, ObjectType, UIKeyframe,
 };
 use stunts_engine::editor::{
     color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, ObjectProperty, PathType,
@@ -762,6 +762,7 @@ impl EditorState {
             value: KeyframeValue::Position([0, 0]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -769,6 +770,7 @@ impl EditorState {
             value: KeyframeValue::Position([10, 10]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -776,6 +778,7 @@ impl EditorState {
             value: KeyframeValue::Position([20, 20]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -783,6 +786,7 @@ impl EditorState {
             value: KeyframeValue::Position([20, 20]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -790,6 +794,7 @@ impl EditorState {
             value: KeyframeValue::Position([30, 30]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -797,6 +802,7 @@ impl EditorState {
             value: KeyframeValue::Position([40, 40]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
 
         let mut position_prop = AnimationProperty {
@@ -815,6 +821,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         rotation_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -822,6 +829,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         rotation_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -829,6 +837,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         rotation_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -836,6 +845,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         rotation_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -843,6 +853,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         rotation_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -850,6 +861,7 @@ impl EditorState {
             value: KeyframeValue::Rotation(0),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
 
         let mut rotation_prop = AnimationProperty {
@@ -868,6 +880,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         scale_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -875,6 +888,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         scale_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -882,6 +896,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         scale_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -889,6 +904,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         scale_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -896,6 +912,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         scale_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -903,6 +920,7 @@ impl EditorState {
             value: KeyframeValue::Scale(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
 
         let mut scale_prop = AnimationProperty {
@@ -921,6 +939,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         opacity_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -928,6 +947,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         opacity_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -935,6 +955,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         opacity_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -942,6 +963,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         opacity_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -949,6 +971,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
         opacity_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
@@ -956,6 +979,7 @@ impl EditorState {
             value: KeyframeValue::Opacity(100),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
+            key_type: KeyType::Frame,
         });
 
         let mut opacity_prop = AnimationProperty {
