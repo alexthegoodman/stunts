@@ -1099,6 +1099,8 @@ pub fn project_view(
                             sequence_selected,
                             selected_sequence_id,
                             selected_sequence_data,
+                            polygon_selected,
+                            selected_polygon_id,
                         ),
                         v_stack((
                             play_sequence_button(editor_cloned11.clone(), selected_sequence_data),

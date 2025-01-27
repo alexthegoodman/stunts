@@ -167,6 +167,7 @@ pub fn tab_interface(
                                     selected_sequence_data,
                                     selected_sequence_id,
                                     sequence_selected,
+                                    polygon_selected,
                                 )
                                 .into_any(),
                                 "Settings" => settings_view().into_any(),

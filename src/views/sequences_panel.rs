@@ -47,6 +47,7 @@ pub fn sequences_view(
     selected_sequence_data: RwSignal<Sequence>,
     selected_sequence_id: RwSignal<String>,
     sequence_selected: RwSignal<bool>,
+    polygon_selected: RwSignal<bool>,
 ) -> impl IntoView {
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned2 = Arc::clone(&editor);

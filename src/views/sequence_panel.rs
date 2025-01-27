@@ -195,6 +195,8 @@ pub fn sequence_panel(
     sequence_selected: RwSignal<bool>,
     selected_sequence_id: RwSignal<String>,
     selected_sequence_data: RwSignal<Sequence>,
+    polygon_selected: RwSignal<bool>,
+    selected_polygon_id: RwSignal<Uuid>,
 ) -> impl IntoView {
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned_2 = Arc::clone(&editor_state);
@@ -836,6 +838,8 @@ pub fn sequence_panel(
             label(move || format!("Update Sequence"))
                 .style(|s| s.font_size(14.0).margin_bottom(10)),
             simple_button("Back to Sequence List".to_string(), move |_| {
+                // polygon_selected.set(false);
+                // selected_polygon_id.set(Uuid::nil());
                 sequence_selected.set(false);
 
                 let mut editor = editor_cloned_5.lock().unwrap();
@@ -1129,6 +1133,27 @@ pub fn sequence_panel(
                                 layer: polygon_config.layer.clone(),
                             },
                         );
+
+                        let saved_state = editor_state
+                            .record_state
+                            .saved_state
+                            .as_ref()
+                            .expect("Couldn't get saved state");
+                        let updated_sequence = saved_state
+                            .sequences
+                            .iter()
+                            .find(|s| s.id == selected_sequence_id.get())
+                            .expect("Couldn't get updated sequence");
+
+                        selected_sequence_data.set(updated_sequence.clone());
+
+                        let sequence_cloned = updated_sequence.clone();
+
+                        drop(editor_state);
+
+                        let mut editor = editor_cloned.lock().unwrap();
+                        editor.current_sequence_data = Some(sequence_cloned);
+                        drop(editor);
                     }),
                     false,
                 ),
@@ -1214,6 +1239,27 @@ pub fn sequence_panel(
                                     layer: image_config.layer.clone(),
                                 },
                             );
+
+                            let saved_state = editor_state
+                                .record_state
+                                .saved_state
+                                .as_ref()
+                                .expect("Couldn't get saved state");
+                            let updated_sequence = saved_state
+                                .sequences
+                                .iter()
+                                .find(|s| s.id == selected_sequence_id.get())
+                                .expect("Couldn't get updated sequence");
+
+                            selected_sequence_data.set(updated_sequence.clone());
+
+                            let sequence_cloned = updated_sequence.clone();
+
+                            drop(editor_state);
+
+                            let mut editor = editor_cloned_3.lock().unwrap();
+                            editor.current_sequence_data = Some(sequence_cloned);
+                            drop(editor);
                         }
                     }),
                     false,
@@ -1298,6 +1344,27 @@ pub fn sequence_panel(
                                 font_size: text_config.font_size.clone(),
                             },
                         );
+
+                        let saved_state = editor_state
+                            .record_state
+                            .saved_state
+                            .as_ref()
+                            .expect("Couldn't get saved state");
+                        let updated_sequence = saved_state
+                            .sequences
+                            .iter()
+                            .find(|s| s.id == selected_sequence_id.get())
+                            .expect("Couldn't get updated sequence");
+
+                        selected_sequence_data.set(updated_sequence.clone());
+
+                        let sequence_cloned = updated_sequence.clone();
+
+                        drop(editor_state);
+
+                        let mut editor = editor_cloned_2.lock().unwrap();
+                        editor.current_sequence_data = Some(sequence_cloned);
+                        drop(editor);
                     }),
                     false,
                 ),
@@ -1381,6 +1448,27 @@ pub fn sequence_panel(
                                     layer: video_config.layer.clone(),
                                 },
                             );
+
+                            let saved_state = editor_state
+                                .record_state
+                                .saved_state
+                                .as_ref()
+                                .expect("Couldn't get saved state");
+                            let updated_sequence = saved_state
+                                .sequences
+                                .iter()
+                                .find(|s| s.id == selected_sequence_id.get())
+                                .expect("Couldn't get updated sequence");
+
+                            selected_sequence_data.set(updated_sequence.clone());
+
+                            let sequence_cloned = updated_sequence.clone();
+
+                            drop(editor_state);
+
+                            let mut editor = editor_cloned_13.lock().unwrap();
+                            editor.current_sequence_data = Some(sequence_cloned);
+                            drop(editor);
                         }
                     }),
                     false,
