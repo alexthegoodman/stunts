@@ -465,8 +465,9 @@ fn parse_motion_paths(
             object_type: ObjectType::Polygon,
             polygon_id: polygon_id.clone(),
             duration: max_time,
-            properties: vec![position_property],
             start_time_ms: 0,
+            position: [0, 0],
+            properties: vec![position_property],
         };
 
         motion_paths.push(animation_data);

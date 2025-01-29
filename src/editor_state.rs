@@ -1002,8 +1002,9 @@ impl EditorState {
             object_type,
             polygon_id: savable_item_id.clone(),
             duration: Duration::from_secs(20),
-            properties: properties,
             start_time_ms: 0,
+            position: [0, 0],
+            properties: properties,
         };
 
         new_motion_path

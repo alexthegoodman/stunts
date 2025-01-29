@@ -202,12 +202,46 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     }
 
                     render_pass.set_bind_group(1, &polygon.bind_group, &[]);
+                    render_pass.set_bind_group(3, &polygon.group_bind_group, &[]);
                     render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                     render_pass.set_index_buffer(
                         polygon.index_buffer.slice(..),
                         wgpu::IndexFormat::Uint32,
                     );
                     render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
+                }
+
+                // draw motion path static polygons, using motion path transform
+                for (path_index, path) in editor.motion_paths.iter().enumerate() {
+                    // uniform buffers are pricier, no reason to over-update when idle
+                    if let Some(dragging_id) = editor.dragging_path {
+                        if dragging_id == path.id {
+                            path.transform
+                                .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
+                        }
+                    }
+
+                    render_pass.set_bind_group(3, &path.bind_group, &[]);
+
+                    for (poly_index, polygon) in path.static_polygons.iter().enumerate() {
+                        // uniform buffers are pricier, no reason to over-update when idle
+                        if let Some(dragging_id) = editor.dragging_path_handle {
+                            if dragging_id == polygon.id {
+                                polygon.transform.update_uniform_buffer(
+                                    &gpu_resources.queue,
+                                    &camera.window_size,
+                                );
+                            }
+                        }
+
+                        render_pass.set_bind_group(1, &polygon.bind_group, &[]);
+                        render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
+                        render_pass.set_index_buffer(
+                            polygon.index_buffer.slice(..),
+                            wgpu::IndexFormat::Uint32,
+                        );
+                        render_pass.draw_indexed(0..polygon.indices.len() as u32, 0, 0..1);
+                    }
                 }
 
                 // draw polygons
@@ -230,6 +264,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         }
 
                         render_pass.set_bind_group(1, &polygon.bind_group, &[]);
+                        render_pass.set_bind_group(3, &polygon.group_bind_group, &[]);
                         render_pass.set_vertex_buffer(0, polygon.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
                             polygon.index_buffer.slice(..),
@@ -258,6 +293,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         }
 
                         render_pass.set_bind_group(1, &text_item.bind_group, &[]);
+                        render_pass.set_bind_group(3, &text_item.group_bind_group, &[]);
                         render_pass.set_vertex_buffer(0, text_item.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
                             text_item.index_buffer.slice(..),
@@ -286,6 +322,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         }
 
                         render_pass.set_bind_group(1, &st_image.bind_group, &[]);
+                        render_pass.set_bind_group(3, &st_image.group_bind_group, &[]);
                         render_pass.set_vertex_buffer(0, st_image.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
                             st_image.index_buffer.slice(..),
@@ -314,6 +351,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                         }
 
                         render_pass.set_bind_group(1, &st_video.bind_group, &[]);
+                        render_pass.set_bind_group(3, &st_video.group_bind_group, &[]);
                         render_pass.set_vertex_buffer(0, st_video.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(
                             st_video.index_buffer.slice(..),
@@ -327,7 +365,7 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                     dot.transform
                         .update_uniform_buffer(&gpu_resources.queue, &camera.window_size);
                     render_pass.set_bind_group(1, &dot.bind_group, &[]);
-
+                    render_pass.set_bind_group(3, &dot.group_bind_group, &[]);
                     render_pass.set_vertex_buffer(0, dot.vertex_buffer.slice(..));
                     render_pass
                         .set_index_buffer(dot.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
@@ -800,6 +838,27 @@ async fn main() {
 
                 let model_bind_group_layout = Arc::new(model_bind_group_layout);
 
+                let group_bind_group_layout = gpu_resources.device.create_bind_group_layout(
+                    &wgpu::BindGroupLayoutDescriptor {
+                        entries: &[
+                            // Existing uniform buffer binding
+                            wgpu::BindGroupLayoutEntry {
+                                binding: 0,
+                                visibility: wgpu::ShaderStages::VERTEX,
+                                ty: wgpu::BindingType::Buffer {
+                                    ty: wgpu::BufferBindingType::Uniform,
+                                    has_dynamic_offset: false,
+                                    min_binding_size: None,
+                                },
+                                count: None,
+                            },
+                        ],
+                        label: Some("group_bind_group_layout"),
+                    },
+                );
+
+                let group_bind_group_layout = Arc::new(group_bind_group_layout);
+
                 let window_size_buffer =
                     gpu_resources
                         .device
@@ -855,6 +914,7 @@ async fn main() {
                                 &camera_binding.bind_group_layout,
                                 &model_bind_group_layout,
                                 &window_size_bind_group_layout,
+                                &group_bind_group_layout,
                             ], // No bind group layouts
                             push_constant_ranges: &[],
                         });
@@ -956,6 +1016,7 @@ async fn main() {
                     &gpu_resources.device,
                     &gpu_resources.queue,
                     &model_bind_group_layout,
+                    &group_bind_group_layout,
                     &camera,
                     vec![
                         Point { x: 0.0, y: 0.0 },
@@ -985,6 +1046,7 @@ async fn main() {
                     &gpu_resources.device,
                     &gpu_resources.queue,
                     &model_bind_group_layout,
+                    &group_bind_group_layout,
                     &window_size,
                     Point { x: 600.0, y: 300.0 },
                     rgb_to_wgpu(250, 20, 10, 0.5),
@@ -1024,6 +1086,7 @@ async fn main() {
                 gpu_clonsed2.lock().unwrap().gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.gpu_resources = Some(Arc::clone(&gpu_resources));
                 editor.model_bind_group_layout = Some(model_bind_group_layout);
+                editor.group_bind_group_layout = Some(group_bind_group_layout);
                 editor.window_size_bind_group = Some(window_size_bind_group);
                 editor.window_size_bind_group_layout = Some(window_size_bind_group_layout);
                 editor.window_size_buffer = Some(window_size_buffer);

@@ -455,6 +455,10 @@ pub fn sequence_panel(
                             .model_bind_group_layout
                             .as_ref()
                             .expect("Couldn't get model bind group layout"),
+                        &editor
+                            .group_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get group bind group layout"),
                         &camera,
                         selected_sequence_id.get(),
                     );
@@ -500,6 +504,10 @@ pub fn sequence_panel(
                             .model_bind_group_layout
                             .as_ref()
                             .expect("Couldn't get model bind group layout"),
+                        &editor
+                            .group_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get group bind group layout"),
                         &camera,
                         selected_sequence_id.get(),
                         font_data,
@@ -541,6 +549,10 @@ pub fn sequence_panel(
                             .model_bind_group_layout
                             .as_ref()
                             .expect("Couldn't get model bind group layout"),
+                        &editor
+                            .group_bind_group_layout
+                            .as_ref()
+                            .expect("Couldn't get group bind group layout"),
                         &camera,
                         selected_sequence_id.get(),
                     );

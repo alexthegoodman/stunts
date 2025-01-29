@@ -27,7 +27,7 @@ use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
-    string_to_f32, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp, Point,
+    string_to_f32, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp, OnPathMouseUp, Point,
     PolygonClickHandler, TextItemClickHandler, Viewport, WindowSize,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
@@ -1007,6 +1007,73 @@ pub fn project_view(
         }
     });
 
+    let on_path_mouse_up: Arc<OnPathMouseUp> = Arc::new({
+        let editor_state = editor_state.clone();
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+
+        move || {
+            let editor_state = editor_state.clone();
+            let animation_data_ref = animation_data_ref.clone();
+
+            Some(Box::new(move |path_id: Uuid, point: Point| {
+                // cannot lock editor here! probably because called from Editor
+                // {
+                //     let mut editor = new_editor.lock().unwrap();
+                //     // Update editor as needed
+                // }
+
+                println!("Updating path...");
+
+                if (!sequence_selected.get()) {
+                    return (selected_sequence_data.get(), selected_keyframes.get());
+                }
+
+                let mut selected_sequence = selected_sequence_data.get();
+
+                // update selected sequence data with new path data
+                selected_sequence
+                    .polygon_motion_paths
+                    .iter_mut()
+                    .for_each(|p| {
+                        if p.id == path_id.to_string() {
+                            p.position = [point.x as i32, point.y as i32];
+                        }
+                    });
+
+                selected_sequence_data.set(selected_sequence);
+
+                // save to saved state
+                if let Ok(mut animation_data) = animation_data_ref.lock() {
+                    let editor_state = editor_state.lock().unwrap();
+                    let saved_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_ref()
+                        .expect("Couldn't get Saved State");
+
+                    let saved_animation_data = saved_state
+                        .sequences
+                        .iter()
+                        .flat_map(|s| s.polygon_motion_paths.iter())
+                        .find(|p| p.id == path_id.to_string());
+
+                    if let Some(object_animation_data) = saved_animation_data {
+                        let mut updated_animation_data = object_animation_data.clone();
+
+                        updated_animation_data.position = [point.x as i32, point.y as i32];
+
+                        animation_data.set(Some(updated_animation_data));
+                    }
+
+                    drop(editor_state);
+                }
+
+                (selected_sequence_data.get(), selected_keyframes.get())
+            })
+                as Box<dyn FnMut(Uuid, Point) -> (Sequence, Vec<UIKeyframe>)>)
+        }
+    });
+
     // Use create_effect to set the handler only once
     create_effect({
         let handle_polygon_click = Arc::clone(&handle_polygon_click);
@@ -1038,6 +1105,7 @@ pub fn project_view(
             editor.handle_image_click = Some(Arc::clone(&handle_image_click));
             editor.on_mouse_up = Some(Arc::clone(&on_mouse_up));
             editor.on_handle_mouse_up = Some(Arc::clone(&on_handle_mouse_up));
+            editor.on_path_mouse_up = Some(Arc::clone(&on_path_mouse_up));
 
             // restore all objects as hidden, avoids too much loading mid-usage
             editor.polygons = Vec::new();
