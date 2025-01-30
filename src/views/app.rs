@@ -1022,7 +1022,7 @@ pub fn project_view(
                 //     // Update editor as needed
                 // }
 
-                println!("Updating path...");
+                println!("Updating path... {:?} {:?}", path_id, point);
 
                 if (!sequence_selected.get()) {
                     return (selected_sequence_data.get(), selected_keyframes.get());
@@ -1044,7 +1044,7 @@ pub fn project_view(
 
                 // save to saved state
                 if let Ok(mut animation_data) = animation_data_ref.lock() {
-                    let editor_state = editor_state.lock().unwrap();
+                    let mut editor_state = editor_state.lock().unwrap();
                     let saved_state = editor_state
                         .record_state
                         .saved_state
@@ -1064,6 +1064,24 @@ pub fn project_view(
 
                         animation_data.set(Some(updated_animation_data));
                     }
+
+                    let mut new_saved_state = saved_state.clone();
+
+                    new_saved_state.sequences.iter_mut().for_each(|s| {
+                        if s.id == selected_sequence_id.get() {
+                            s.polygon_motion_paths.iter_mut().for_each(|pm| {
+                                if pm.id == path_id.to_string() {
+                                    pm.position = [point.x as i32, point.y as i32];
+                                }
+                            });
+                        }
+                    });
+
+                    editor_state.record_state.saved_state = Some(new_saved_state.clone());
+
+                    save_saved_state_raw(new_saved_state);
+
+                    println!("Path updated!");
 
                     drop(editor_state);
                 }
