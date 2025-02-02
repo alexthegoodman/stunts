@@ -14,7 +14,7 @@ use stunts_engine::animations::{
 use stunts_engine::editor::{
     color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, ObjectProperty, PathType,
 };
-use stunts_engine::polygon::SavedPolygonConfig;
+use stunts_engine::polygon::{SavedPoint, SavedPolygonConfig};
 use stunts_engine::st_image::SavedStImageConfig;
 use stunts_engine::st_video::SavedStVideoConfig;
 use stunts_engine::text_due::SavedTextRendererConfig;
@@ -751,6 +751,7 @@ impl EditorState {
         &mut self,
         savable_item_id: String,
         object_type: ObjectType,
+        object_position: SavedPoint,
     ) -> AnimationData {
         let mut properties = Vec::new();
 
@@ -759,7 +760,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(0),
-            value: KeyframeValue::Position([0, 0]),
+            value: KeyframeValue::Position([object_position.x, object_position.y - 200]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -767,7 +768,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_millis(2500),
-            value: KeyframeValue::Position([10, 10]),
+            value: KeyframeValue::Position([object_position.x, object_position.y - 100]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -775,7 +776,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(5),
-            value: KeyframeValue::Position([20, 20]),
+            value: KeyframeValue::Position([object_position.x, object_position.y]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -783,7 +784,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(15),
-            value: KeyframeValue::Position([20, 20]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 100]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -791,7 +792,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_millis(17500),
-            value: KeyframeValue::Position([30, 30]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 200]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -799,7 +800,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(20),
-            value: KeyframeValue::Position([40, 40]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 300]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -1070,8 +1071,11 @@ impl EditorState {
         selected_sequence_id: String,
         savable_polygon: SavedPolygonConfig,
     ) {
-        let new_motion_path =
-            self.save_default_keyframes(savable_polygon.id.clone(), ObjectType::Polygon);
+        let new_motion_path = self.save_default_keyframes(
+            savable_polygon.id.clone(),
+            ObjectType::Polygon,
+            savable_polygon.position.clone(),
+        );
 
         let mut saved_state = self
             .record_state
@@ -1096,8 +1100,11 @@ impl EditorState {
         selected_sequence_id: String,
         savable_text_item: SavedTextRendererConfig,
     ) {
-        let new_motion_path =
-            self.save_default_keyframes(savable_text_item.id.clone(), ObjectType::TextItem);
+        let new_motion_path = self.save_default_keyframes(
+            savable_text_item.id.clone(),
+            ObjectType::TextItem,
+            savable_text_item.position.clone(),
+        );
 
         let mut saved_state = self
             .record_state
@@ -1122,8 +1129,11 @@ impl EditorState {
         selected_sequence_id: String,
         savable_image_item: SavedStImageConfig,
     ) {
-        let new_motion_path =
-            self.save_default_keyframes(savable_image_item.id.clone(), ObjectType::ImageItem);
+        let new_motion_path = self.save_default_keyframes(
+            savable_image_item.id.clone(),
+            ObjectType::ImageItem,
+            savable_image_item.position.clone(),
+        );
 
         let mut saved_state = self
             .record_state
@@ -1148,8 +1158,11 @@ impl EditorState {
         selected_sequence_id: String,
         savable_video_item: SavedStVideoConfig,
     ) {
-        let new_motion_path =
-            self.save_default_keyframes(savable_video_item.id.clone(), ObjectType::VideoItem);
+        let new_motion_path = self.save_default_keyframes(
+            savable_video_item.id.clone(),
+            ObjectType::VideoItem,
+            savable_video_item.position.clone(),
+        );
 
         let mut saved_state = self
             .record_state
