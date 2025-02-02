@@ -1164,7 +1164,10 @@ pub fn sequence_panel(
                         drop(editor_state);
 
                         let mut editor = editor_cloned.lock().unwrap();
-                        editor.current_sequence_data = Some(sequence_cloned);
+
+                        editor.current_sequence_data = Some(sequence_cloned.clone());
+                        editor.update_motion_paths(&sequence_cloned);
+
                         drop(editor);
                     }),
                     false,
@@ -1270,7 +1273,10 @@ pub fn sequence_panel(
                             drop(editor_state);
 
                             let mut editor = editor_cloned_3.lock().unwrap();
-                            editor.current_sequence_data = Some(sequence_cloned);
+
+                            editor.current_sequence_data = Some(sequence_cloned.clone());
+                            editor.update_motion_paths(&sequence_cloned);
+
                             drop(editor);
                         }
                     }),
@@ -1375,7 +1381,10 @@ pub fn sequence_panel(
                         drop(editor_state);
 
                         let mut editor = editor_cloned_2.lock().unwrap();
-                        editor.current_sequence_data = Some(sequence_cloned);
+
+                        editor.current_sequence_data = Some(sequence_cloned.clone());
+                        editor.update_motion_paths(&sequence_cloned);
+
                         drop(editor);
                     }),
                     false,
@@ -1479,7 +1488,10 @@ pub fn sequence_panel(
                             drop(editor_state);
 
                             let mut editor = editor_cloned_13.lock().unwrap();
-                            editor.current_sequence_data = Some(sequence_cloned);
+
+                            editor.current_sequence_data = Some(sequence_cloned.clone());
+                            editor.update_motion_paths(&sequence_cloned);
+
                             drop(editor);
                         }
                     }),
