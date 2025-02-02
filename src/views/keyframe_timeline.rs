@@ -16,7 +16,7 @@ use floem::{
     AppState, View, ViewId,
 };
 use floem_renderer::Renderer;
-use stunts_engine::editor::PathType;
+use stunts_engine::editor::{Editor, PathType};
 use uuid::Uuid;
 
 use std::sync::{Arc, Mutex};
@@ -612,6 +612,7 @@ struct TimelineHandle {
 }
 
 pub fn create_timeline(
+    editor: Arc<Mutex<Editor>>,
     editor_state: Arc<Mutex<EditorState>>,
     state: TimelineState,
     config: TimelineConfig,
@@ -651,6 +652,7 @@ pub fn create_timeline(
             );
 
             handle_mouse_down(
+                editor.clone(),
                 editor_state.clone(),
                 handle.state,
                 handle.config.clone(),
@@ -699,6 +701,7 @@ pub fn create_timeline(
 }
 
 fn handle_mouse_down(
+    editor: Arc<Mutex<Editor>>,
     editor_state: Arc<Mutex<EditorState>>,
     state: RwSignal<TimelineState>,
     config: TimelineConfig,
@@ -809,13 +812,26 @@ fn handle_mouse_down(
                     if pm.id == anim_data.id {
                         *pm = anim_data.clone();
                     }
-                })
+                });
+
+                selected_sequence_data.set(s.clone());
             }
         });
 
         editor_state.record_state.saved_state = Some(new_state.clone());
 
         save_saved_state_raw(new_state.clone());
+
+        drop(editor_state);
+
+        let mut editor = editor.lock().unwrap();
+
+        let updated_sequence = selected_sequence_data.get();
+
+        editor.current_sequence_data = Some(updated_sequence.clone());
+        editor.update_motion_paths(&updated_sequence);
+
+        drop(editor);
 
         return EventPropagation::Stop;
     }
@@ -880,6 +896,10 @@ fn handle_mouse_move(
             pos,
         ) {
             state.update(|s| s.hovered_keyframe = Some((property_path, ui_keyframe.time)));
+
+            // Clear hover state if not over a property row
+            state.get().hover_position.set(None);
+            state.get().hover_property.set(None);
 
             return EventPropagation::Continue;
         } else {

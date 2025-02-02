@@ -1229,6 +1229,7 @@ pub fn project_view(
                     let gpu_cloned5 = gpu_cloned5.clone();
                     let editor_cloned9 = editor_cloned9.clone();
                     let viewport_cloned5 = viewport_cloned5.clone();
+                    let editor_cloned10 = editor_cloned9.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -1261,6 +1262,7 @@ pub fn project_view(
                     };
 
                     let keyframe_timeline = create_timeline(
+                        editor_cloned10,
                         state_cloned7,
                         state,
                         config,
