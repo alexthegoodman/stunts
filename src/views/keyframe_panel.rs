@@ -138,6 +138,7 @@ pub fn keyframe_properties_view(
     let editor_cloned4 = Arc::clone(&editor);
     let editor_cloned5 = Arc::clone(&editor);
     let editor_cloned6 = Arc::clone(&editor);
+    let editor_cloned7 = Arc::clone(&editor);
     let editor_state_cloned = Arc::clone(&editor_state);
     let editor_state_cloned2 = Arc::clone(&editor_state);
     let editor_state_cloned3 = Arc::clone(&editor_state);
@@ -153,6 +154,7 @@ pub fn keyframe_properties_view(
     let editor_state_cloned13 = Arc::clone(&editor_state);
     let editor_state_cloned14 = Arc::clone(&editor_state);
     let editor_state_cloned15 = Arc::clone(&editor_state);
+    let editor_state_cloned16 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -762,9 +764,8 @@ pub fn keyframe_properties_view(
                         )
                         .style(move |s| s.width(halfs)),
                     ))
-                    .style(move |s| s.width(aside_width)),
-                ))
-                .style(|s| card_styles(s))),
+                    .style(move |s| s.width(260.0)),
+                ))),
             )
             .into_any(),
             KeyframeValue::Rotation(rotation) => container(
@@ -818,7 +819,7 @@ pub fn keyframe_properties_view(
                         object_type,
                     ),
                 ))
-                .style(|s| card_styles(s))),
+                .style(move |s| s.width(260.0))),
             )
             .into_any(),
             KeyframeValue::Scale(scale) => container(
@@ -872,7 +873,7 @@ pub fn keyframe_properties_view(
                         object_type,
                     ),
                 ))
-                .style(|s| card_styles(s))),
+                .style(move |s| s.width(260.0))),
             )
             .into_any(),
             KeyframeValue::Opacity(opacity) => container(
@@ -926,11 +927,77 @@ pub fn keyframe_properties_view(
                         object_type,
                     ),
                 ))
-                .style(|s| card_styles(s))),
+                .style(move |s| s.width(260.0))),
             )
             .into_any(),
             _ => empty().into_any(),
         },
-        simple_button("Delete Keyframe".to_string(), move |_| {}).style(|s| s.color(Color::RED)),
+        simple_button("Delete Keyframe".to_string(), move |_| {
+            let mut current_keyframe = selected_keyframes.get();
+            let mut current_keyframe = current_keyframe
+                .get_mut(0)
+                .expect("Couldn't get Selected Keyframe");
+            let mut current_sequence = selected_sequence_data.get();
+
+            selected_keyframes.set(Vec::new());
+
+            // update animation data
+            let mut current_animation_data =
+                animation_data.get().expect("Couldn't get animation data");
+            current_animation_data.properties.iter_mut().for_each(|p| {
+                if let Some(index) = p.keyframes.iter().position(|k| k.id == current_keyframe.id) {
+                    p.keyframes.swap_remove(index);
+                }
+            });
+
+            animation_data.set(Some(current_animation_data.clone()));
+
+            // update sequence
+            current_sequence
+                .polygon_motion_paths
+                .iter_mut()
+                .for_each(|pm| {
+                    if pm.id == current_animation_data.id {
+                        *pm = current_animation_data.clone();
+                    }
+                });
+
+            selected_sequence_data.set(current_sequence.clone());
+
+            let mut editor = editor_cloned7.lock().unwrap();
+
+            editor.current_sequence_data = Some(current_sequence.clone());
+            editor.update_motion_paths(&current_sequence);
+
+            drop(editor);
+
+            // save to file
+            let mut editor_state = editor_state_cloned16.lock().unwrap();
+
+            let last_saved_state = editor_state
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get Saved State");
+
+            last_saved_state.sequences.iter_mut().for_each(|s| {
+                if s.id == selected_sequence_id.get() {
+                    s.polygon_motion_paths.iter_mut().for_each(|pm| {
+                        if pm.id == current_animation_data.id {
+                            *pm = current_animation_data.clone();
+                        }
+                    });
+                }
+            });
+
+            // TODO: probably perf hit with larger files, or does it get released?
+            let new_saved_state = last_saved_state.to_owned();
+
+            save_saved_state_raw(new_saved_state);
+
+            drop(editor_state);
+        })
+        .style(|s| s.color(Color::RED)),
     ))
+    .style(|s| card_styles(s).width(300.0))
 }
