@@ -1243,6 +1243,8 @@ pub fn project_view(
                         ]),
                         dragging: None,
                         hovered_keyframe: None,
+                        hover_position: RwSignal::new(None),
+                        hover_property: RwSignal::new(None),
                         selected_keyframes,
                     };
 
@@ -1258,7 +1260,13 @@ pub fn project_view(
                         offset_y: 0.0,
                     };
 
-                    let keyframe_timeline = create_timeline(state, config, animation_data);
+                    let keyframe_timeline = create_timeline(
+                        state_cloned7,
+                        state,
+                        config,
+                        animation_data,
+                        selected_sequence_data,
+                    );
 
                     h_stack((
                         dyn_container(

@@ -1,6 +1,7 @@
 use floem::event::EventListener;
 use floem::reactive::{create_rw_signal, RwSignal, SignalGet, SignalUpdate};
 use floem::taffy::Position;
+use floem::views::editor::keypress::key;
 use floem::{
     self,
     context::{ComputeLayoutCx, EventCx, LayoutCx, PaintCx, StyleCx, UpdateCx},
@@ -15,12 +16,18 @@ use floem::{
     AppState, View, ViewId,
 };
 use floem_renderer::Renderer;
+use stunts_engine::editor::PathType;
+use uuid::Uuid;
 
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+    AnimationData, AnimationProperty, EasingType, KeyType, KeyframeValue, Sequence, UIKeyframe,
 };
+
+use crate::editor_state::EditorState;
+use crate::helpers::utilities::save_saved_state_raw;
 
 /// State for the timeline component
 #[derive(Debug, Clone)]
@@ -30,6 +37,8 @@ pub struct TimelineState {
     pub scroll_offset: f64,
     pub dragging: Option<DragOperation>,
     pub hovered_keyframe: Option<(String, Duration)>,
+    pub hover_position: RwSignal<Option<Point>>,
+    pub hover_property: RwSignal<Option<String>>,
     pub property_expansions: im::HashMap<String, bool>,
     pub selected_keyframes: RwSignal<Vec<UIKeyframe>>,
 }
@@ -173,38 +182,14 @@ impl TimelineGridView {
 
             cx.draw_text(&text_layout, Point::new(x, self.config.offset_y));
         }
-    }
 
-    pub fn draw_keyframe(&self, cx: &mut PaintCx, center: Point, selected: bool) {
-        let size = 6.0;
-        let color = if selected {
-            Color::rgb8(66, 135, 245)
-        } else {
-            Color::rgb8(245, 166, 35)
-        };
-
-        // Draw diamond shape
-        let path = kurbo::BezPath::from_vec(vec![
-            kurbo::PathEl::MoveTo(Point::new(
-                center.x + self.config.offset_x,
-                center.y + self.config.offset_y - size,
-            )),
-            kurbo::PathEl::LineTo(Point::new(
-                center.x + self.config.offset_x + size,
-                center.y + self.config.offset_y,
-            )),
-            kurbo::PathEl::LineTo(Point::new(
-                center.x + self.config.offset_x,
-                center.y + self.config.offset_y + size,
-            )),
-            kurbo::PathEl::LineTo(Point::new(
-                center.x + self.config.offset_x - size,
-                center.y + self.config.offset_y,
-            )),
-            kurbo::PathEl::ClosePath,
-        ]);
-
-        cx.fill(&path, color, 1.0);
+        // Draw plus icon if hovering
+        if let (Some(pos), Some(prop)) = (
+            self.state.get().hover_position.get(),
+            self.state.get().hover_property.get(),
+        ) {
+            self.draw_plus_icon(cx, pos, &prop);
+        }
     }
 
     pub fn draw_keyframes(&self, cx: &mut PaintCx) {
@@ -255,6 +240,7 @@ impl TimelineGridView {
                 cx,
                 Point::new(x, (current_y + self.config.row_height / 2.0)),
                 selected,
+                keyframe.key_type.clone(),
             );
 
             // draw connecting lines between keyframes
@@ -310,6 +296,89 @@ impl TimelineGridView {
         }
 
         Some(current_y)
+    }
+
+    pub fn draw_keyframe(
+        &self,
+        cx: &mut PaintCx,
+        center: Point,
+        selected: bool,
+        key_type: KeyType,
+    ) {
+        let size = 6.0;
+        let color = if selected {
+            match key_type {
+                KeyType::Frame => Color::rgb8(66, 135, 245),
+                KeyType::Range(range_data) => Color::RED,
+            }
+        } else {
+            match key_type {
+                KeyType::Frame => Color::rgb8(245, 166, 35),
+                KeyType::Range(range_data) => Color::ORANGE_RED,
+            }
+        };
+
+        // Draw diamond shape
+        let path = kurbo::BezPath::from_vec(vec![
+            kurbo::PathEl::MoveTo(Point::new(
+                center.x + self.config.offset_x,
+                center.y + self.config.offset_y - size,
+            )),
+            kurbo::PathEl::LineTo(Point::new(
+                center.x + self.config.offset_x + size,
+                center.y + self.config.offset_y,
+            )),
+            kurbo::PathEl::LineTo(Point::new(
+                center.x + self.config.offset_x,
+                center.y + self.config.offset_y + size,
+            )),
+            kurbo::PathEl::LineTo(Point::new(
+                center.x + self.config.offset_x - size,
+                center.y + self.config.offset_y,
+            )),
+            kurbo::PathEl::ClosePath,
+        ]);
+
+        cx.fill(&path, color, 1.0);
+    }
+
+    fn draw_plus_icon(&self, cx: &mut PaintCx, pos: Point, property: &str) {
+        let icon_size = 8.0;
+        let half_size = icon_size / 2.0;
+
+        // Draw circle background
+        let circle = kurbo::Circle::new(
+            Point::new(pos.x + self.config.offset_x, pos.y + self.config.offset_y),
+            icon_size,
+        );
+
+        cx.fill(&circle, &Color::rgb8(66, 135, 245), 1.0);
+
+        // Draw plus symbol
+        let vertical_line = Line::new(
+            Point::new(
+                pos.x + self.config.offset_x,
+                pos.y + self.config.offset_y - half_size + 2.0,
+            ),
+            Point::new(
+                pos.x + self.config.offset_x,
+                pos.y + self.config.offset_y + half_size - 2.0,
+            ),
+        );
+
+        let horizontal_line = Line::new(
+            Point::new(
+                pos.x + self.config.offset_x - half_size + 2.0,
+                pos.y + self.config.offset_y,
+            ),
+            Point::new(
+                pos.x + self.config.offset_x + half_size - 2.0,
+                pos.y + self.config.offset_y,
+            ),
+        );
+
+        cx.stroke(&vertical_line, &Color::rgb8(255, 255, 255), 2.0);
+        cx.stroke(&horizontal_line, &Color::rgb8(255, 255, 255), 2.0);
     }
 
     /// Calculate the Y position for a given property path
@@ -543,9 +612,11 @@ struct TimelineHandle {
 }
 
 pub fn create_timeline(
+    editor_state: Arc<Mutex<EditorState>>,
     state: TimelineState,
     config: TimelineConfig,
     animation_data: RwSignal<Option<AnimationData>>,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> impl View {
     let test = TimelineGridView::new(state, config, animation_data);
 
@@ -580,10 +651,12 @@ pub fn create_timeline(
             );
 
             handle_mouse_down(
+                editor_state.clone(),
                 handle.state,
                 handle.config.clone(),
                 handle.animation_data,
                 position,
+                selected_sequence_data,
             );
             handle.view_id.request_paint(); // Request repaint after state change
             EventPropagation::Continue
@@ -626,13 +699,16 @@ pub fn create_timeline(
 }
 
 fn handle_mouse_down(
+    editor_state: Arc<Mutex<EditorState>>,
     state: RwSignal<TimelineState>,
     config: TimelineConfig,
     animation_data: RwSignal<Option<AnimationData>>,
     pos: Point,
+    selected_sequence_data: RwSignal<Sequence>,
 ) -> EventPropagation {
     println!("handle_mouse_down");
-    let state_data = state.get();
+    // let state_data = state.get();
+
     // Check if clicking on a keyframe
     if let Some((property_path, ui_keyframe)) = hit_test_keyframe(
         state,
@@ -651,6 +727,96 @@ fn handle_mouse_down(
         let mut new_selection = Vec::new();
         new_selection.push(ui_keyframe);
         state.get().selected_keyframes.set(new_selection);
+        return EventPropagation::Stop;
+    } else if let (Some(pos), Some(prop)) = (
+        state.get().hover_position.get(),
+        state.get().hover_property.get(),
+    ) {
+        // handle plus icon click
+        println!("Add keyframe...");
+
+        let mut anim_data = animation_data.get().expect("Couldn't get animation data");
+        let mut anim_prop = anim_data
+            .properties
+            .iter_mut()
+            .find(|p| p.property_path == prop)
+            .expect("Couldn't get related property");
+
+        let time = x_to_time(state, config, pos.x);
+
+        match prop.as_str() {
+            "position" => {
+                anim_prop.keyframes.push(UIKeyframe {
+                    id: Uuid::new_v4().to_string(),
+                    time,
+                    value: KeyframeValue::Position([100, 100]),
+                    easing: EasingType::EaseInOut,
+                    path_type: PathType::Linear,
+                    key_type: KeyType::Frame,
+                });
+            }
+            "rotation" => {
+                anim_prop.keyframes.push(UIKeyframe {
+                    id: Uuid::new_v4().to_string(),
+                    time,
+                    value: KeyframeValue::Rotation(0),
+                    easing: EasingType::EaseInOut,
+                    path_type: PathType::Linear,
+                    key_type: KeyType::Frame,
+                });
+            }
+            "scale" => {
+                anim_prop.keyframes.push(UIKeyframe {
+                    id: Uuid::new_v4().to_string(),
+                    time,
+                    value: KeyframeValue::Scale(100),
+                    easing: EasingType::EaseInOut,
+                    path_type: PathType::Linear,
+                    key_type: KeyType::Frame,
+                });
+            }
+            "opacity" => {
+                anim_prop.keyframes.push(UIKeyframe {
+                    id: Uuid::new_v4().to_string(),
+                    time,
+                    value: KeyframeValue::Opacity(100),
+                    easing: EasingType::EaseInOut,
+                    path_type: PathType::Linear,
+                    key_type: KeyType::Frame,
+                });
+            }
+            _ => {
+                return EventPropagation::Stop;
+            }
+        }
+
+        animation_data.set(Some(anim_data.clone()));
+
+        // update saved state with new keyframe
+        let mut editor_state = editor_state.lock().unwrap();
+        let mut new_state = editor_state
+            .record_state
+            .saved_state
+            .as_mut()
+            .expect("Couldn't get Saved State")
+            .clone();
+
+        new_state.sequences.iter_mut().for_each(move |s| {
+            if s.id == selected_sequence_data.get().id {
+                let anim_data = anim_data.clone();
+
+                s.polygon_motion_paths.iter_mut().for_each(move |pm| {
+                    if pm.id == anim_data.id {
+                        *pm = anim_data.clone();
+                    }
+                })
+            }
+        });
+
+        editor_state.record_state.saved_state = Some(new_state.clone());
+
+        save_saved_state_raw(new_state.clone());
+
         return EventPropagation::Stop;
     }
 
@@ -702,21 +868,54 @@ fn handle_mouse_move(
                 return EventPropagation::Stop;
             }
             _ => {
-                // Update hover state
-                if let Some((property_path, ui_keyframe)) = hit_test_keyframe(
-                    state,
-                    config.clone(),
-                    animation_data.get().expect("Couldn't get animation data"),
-                    pos,
-                ) {
-                    state.update(|s| s.hovered_keyframe = Some((property_path, ui_keyframe.time)));
-                } else {
-                    state.update(|s| s.hovered_keyframe = None);
-                }
                 return EventPropagation::Continue;
             }
         }
     } else {
+        // Update hover state
+        if let Some((property_path, ui_keyframe)) = hit_test_keyframe(
+            state,
+            config.clone(),
+            animation_data.get().expect("Couldn't get animation data"),
+            pos,
+        ) {
+            state.update(|s| s.hovered_keyframe = Some((property_path, ui_keyframe.time)));
+
+            return EventPropagation::Continue;
+        } else {
+            state.update(|s| s.hovered_keyframe = None);
+        }
+
+        let row_height = config.row_height;
+        let header_height = config.header_height;
+
+        // Calculate which property row we're hovering over
+        let relative_y = pos.y - header_height;
+        let row_index = (relative_y / row_height).floor() as usize;
+
+        // Find the corresponding property
+        if let Some(data) = animation_data.get() {
+            let mut current_row = 0;
+            for property in &data.properties {
+                if current_row == row_index {
+                    state
+                        .get()
+                        .hover_property
+                        .set(Some(property.property_path.clone()));
+                    state.get().hover_position.set(Some(Point::new(
+                        pos.x,
+                        header_height + (row_index as f64 * row_height) + (row_height / 2.0),
+                    )));
+                    return EventPropagation::Continue;
+                }
+                current_row += 1;
+            }
+        }
+
+        // Clear hover state if not over a property row
+        state.get().hover_position.set(None);
+        state.get().hover_property.set(None);
+
         return EventPropagation::Continue;
     }
 }

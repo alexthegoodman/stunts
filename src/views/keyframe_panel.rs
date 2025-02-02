@@ -179,731 +179,758 @@ pub fn keyframe_properties_view(
 
     let object_type_cloned = object_type.clone();
 
-    match selected_keyframe.value {
-        KeyframeValue::Position(position) => container(
-            (v_stack((
-                label(|| "Keyframe").style(|s| s.font_size(14.0).margin_bottom(10)),
-                simple_button("Back to Properties".to_string(), move |_| {
-                    selected_keyframes.set(Vec::new());
-                })
-                .style(|s| s.margin_bottom(5.0)),
-                v_stack((
-                    Checkbox::new_labeled_rw(curve_is_checked, || "Curved Path"),
-                    dyn_container(
-                        move || curve_is_checked.get(),
-                        move |curve_checked| {
-                            let editor_cloned = editor_cloned.clone();
-                            let editor_cloned2 = editor_cloned2.clone();
-                            let editor_cloned3 = editor_cloned3.clone();
-                            let editor_cloned4 = editor_cloned4.clone();
-                            let editor_state_cloned8 = editor_state_cloned8.clone();
-                            let editor_state_cloned9 = editor_state_cloned9.clone();
-                            let editor_state_cloned10 = editor_state_cloned10.clone();
-                            let editor_state_cloned11 = editor_state_cloned11.clone();
-                            let editor_state_cloned12 = editor_state_cloned12.clone();
-                            let editor_state_cloned13 = editor_state_cloned13.clone();
-                            let editor_state_cloned14 = editor_state_cloned14.clone();
-                            let editor_state_cloned15 = editor_state_cloned15.clone();
+    v_stack((
+        match selected_keyframe.value {
+            KeyframeValue::Position(position) => container(
+                (v_stack((
+                    label(|| "Keyframe").style(|s| s.font_size(14.0).margin_bottom(10)),
+                    simple_button("Back to Properties".to_string(), move |_| {
+                        selected_keyframes.set(Vec::new());
+                    })
+                    .style(|s| s.margin_bottom(5.0)),
+                    v_stack((
+                        Checkbox::new_labeled_rw(curve_is_checked, || "Curved Path"),
+                        dyn_container(
+                            move || curve_is_checked.get(),
+                            move |curve_checked| {
+                                let editor_cloned = editor_cloned.clone();
+                                let editor_cloned2 = editor_cloned2.clone();
+                                let editor_cloned3 = editor_cloned3.clone();
+                                let editor_cloned4 = editor_cloned4.clone();
+                                let editor_state_cloned8 = editor_state_cloned8.clone();
+                                let editor_state_cloned9 = editor_state_cloned9.clone();
+                                let editor_state_cloned10 = editor_state_cloned10.clone();
+                                let editor_state_cloned11 = editor_state_cloned11.clone();
+                                let editor_state_cloned12 = editor_state_cloned12.clone();
+                                let editor_state_cloned13 = editor_state_cloned13.clone();
+                                let editor_state_cloned14 = editor_state_cloned14.clone();
+                                let editor_state_cloned15 = editor_state_cloned15.clone();
 
-                            let curve_data: Option<CurveData> = match selected_path_type.get() {
-                                PathType::Linear => None,
-                                PathType::Bezier(curve_data) => Some(curve_data),
-                            };
+                                let curve_data: Option<CurveData> = match selected_path_type.get() {
+                                    PathType::Linear => None,
+                                    PathType::Bezier(curve_data) => Some(curve_data),
+                                };
 
-                            let c1 = if let Some(data) = curve_data.clone() {
-                                data.control_point1.expect("Couldn't get control point 1")
-                            } else {
-                                ControlPoint { x: 0, y: 0 }
-                            };
+                                let c1 = if let Some(data) = curve_data.clone() {
+                                    data.control_point1.expect("Couldn't get control point 1")
+                                } else {
+                                    ControlPoint { x: 0, y: 0 }
+                                };
 
-                            let c2 = if let Some(data) = curve_data.clone() {
-                                data.control_point2.expect("Couldn't get control point 2")
-                            } else {
-                                ControlPoint { x: 0, y: 0 }
-                            };
+                                let c2 = if let Some(data) = curve_data.clone() {
+                                    data.control_point2.expect("Couldn't get control point 2")
+                                } else {
+                                    ControlPoint { x: 0, y: 0 }
+                                };
 
-                            if curve_checked {
-                                v_stack((
-                                    label(|| "Curve Control Points")
-                                        .style(|s| s.font_size(10.0).margin_bottom(2.0)),
-                                    h_stack((
-                                        debounce_input(
-                                            "X 1:".to_string(),
-                                            &c1.x.to_string(),
-                                            "Enter X",
-                                            move |value| {
-                                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                // then save merge animation_data with saved_data and save to file
-                                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+                                if curve_checked {
+                                    v_stack((
+                                        label(|| "Curve Control Points")
+                                            .style(|s| s.font_size(10.0).margin_bottom(2.0)),
+                                        h_stack((
+                                            debounce_input(
+                                                "X 1:".to_string(),
+                                                &c1.x.to_string(),
+                                                "Enter X",
+                                                move |value| {
+                                                    // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                    // then save merge animation_data with saved_data and save to file
+                                                    // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                                                let value = string_to_f32(&value)
-                                                    .map_err(|_| "Couldn't convert string to f32")
-                                                    .expect("Couldn't convert string to f32");
+                                                    let value = string_to_f32(&value)
+                                                        .map_err(|_| {
+                                                            "Couldn't convert string to f32"
+                                                        })
+                                                        .expect("Couldn't convert string to f32");
 
-                                                let mut current_animation_data = animation_data
-                                                    .get()
-                                                    .expect("Couldn't get Animation Data");
-                                                let mut current_keyframe = selected_keyframes.get();
-                                                let mut current_keyframe = current_keyframe
-                                                    .get_mut(0)
-                                                    .expect("Couldn't get Selected Keyframe");
-                                                let mut current_sequence =
-                                                    selected_sequence_data.get();
+                                                    let mut current_animation_data = animation_data
+                                                        .get()
+                                                        .expect("Couldn't get Animation Data");
+                                                    let mut current_keyframe =
+                                                        selected_keyframes.get();
+                                                    let mut current_keyframe = current_keyframe
+                                                        .get_mut(0)
+                                                        .expect("Couldn't get Selected Keyframe");
+                                                    let mut current_sequence =
+                                                        selected_sequence_data.get();
 
-                                                // update keyframe
-                                                let mut current_path_type =
-                                                    selected_path_type.get();
+                                                    // update keyframe
+                                                    let mut current_path_type =
+                                                        selected_path_type.get();
 
-                                                match current_path_type {
-                                                    PathType::Linear => {
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: value as i32,
-                                                                        y: 0,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint { x: 0, y: 0 },
-                                                                ),
-                                                            });
+                                                    match current_path_type {
+                                                        PathType::Linear => {
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: value as i32,
+                                                                            y: 0,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint { x: 0, y: 0 },
+                                                                    ),
+                                                                });
+                                                        }
+                                                        PathType::Bezier(curve_data) => {
+                                                            let c1 =
+                                                                curve_data.control_point1.expect(
+                                                                    "Couldn't get control point 1",
+                                                                );
+                                                            let c2 =
+                                                                curve_data.control_point2.expect(
+                                                                    "Couldn't get control point 2",
+                                                                );
+
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: value as i32,
+                                                                            y: c1.y,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: c2.x,
+                                                                            y: c2.y,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
                                                     }
-                                                    PathType::Bezier(curve_data) => {
-                                                        let c1 = curve_data
-                                                            .control_point1
-                                                            .expect("Couldn't get control point 1");
-                                                        let c2 = curve_data
-                                                            .control_point2
-                                                            .expect("Couldn't get control point 2");
 
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: value as i32,
-                                                                        y: c1.y,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: c2.x,
-                                                                        y: c2.y,
-                                                                    },
-                                                                ),
-                                                            });
+                                                    selected_path_type
+                                                        .set(current_path_type.clone());
+
+                                                    current_keyframe.path_type = current_path_type;
+
+                                                    let editor_state =
+                                                        editor_state_cloned8.lock().unwrap();
+
+                                                    update_keyframe(
+                                                        editor_state,
+                                                        current_animation_data,
+                                                        current_keyframe,
+                                                        current_sequence,
+                                                        selected_keyframes,
+                                                        animation_data,
+                                                        selected_sequence_data,
+                                                        selected_sequence_id,
+                                                        sequence_selected,
+                                                    );
+
+                                                    println!("Keyframe updated!");
+
+                                                    let mut editor = editor_cloned.lock().unwrap();
+                                                    editor.update_motion_paths(
+                                                        &selected_sequence_data.get(),
+                                                    );
+
+                                                    println!("Motion Paths updated!");
+                                                },
+                                                editor_state_cloned9,
+                                                "x".to_string(),
+                                                object_type.clone(),
+                                            )
+                                            .style(move |s| s.width(halfs).margin_right(5.0)),
+                                            debounce_input(
+                                                "Y 1:".to_string(),
+                                                &c1.y.to_string(),
+                                                "Enter Y",
+                                                move |value| {
+                                                    let value = string_to_f32(&value)
+                                                        .map_err(|_| {
+                                                            "Couldn't convert string to f32"
+                                                        })
+                                                        .expect("Couldn't convert string to f32");
+
+                                                    let mut current_animation_data = animation_data
+                                                        .get()
+                                                        .expect("Couldn't get Animation Data");
+                                                    let mut current_keyframe =
+                                                        selected_keyframes.get();
+                                                    let mut current_keyframe = current_keyframe
+                                                        .get_mut(0)
+                                                        .expect("Couldn't get Selected Keyframe");
+                                                    let mut current_sequence =
+                                                        selected_sequence_data.get();
+
+                                                    let mut current_path_type =
+                                                        selected_path_type.get();
+
+                                                    match current_path_type {
+                                                        PathType::Linear => {
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: 0,
+                                                                            y: value as i32,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint { x: 0, y: 0 },
+                                                                    ),
+                                                                });
+                                                        }
+                                                        PathType::Bezier(curve_data) => {
+                                                            let c1 =
+                                                                curve_data.control_point1.expect(
+                                                                    "Couldn't get control point 1",
+                                                                );
+                                                            let c2 =
+                                                                curve_data.control_point2.expect(
+                                                                    "Couldn't get control point 2",
+                                                                );
+
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: c1.x,
+                                                                            y: value as i32,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: c2.x,
+                                                                            y: c2.y,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
                                                     }
-                                                }
 
-                                                selected_path_type.set(current_path_type.clone());
+                                                    selected_path_type
+                                                        .set(current_path_type.clone());
 
-                                                current_keyframe.path_type = current_path_type;
+                                                    current_keyframe.path_type = current_path_type;
 
-                                                let editor_state =
-                                                    editor_state_cloned8.lock().unwrap();
+                                                    let editor_state =
+                                                        editor_state_cloned10.lock().unwrap();
 
-                                                update_keyframe(
-                                                    editor_state,
-                                                    current_animation_data,
-                                                    current_keyframe,
-                                                    current_sequence,
-                                                    selected_keyframes,
-                                                    animation_data,
-                                                    selected_sequence_data,
-                                                    selected_sequence_id,
-                                                    sequence_selected,
-                                                );
+                                                    update_keyframe(
+                                                        editor_state,
+                                                        current_animation_data,
+                                                        current_keyframe,
+                                                        current_sequence,
+                                                        selected_keyframes,
+                                                        animation_data,
+                                                        selected_sequence_data,
+                                                        selected_sequence_id,
+                                                        sequence_selected,
+                                                    );
 
-                                                println!("Keyframe updated!");
+                                                    println!("Keyframe updated!");
 
-                                                let mut editor = editor_cloned.lock().unwrap();
-                                                editor.update_motion_paths(
-                                                    &selected_sequence_data.get(),
-                                                );
+                                                    let mut editor = editor_cloned2.lock().unwrap();
+                                                    editor.update_motion_paths(
+                                                        &selected_sequence_data.get(),
+                                                    );
 
-                                                println!("Motion Paths updated!");
-                                            },
-                                            editor_state_cloned9,
-                                            "x".to_string(),
-                                            object_type.clone(),
-                                        )
-                                        .style(move |s| s.width(halfs).margin_right(5.0)),
-                                        debounce_input(
-                                            "Y 1:".to_string(),
-                                            &c1.y.to_string(),
-                                            "Enter Y",
-                                            move |value| {
-                                                let value = string_to_f32(&value)
-                                                    .map_err(|_| "Couldn't convert string to f32")
-                                                    .expect("Couldn't convert string to f32");
+                                                    println!("Motion Paths updated!");
+                                                },
+                                                editor_state_cloned11,
+                                                "y".to_string(),
+                                                object_type.clone(),
+                                            )
+                                            .style(move |s| s.width(halfs)),
+                                        ))
+                                        .style(move |s| s.width(aside_width)),
+                                        h_stack((
+                                            debounce_input(
+                                                "X 2:".to_string(),
+                                                &c2.x.to_string(),
+                                                "Enter X",
+                                                move |value| {
+                                                    // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                                    // then save merge animation_data with saved_data and save to file
+                                                    // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                                                let mut current_animation_data = animation_data
-                                                    .get()
-                                                    .expect("Couldn't get Animation Data");
-                                                let mut current_keyframe = selected_keyframes.get();
-                                                let mut current_keyframe = current_keyframe
-                                                    .get_mut(0)
-                                                    .expect("Couldn't get Selected Keyframe");
-                                                let mut current_sequence =
-                                                    selected_sequence_data.get();
+                                                    let value = string_to_f32(&value)
+                                                        .map_err(|_| {
+                                                            "Couldn't convert string to f32"
+                                                        })
+                                                        .expect("Couldn't convert string to f32");
 
-                                                let mut current_path_type =
-                                                    selected_path_type.get();
+                                                    let mut current_animation_data = animation_data
+                                                        .get()
+                                                        .expect("Couldn't get Animation Data");
+                                                    let mut current_keyframe =
+                                                        selected_keyframes.get();
+                                                    let mut current_keyframe = current_keyframe
+                                                        .get_mut(0)
+                                                        .expect("Couldn't get Selected Keyframe");
+                                                    let mut current_sequence =
+                                                        selected_sequence_data.get();
 
-                                                match current_path_type {
-                                                    PathType::Linear => {
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: 0,
-                                                                        y: value as i32,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint { x: 0, y: 0 },
-                                                                ),
-                                                            });
+                                                    let mut current_path_type =
+                                                        selected_path_type.get();
+
+                                                    match current_path_type {
+                                                        PathType::Linear => {
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint { x: 0, y: 0 },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: value as i32,
+                                                                            y: 0,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
+                                                        PathType::Bezier(curve_data) => {
+                                                            let c1 =
+                                                                curve_data.control_point1.expect(
+                                                                    "Couldn't get control point 1",
+                                                                );
+                                                            let c2 =
+                                                                curve_data.control_point2.expect(
+                                                                    "Couldn't get control point 2",
+                                                                );
+
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: c1.x,
+                                                                            y: c1.y,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: value as i32,
+                                                                            y: c2.y,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
                                                     }
-                                                    PathType::Bezier(curve_data) => {
-                                                        let c1 = curve_data
-                                                            .control_point1
-                                                            .expect("Couldn't get control point 1");
-                                                        let c2 = curve_data
-                                                            .control_point2
-                                                            .expect("Couldn't get control point 2");
 
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: c1.x,
-                                                                        y: value as i32,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: c2.x,
-                                                                        y: c2.y,
-                                                                    },
-                                                                ),
-                                                            });
+                                                    selected_path_type
+                                                        .set(current_path_type.clone());
+
+                                                    current_keyframe.path_type = current_path_type;
+
+                                                    let editor_state =
+                                                        editor_state_cloned12.lock().unwrap();
+
+                                                    update_keyframe(
+                                                        editor_state,
+                                                        current_animation_data,
+                                                        current_keyframe,
+                                                        current_sequence,
+                                                        selected_keyframes,
+                                                        animation_data,
+                                                        selected_sequence_data,
+                                                        selected_sequence_id,
+                                                        sequence_selected,
+                                                    );
+
+                                                    println!("Keyframe updated!");
+
+                                                    let mut editor = editor_cloned3.lock().unwrap();
+                                                    editor.update_motion_paths(
+                                                        &selected_sequence_data.get(),
+                                                    );
+
+                                                    println!("Motion Paths updated!");
+                                                },
+                                                editor_state_cloned13,
+                                                "x".to_string(),
+                                                object_type.clone(),
+                                            )
+                                            .style(move |s| s.width(halfs).margin_right(5.0)),
+                                            debounce_input(
+                                                "Y:".to_string(),
+                                                &c2.y.to_string(),
+                                                "Enter Y",
+                                                move |value| {
+                                                    let value = string_to_f32(&value)
+                                                        .map_err(|_| {
+                                                            "Couldn't convert string to f32"
+                                                        })
+                                                        .expect("Couldn't convert string to f32");
+
+                                                    let mut current_animation_data = animation_data
+                                                        .get()
+                                                        .expect("Couldn't get Animation Data");
+                                                    let mut current_keyframe =
+                                                        selected_keyframes.get();
+                                                    let mut current_keyframe = current_keyframe
+                                                        .get_mut(0)
+                                                        .expect("Couldn't get Selected Keyframe");
+                                                    let mut current_sequence =
+                                                        selected_sequence_data.get();
+
+                                                    let mut current_path_type =
+                                                        selected_path_type.get();
+
+                                                    match current_path_type {
+                                                        PathType::Linear => {
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint { x: 0, y: 0 },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: 0,
+                                                                            y: value as i32,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
+                                                        PathType::Bezier(curve_data) => {
+                                                            let c1 =
+                                                                curve_data.control_point1.expect(
+                                                                    "Couldn't get control point 1",
+                                                                );
+                                                            let c2 =
+                                                                curve_data.control_point2.expect(
+                                                                    "Couldn't get control point 2",
+                                                                );
+
+                                                            current_path_type =
+                                                                PathType::Bezier(CurveData {
+                                                                    control_point1: Some(
+                                                                        ControlPoint {
+                                                                            x: c1.x,
+                                                                            y: c1.y,
+                                                                        },
+                                                                    ),
+                                                                    control_point2: Some(
+                                                                        ControlPoint {
+                                                                            x: c2.x,
+                                                                            y: value as i32,
+                                                                        },
+                                                                    ),
+                                                                });
+                                                        }
                                                     }
-                                                }
 
-                                                selected_path_type.set(current_path_type.clone());
+                                                    selected_path_type
+                                                        .set(current_path_type.clone());
 
-                                                current_keyframe.path_type = current_path_type;
+                                                    current_keyframe.path_type = current_path_type;
 
-                                                let editor_state =
-                                                    editor_state_cloned10.lock().unwrap();
+                                                    let editor_state =
+                                                        editor_state_cloned14.lock().unwrap();
 
-                                                update_keyframe(
-                                                    editor_state,
-                                                    current_animation_data,
-                                                    current_keyframe,
-                                                    current_sequence,
-                                                    selected_keyframes,
-                                                    animation_data,
-                                                    selected_sequence_data,
-                                                    selected_sequence_id,
-                                                    sequence_selected,
-                                                );
+                                                    update_keyframe(
+                                                        editor_state,
+                                                        current_animation_data,
+                                                        current_keyframe,
+                                                        current_sequence,
+                                                        selected_keyframes,
+                                                        animation_data,
+                                                        selected_sequence_data,
+                                                        selected_sequence_id,
+                                                        sequence_selected,
+                                                    );
 
-                                                println!("Keyframe updated!");
+                                                    println!("Keyframe updated!");
 
-                                                let mut editor = editor_cloned2.lock().unwrap();
-                                                editor.update_motion_paths(
-                                                    &selected_sequence_data.get(),
-                                                );
+                                                    let mut editor = editor_cloned4.lock().unwrap();
+                                                    editor.update_motion_paths(
+                                                        &selected_sequence_data.get(),
+                                                    );
 
-                                                println!("Motion Paths updated!");
-                                            },
-                                            editor_state_cloned11,
-                                            "y".to_string(),
-                                            object_type.clone(),
-                                        )
-                                        .style(move |s| s.width(halfs)),
+                                                    println!("Motion Paths updated!");
+                                                },
+                                                editor_state_cloned15,
+                                                "y".to_string(),
+                                                object_type.clone(),
+                                            )
+                                            .style(move |s| s.width(halfs)),
+                                        ))
+                                        .style(move |s| s.width(aside_width)),
                                     ))
-                                    .style(move |s| s.width(aside_width)),
-                                    h_stack((
-                                        debounce_input(
-                                            "X 2:".to_string(),
-                                            &c2.x.to_string(),
-                                            "Enter X",
-                                            move |value| {
-                                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                                                // then save merge animation_data with saved_data and save to file
-                                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+                                    .into_any()
+                                } else {
+                                    container((empty())).into_any()
+                                }
+                            },
+                        ),
+                    )),
+                    h_stack((
+                        debounce_input(
+                            "X:".to_string(),
+                            &position[0].to_string(),
+                            "Enter X",
+                            move |value| {
+                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                // then save merge animation_data with saved_data and save to file
+                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                                                let value = string_to_f32(&value)
-                                                    .map_err(|_| "Couldn't convert string to f32")
-                                                    .expect("Couldn't convert string to f32");
+                                let value = string_to_f32(&value)
+                                    .map_err(|_| "Couldn't convert string to f32")
+                                    .expect("Couldn't convert string to f32");
 
-                                                let mut current_animation_data = animation_data
-                                                    .get()
-                                                    .expect("Couldn't get Animation Data");
-                                                let mut current_keyframe = selected_keyframes.get();
-                                                let mut current_keyframe = current_keyframe
-                                                    .get_mut(0)
-                                                    .expect("Couldn't get Selected Keyframe");
-                                                let mut current_sequence =
-                                                    selected_sequence_data.get();
+                                let mut current_animation_data =
+                                    animation_data.get().expect("Couldn't get Animation Data");
+                                let mut current_keyframe = selected_keyframes.get();
+                                let mut current_keyframe = current_keyframe
+                                    .get_mut(0)
+                                    .expect("Couldn't get Selected Keyframe");
+                                let mut current_sequence = selected_sequence_data.get();
+                                // let current_polygon = selected_polygon_data.read();
+                                // let current_polygon = current_polygon.borrow();
 
-                                                let mut current_path_type =
-                                                    selected_path_type.get();
+                                // update keyframe
+                                current_keyframe.value =
+                                    KeyframeValue::Position([value as i32, position[1]]);
 
-                                                match current_path_type {
-                                                    PathType::Linear => {
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint { x: 0, y: 0 },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: value as i32,
-                                                                        y: 0,
-                                                                    },
-                                                                ),
-                                                            });
-                                                    }
-                                                    PathType::Bezier(curve_data) => {
-                                                        let c1 = curve_data
-                                                            .control_point1
-                                                            .expect("Couldn't get control point 1");
-                                                        let c2 = curve_data
-                                                            .control_point2
-                                                            .expect("Couldn't get control point 2");
+                                let editor_state = editor_state_cloned6.lock().unwrap();
 
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: c1.x,
-                                                                        y: c1.y,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: value as i32,
-                                                                        y: c2.y,
-                                                                    },
-                                                                ),
-                                                            });
-                                                    }
-                                                }
+                                update_keyframe(
+                                    editor_state,
+                                    current_animation_data,
+                                    current_keyframe,
+                                    current_sequence,
+                                    selected_keyframes,
+                                    animation_data,
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
+                                );
 
-                                                selected_path_type.set(current_path_type.clone());
+                                println!("Keyframe updated!");
 
-                                                current_keyframe.path_type = current_path_type;
+                                let mut editor = editor_cloned5.lock().unwrap();
+                                editor.update_motion_paths(&selected_sequence_data.get());
 
-                                                let editor_state =
-                                                    editor_state_cloned12.lock().unwrap();
+                                println!("Motion Paths updated!");
+                            },
+                            editor_state_cloned,
+                            "x".to_string(),
+                            object_type_cloned.clone(),
+                        )
+                        .style(move |s| s.width(halfs).margin_right(5.0)),
+                        debounce_input(
+                            "Y:".to_string(),
+                            &position[1].to_string(),
+                            "Enter Y",
+                            move |value| {
+                                let value = string_to_f32(&value)
+                                    .map_err(|_| "Couldn't convert string to f32")
+                                    .expect("Couldn't convert string to f32");
 
-                                                update_keyframe(
-                                                    editor_state,
-                                                    current_animation_data,
-                                                    current_keyframe,
-                                                    current_sequence,
-                                                    selected_keyframes,
-                                                    animation_data,
-                                                    selected_sequence_data,
-                                                    selected_sequence_id,
-                                                    sequence_selected,
-                                                );
+                                let mut current_animation_data =
+                                    animation_data.get().expect("Couldn't get Animation Data");
+                                let mut current_keyframe = selected_keyframes.get();
+                                let mut current_keyframe = current_keyframe
+                                    .get_mut(0)
+                                    .expect("Couldn't get Selected Keyframe");
+                                let mut current_sequence = selected_sequence_data.get();
+                                // let current_polygon = selected_polygon_data.read();
+                                // let current_polygon = current_polygon.borrow();
 
-                                                println!("Keyframe updated!");
+                                // update keyframe
+                                current_keyframe.value =
+                                    KeyframeValue::Position([position[0], value as i32]);
 
-                                                let mut editor = editor_cloned3.lock().unwrap();
-                                                editor.update_motion_paths(
-                                                    &selected_sequence_data.get(),
-                                                );
+                                let editor_state = editor_state_cloned7.lock().unwrap();
 
-                                                println!("Motion Paths updated!");
-                                            },
-                                            editor_state_cloned13,
-                                            "x".to_string(),
-                                            object_type.clone(),
-                                        )
-                                        .style(move |s| s.width(halfs).margin_right(5.0)),
-                                        debounce_input(
-                                            "Y:".to_string(),
-                                            &c2.y.to_string(),
-                                            "Enter Y",
-                                            move |value| {
-                                                let value = string_to_f32(&value)
-                                                    .map_err(|_| "Couldn't convert string to f32")
-                                                    .expect("Couldn't convert string to f32");
+                                update_keyframe(
+                                    editor_state,
+                                    current_animation_data,
+                                    current_keyframe,
+                                    current_sequence,
+                                    selected_keyframes,
+                                    animation_data,
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
+                                );
 
-                                                let mut current_animation_data = animation_data
-                                                    .get()
-                                                    .expect("Couldn't get Animation Data");
-                                                let mut current_keyframe = selected_keyframes.get();
-                                                let mut current_keyframe = current_keyframe
-                                                    .get_mut(0)
-                                                    .expect("Couldn't get Selected Keyframe");
-                                                let mut current_sequence =
-                                                    selected_sequence_data.get();
+                                println!("Keyframe updated!");
 
-                                                let mut current_path_type =
-                                                    selected_path_type.get();
+                                let mut editor = editor_cloned6.lock().unwrap();
+                                editor.update_motion_paths(&selected_sequence_data.get());
 
-                                                match current_path_type {
-                                                    PathType::Linear => {
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint { x: 0, y: 0 },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: 0,
-                                                                        y: value as i32,
-                                                                    },
-                                                                ),
-                                                            });
-                                                    }
-                                                    PathType::Bezier(curve_data) => {
-                                                        let c1 = curve_data
-                                                            .control_point1
-                                                            .expect("Couldn't get control point 1");
-                                                        let c2 = curve_data
-                                                            .control_point2
-                                                            .expect("Couldn't get control point 2");
-
-                                                        current_path_type =
-                                                            PathType::Bezier(CurveData {
-                                                                control_point1: Some(
-                                                                    ControlPoint {
-                                                                        x: c1.x,
-                                                                        y: c1.y,
-                                                                    },
-                                                                ),
-                                                                control_point2: Some(
-                                                                    ControlPoint {
-                                                                        x: c2.x,
-                                                                        y: value as i32,
-                                                                    },
-                                                                ),
-                                                            });
-                                                    }
-                                                }
-
-                                                selected_path_type.set(current_path_type.clone());
-
-                                                current_keyframe.path_type = current_path_type;
-
-                                                let editor_state =
-                                                    editor_state_cloned14.lock().unwrap();
-
-                                                update_keyframe(
-                                                    editor_state,
-                                                    current_animation_data,
-                                                    current_keyframe,
-                                                    current_sequence,
-                                                    selected_keyframes,
-                                                    animation_data,
-                                                    selected_sequence_data,
-                                                    selected_sequence_id,
-                                                    sequence_selected,
-                                                );
-
-                                                println!("Keyframe updated!");
-
-                                                let mut editor = editor_cloned4.lock().unwrap();
-                                                editor.update_motion_paths(
-                                                    &selected_sequence_data.get(),
-                                                );
-
-                                                println!("Motion Paths updated!");
-                                            },
-                                            editor_state_cloned15,
-                                            "y".to_string(),
-                                            object_type.clone(),
-                                        )
-                                        .style(move |s| s.width(halfs)),
-                                    ))
-                                    .style(move |s| s.width(aside_width)),
-                                ))
-                                .into_any()
-                            } else {
-                                container((empty())).into_any()
-                            }
-                        },
-                    ),
-                )),
-                h_stack((
-                    debounce_input(
-                        "X:".to_string(),
-                        &position[0].to_string(),
-                        "Enter X",
-                        move |value| {
-                            // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                            // then save merge animation_data with saved_data and save to file
-                            // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                            let value = string_to_f32(&value)
-                                .map_err(|_| "Couldn't convert string to f32")
-                                .expect("Couldn't convert string to f32");
-
-                            let mut current_animation_data =
-                                animation_data.get().expect("Couldn't get Animation Data");
-                            let mut current_keyframe = selected_keyframes.get();
-                            let mut current_keyframe = current_keyframe
-                                .get_mut(0)
-                                .expect("Couldn't get Selected Keyframe");
-                            let mut current_sequence = selected_sequence_data.get();
-                            // let current_polygon = selected_polygon_data.read();
-                            // let current_polygon = current_polygon.borrow();
-
-                            // update keyframe
-                            current_keyframe.value =
-                                KeyframeValue::Position([value as i32, position[1]]);
-
-                            let editor_state = editor_state_cloned6.lock().unwrap();
-
-                            update_keyframe(
-                                editor_state,
-                                current_animation_data,
-                                current_keyframe,
-                                current_sequence,
-                                selected_keyframes,
-                                animation_data,
-                                selected_sequence_data,
-                                selected_sequence_id,
-                                sequence_selected,
-                            );
-
-                            println!("Keyframe updated!");
-
-                            let mut editor = editor_cloned5.lock().unwrap();
-                            editor.update_motion_paths(&selected_sequence_data.get());
-
-                            println!("Motion Paths updated!");
-                        },
-                        editor_state_cloned,
-                        "x".to_string(),
-                        object_type_cloned.clone(),
-                    )
-                    .style(move |s| s.width(halfs).margin_right(5.0)),
-                    debounce_input(
-                        "Y:".to_string(),
-                        &position[1].to_string(),
-                        "Enter Y",
-                        move |value| {
-                            let value = string_to_f32(&value)
-                                .map_err(|_| "Couldn't convert string to f32")
-                                .expect("Couldn't convert string to f32");
-
-                            let mut current_animation_data =
-                                animation_data.get().expect("Couldn't get Animation Data");
-                            let mut current_keyframe = selected_keyframes.get();
-                            let mut current_keyframe = current_keyframe
-                                .get_mut(0)
-                                .expect("Couldn't get Selected Keyframe");
-                            let mut current_sequence = selected_sequence_data.get();
-                            // let current_polygon = selected_polygon_data.read();
-                            // let current_polygon = current_polygon.borrow();
-
-                            // update keyframe
-                            current_keyframe.value =
-                                KeyframeValue::Position([position[0], value as i32]);
-
-                            let editor_state = editor_state_cloned7.lock().unwrap();
-
-                            update_keyframe(
-                                editor_state,
-                                current_animation_data,
-                                current_keyframe,
-                                current_sequence,
-                                selected_keyframes,
-                                animation_data,
-                                selected_sequence_data,
-                                selected_sequence_id,
-                                sequence_selected,
-                            );
-
-                            println!("Keyframe updated!");
-
-                            let mut editor = editor_cloned6.lock().unwrap();
-                            editor.update_motion_paths(&selected_sequence_data.get());
-
-                            println!("Motion Paths updated!");
-                        },
-                        editor_state_cloned2,
-                        "y".to_string(),
-                        object_type_cloned.clone(),
-                    )
-                    .style(move |s| s.width(halfs)),
+                                println!("Motion Paths updated!");
+                            },
+                            editor_state_cloned2,
+                            "y".to_string(),
+                            object_type_cloned.clone(),
+                        )
+                        .style(move |s| s.width(halfs)),
+                    ))
+                    .style(move |s| s.width(aside_width)),
                 ))
-                .style(move |s| s.width(aside_width)),
-            ))
-            .style(|s| card_styles(s))),
-        )
-        .into_any(),
-        KeyframeValue::Rotation(rotation) => container(
-            (v_stack((
-                label(|| "Keyframe"),
-                simple_button("Back to Properties".to_string(), move |_| {
-                    selected_keyframes.set(Vec::new());
-                }),
-                styled_input(
-                    "Rotation Degrees:".to_string(),
-                    &rotation.to_string(),
-                    "Enter Degrees",
-                    Box::new({
-                        move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                            // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                            // then save merge animation_data with saved_data and save to file
-                            // although perhaps polygon_data is not related to the keyframe data? no need to update here?
-
-                            let value = string_to_f32(&value)
-                                .map_err(|_| "Couldn't convert string to f32")
-                                .expect("Couldn't convert string to f32");
-
-                            let mut current_animation_data =
-                                animation_data.get().expect("Couldn't get Animation Data");
-                            let mut current_keyframe = selected_keyframes.get();
-                            let mut current_keyframe = current_keyframe
-                                .get_mut(0)
-                                .expect("Couldn't get Selected Keyframe");
-                            let mut current_sequence = selected_sequence_data.get();
-                            // let current_polygon = selected_polygon_data.read();
-                            // let current_polygon = current_polygon.borrow();
-
-                            // update keyframe
-                            current_keyframe.value = KeyframeValue::Rotation(value as i32);
-
-                            update_keyframe(
-                                editor_state,
-                                current_animation_data,
-                                current_keyframe,
-                                current_sequence,
-                                selected_keyframes,
-                                animation_data,
-                                selected_sequence_data,
-                                selected_sequence_id,
-                                sequence_selected,
-                            );
-                        }
+                .style(|s| card_styles(s))),
+            )
+            .into_any(),
+            KeyframeValue::Rotation(rotation) => container(
+                (v_stack((
+                    label(|| "Keyframe"),
+                    simple_button("Back to Properties".to_string(), move |_| {
+                        selected_keyframes.set(Vec::new());
                     }),
-                    editor_state_cloned3,
-                    "rotation".to_string(),
-                    object_type,
-                ),
-            ))
-            .style(|s| card_styles(s))),
-        )
-        .into_any(),
-        KeyframeValue::Scale(scale) => container(
-            (v_stack((
-                label(|| "Keyframe"),
-                simple_button("Back to Properties".to_string(), move |_| {
-                    selected_keyframes.set(Vec::new());
-                }),
-                styled_input(
-                    "Scale (100 default):".to_string(),
-                    &scale.to_string(),
-                    "Enter Scale",
-                    Box::new({
-                        move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                            // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                            // then save merge animation_data with saved_data and save to file
-                            // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+                    styled_input(
+                        "Rotation Degrees:".to_string(),
+                        &rotation.to_string(),
+                        "Enter Degrees",
+                        Box::new({
+                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                // then save merge animation_data with saved_data and save to file
+                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                            let value = string_to_f32(&value)
-                                .map_err(|_| "Couldn't convert string to f32")
-                                .expect("Couldn't convert string to f32");
+                                let value = string_to_f32(&value)
+                                    .map_err(|_| "Couldn't convert string to f32")
+                                    .expect("Couldn't convert string to f32");
 
-                            let mut current_animation_data =
-                                animation_data.get().expect("Couldn't get Animation Data");
-                            let mut current_keyframe = selected_keyframes.get();
-                            let mut current_keyframe = current_keyframe
-                                .get_mut(0)
-                                .expect("Couldn't get Selected Keyframe");
-                            let mut current_sequence = selected_sequence_data.get();
-                            // let current_polygon = selected_polygon_data.read();
-                            // let current_polygon = current_polygon.borrow();
+                                let mut current_animation_data =
+                                    animation_data.get().expect("Couldn't get Animation Data");
+                                let mut current_keyframe = selected_keyframes.get();
+                                let mut current_keyframe = current_keyframe
+                                    .get_mut(0)
+                                    .expect("Couldn't get Selected Keyframe");
+                                let mut current_sequence = selected_sequence_data.get();
+                                // let current_polygon = selected_polygon_data.read();
+                                // let current_polygon = current_polygon.borrow();
 
-                            // update keyframe
-                            current_keyframe.value = KeyframeValue::Scale(value as i32);
+                                // update keyframe
+                                current_keyframe.value = KeyframeValue::Rotation(value as i32);
 
-                            update_keyframe(
-                                editor_state,
-                                current_animation_data,
-                                current_keyframe,
-                                current_sequence,
-                                selected_keyframes,
-                                animation_data,
-                                selected_sequence_data,
-                                selected_sequence_id,
-                                sequence_selected,
-                            );
-                        }
+                                update_keyframe(
+                                    editor_state,
+                                    current_animation_data,
+                                    current_keyframe,
+                                    current_sequence,
+                                    selected_keyframes,
+                                    animation_data,
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
+                                );
+                            }
+                        }),
+                        editor_state_cloned3,
+                        "rotation".to_string(),
+                        object_type,
+                    ),
+                ))
+                .style(|s| card_styles(s))),
+            )
+            .into_any(),
+            KeyframeValue::Scale(scale) => container(
+                (v_stack((
+                    label(|| "Keyframe"),
+                    simple_button("Back to Properties".to_string(), move |_| {
+                        selected_keyframes.set(Vec::new());
                     }),
-                    editor_state_cloned4,
-                    "scale".to_string(),
-                    object_type,
-                ),
-            ))
-            .style(|s| card_styles(s))),
-        )
-        .into_any(),
-        KeyframeValue::Opacity(opacity) => container(
-            (v_stack((
-                label(|| "Keyframe"),
-                simple_button("Back to Properties".to_string(), move |_| {
-                    selected_keyframes.set(Vec::new());
-                }),
-                styled_input(
-                    "Opacity (default 100):".to_string(),
-                    &opacity.to_string(),
-                    "Enter Opacity",
-                    Box::new({
-                        move |mut editor_state: MutexGuard<'_, EditorState>, value| {
-                            // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
-                            // then save merge animation_data with saved_data and save to file
-                            // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+                    styled_input(
+                        "Scale (100 default):".to_string(),
+                        &scale.to_string(),
+                        "Enter Scale",
+                        Box::new({
+                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                // then save merge animation_data with saved_data and save to file
+                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
 
-                            let value = string_to_f32(&value)
-                                .map_err(|_| "Couldn't convert string to f32")
-                                .expect("Couldn't convert string to f32");
+                                let value = string_to_f32(&value)
+                                    .map_err(|_| "Couldn't convert string to f32")
+                                    .expect("Couldn't convert string to f32");
 
-                            let mut current_animation_data =
-                                animation_data.get().expect("Couldn't get Animation Data");
-                            let mut current_keyframe = selected_keyframes.get();
-                            let mut current_keyframe = current_keyframe
-                                .get_mut(0)
-                                .expect("Couldn't get Selected Keyframe");
-                            let mut current_sequence = selected_sequence_data.get();
-                            // let current_polygon = selected_polygon_data.read();
-                            // let current_polygon = current_polygon.borrow();
+                                let mut current_animation_data =
+                                    animation_data.get().expect("Couldn't get Animation Data");
+                                let mut current_keyframe = selected_keyframes.get();
+                                let mut current_keyframe = current_keyframe
+                                    .get_mut(0)
+                                    .expect("Couldn't get Selected Keyframe");
+                                let mut current_sequence = selected_sequence_data.get();
+                                // let current_polygon = selected_polygon_data.read();
+                                // let current_polygon = current_polygon.borrow();
 
-                            // update keyframe
-                            current_keyframe.value = KeyframeValue::Opacity(value as i32);
+                                // update keyframe
+                                current_keyframe.value = KeyframeValue::Scale(value as i32);
 
-                            update_keyframe(
-                                editor_state,
-                                current_animation_data,
-                                current_keyframe,
-                                current_sequence,
-                                selected_keyframes,
-                                animation_data,
-                                selected_sequence_data,
-                                selected_sequence_id,
-                                sequence_selected,
-                            );
-                        }
+                                update_keyframe(
+                                    editor_state,
+                                    current_animation_data,
+                                    current_keyframe,
+                                    current_sequence,
+                                    selected_keyframes,
+                                    animation_data,
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
+                                );
+                            }
+                        }),
+                        editor_state_cloned4,
+                        "scale".to_string(),
+                        object_type,
+                    ),
+                ))
+                .style(|s| card_styles(s))),
+            )
+            .into_any(),
+            KeyframeValue::Opacity(opacity) => container(
+                (v_stack((
+                    label(|| "Keyframe"),
+                    simple_button("Back to Properties".to_string(), move |_| {
+                        selected_keyframes.set(Vec::new());
                     }),
-                    editor_state_cloned5,
-                    "opacity".to_string(),
-                    object_type,
-                ),
-            ))
-            .style(|s| card_styles(s))),
-        )
-        .into_any(),
-        _ => empty().into_any(),
-    }
+                    styled_input(
+                        "Opacity (default 100):".to_string(),
+                        &opacity.to_string(),
+                        "Enter Opacity",
+                        Box::new({
+                            move |mut editor_state: MutexGuard<'_, EditorState>, value| {
+                                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                                // then save merge animation_data with saved_data and save to file
+                                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                                let value = string_to_f32(&value)
+                                    .map_err(|_| "Couldn't convert string to f32")
+                                    .expect("Couldn't convert string to f32");
+
+                                let mut current_animation_data =
+                                    animation_data.get().expect("Couldn't get Animation Data");
+                                let mut current_keyframe = selected_keyframes.get();
+                                let mut current_keyframe = current_keyframe
+                                    .get_mut(0)
+                                    .expect("Couldn't get Selected Keyframe");
+                                let mut current_sequence = selected_sequence_data.get();
+                                // let current_polygon = selected_polygon_data.read();
+                                // let current_polygon = current_polygon.borrow();
+
+                                // update keyframe
+                                current_keyframe.value = KeyframeValue::Opacity(value as i32);
+
+                                update_keyframe(
+                                    editor_state,
+                                    current_animation_data,
+                                    current_keyframe,
+                                    current_sequence,
+                                    selected_keyframes,
+                                    animation_data,
+                                    selected_sequence_data,
+                                    selected_sequence_id,
+                                    sequence_selected,
+                                );
+                            }
+                        }),
+                        editor_state_cloned5,
+                        "opacity".to_string(),
+                        object_type,
+                    ),
+                ))
+                .style(|s| card_styles(s))),
+            )
+            .into_any(),
+            _ => empty().into_any(),
+        },
+        simple_button("Delete Keyframe".to_string(), move |_| {}).style(|s| s.color(Color::RED)),
+    ))
 }
