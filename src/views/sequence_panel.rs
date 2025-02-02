@@ -590,6 +590,7 @@ pub fn sequence_panel(
                 .find(|pm| pm.polygon_id == object_id.to_string())
                 .expect("Couldn't get matching path");
 
+            animation.id = Uuid::new_v4().to_string();
             animation.polygon_id = new_id.to_string();
 
             animation
