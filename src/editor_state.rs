@@ -760,7 +760,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(0),
-            value: KeyframeValue::Position([object_position.x, object_position.y - 200]),
+            value: KeyframeValue::Position([object_position.x, object_position.y - 100]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -768,7 +768,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_millis(2500),
-            value: KeyframeValue::Position([object_position.x, object_position.y - 100]),
+            value: KeyframeValue::Position([object_position.x, object_position.y - 50]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -784,7 +784,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(15),
-            value: KeyframeValue::Position([object_position.x, object_position.y + 100]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 50]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -792,7 +792,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_millis(17500),
-            value: KeyframeValue::Position([object_position.x, object_position.y + 200]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 100]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
@@ -800,7 +800,7 @@ impl EditorState {
         position_keyframes.push(UIKeyframe {
             id: Uuid::new_v4().to_string(),
             time: Duration::from_secs(20),
-            value: KeyframeValue::Position([object_position.x, object_position.y + 300]),
+            value: KeyframeValue::Position([object_position.x, object_position.y + 150]),
             easing: EasingType::EaseInOut,
             path_type: PathType::Linear,
             key_type: KeyType::Frame,
