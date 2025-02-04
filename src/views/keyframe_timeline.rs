@@ -305,21 +305,30 @@ impl TimelineGridView {
         selected: bool,
         key_type: KeyType,
     ) {
-        let size = 6.0;
+        let size = 8.0;
+        let mut end_time = Duration::from_millis(0);
         let color = if selected {
             match key_type {
                 KeyType::Frame => Color::rgb8(66, 135, 245),
-                KeyType::Range(range_data) => Color::RED,
+                KeyType::Range(range_data) => {
+                    end_time = range_data.end_time;
+                    Color::RED
+                }
             }
         } else {
             match key_type {
                 KeyType::Frame => Color::rgb8(245, 166, 35),
-                KeyType::Range(range_data) => Color::ORANGE_RED,
+                KeyType::Range(range_data) => {
+                    end_time = range_data.end_time;
+                    Color::ORANGE_RED
+                }
             }
         };
 
+        let end_x = time_to_x(self.state, self.config.clone(), end_time);
+
         // Draw diamond shape
-        let path = kurbo::BezPath::from_vec(vec![
+        let mut path = kurbo::BezPath::from_vec(vec![
             kurbo::PathEl::MoveTo(Point::new(
                 center.x + self.config.offset_x,
                 center.y + self.config.offset_y - size,
@@ -338,6 +347,28 @@ impl TimelineGridView {
             )),
             kurbo::PathEl::ClosePath,
         ]);
+
+        if end_time.as_millis() > 0 {
+            path = kurbo::BezPath::from_vec(vec![
+                kurbo::PathEl::MoveTo(Point::new(
+                    center.x + self.config.offset_x,
+                    center.y + self.config.offset_y - size,
+                )),
+                kurbo::PathEl::LineTo(Point::new(
+                    end_x + self.config.offset_x + size,
+                    center.y + self.config.offset_y,
+                )),
+                kurbo::PathEl::LineTo(Point::new(
+                    end_x + self.config.offset_x,
+                    center.y + self.config.offset_y + size,
+                )),
+                kurbo::PathEl::LineTo(Point::new(
+                    center.x + self.config.offset_x - size,
+                    center.y + self.config.offset_y,
+                )),
+                kurbo::PathEl::ClosePath,
+            ]);
+        }
 
         cx.fill(&path, color, 1.0);
     }
@@ -452,7 +483,7 @@ fn hit_test_keyframe(
 ) -> Option<(String, UIKeyframe)> {
     let mut current_y = config.header_height;
     let row_height = config.row_height.clone();
-    let hit_radius = 6.0;
+    let hit_radius = 8.0;
 
     for property in &animation_data.properties {
         // Check if point is within the property's vertical bounds
