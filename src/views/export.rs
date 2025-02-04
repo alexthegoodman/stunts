@@ -182,7 +182,7 @@ pub fn export_widget(
                         saved_timeline_state_config
                             .timeline_sequences
                             .iter()
-                            .any(|ts| ts.id == s.id)
+                            .any(|ts| ts.sequence_id == s.id)
                     })
                     .collect::<Vec<&Sequence>>();
 
@@ -205,6 +205,7 @@ pub fn export_widget(
                     println!("Sending tx export command...");
 
                     let output_path = get_exports_dir()
+                        .join(filename)
                         .to_str()
                         .expect("Couldn't convert exports to str")
                         .to_string();
@@ -214,7 +215,7 @@ pub fn export_widget(
                     rt.block_on(async {
                         match export_thread_tx
                             .send(ExportCommand::StartExport {
-                                output_path: output_path + &filename,
+                                output_path,
                                 window_size,
                                 sequences,
                                 saved_timeline_state_config: saved_timeline_state_config.clone(),

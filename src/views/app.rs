@@ -1148,8 +1148,8 @@ pub fn project_view(
                     },
                     &camera,
                     true,
-                    device,
-                    queue,
+                    // device,
+                    // queue,
                 );
             });
         }

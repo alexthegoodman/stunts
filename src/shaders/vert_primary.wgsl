@@ -40,7 +40,6 @@ fn vs_main(
     
     // First apply model transform in original coordinate space
     // Also apply group transform
-    // TODO: update export shader with groups
     let model_pos = group_uniforms.group * model_uniforms.model * vec4<f32>(vertex.position, 1.0);
     
     // Then convert to NDC space

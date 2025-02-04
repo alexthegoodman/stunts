@@ -39,6 +39,7 @@ pub fn get_ground_truth_dir() -> Option<PathBuf> {
     })
 }
 
+// TODO: put images and videos and exports in separate project folders
 pub fn get_images_dir() -> PathBuf {
     let main_dir = get_ground_truth_dir().expect("Couldn't check or create Stunts directory");
     let images_dir = main_dir.join("images");
