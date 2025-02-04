@@ -20,6 +20,7 @@ use stunts_engine::timelines::SavedTimelineStateConfig;
 use tokio::sync::mpsc;
 
 use crate::editor_state::EditorState;
+use crate::helpers::utilities::get_exports_dir;
 
 use std::thread;
 
@@ -96,102 +97,6 @@ pub fn spawn_export_thread() -> mpsc::Sender<ExportCommand> {
 
     cmd_tx
 }
-
-// pub fn export_widget(
-//     editor_state: Arc<Mutex<EditorState>>,
-//     viewport: Arc<Mutex<Viewport>>,
-//     sequence_timeline_signal: RwSignal<TimelineState>,
-// ) -> impl View {
-//     let (progress_tx, progress_rx) = mpsc::unbounded_channel();
-//     let progress = create_signal_from_tokio_channel(progress_rx);
-//     let is_exporting = create_rw_signal(false);
-//     let progress_text = create_rw_signal(String::from("Ready to export"));
-
-//     // Create the export thread and keep its sender
-//     let export_thread_tx = create_rw_signal(spawn_export_thread());
-
-//     create_effect(move |_| {
-//         if let Some(result) = progress.get() {
-//             match result {
-//                 ExportProgress::Progress(percent) => {
-//                     progress_text.set(format!("Exporting: {:.1}%", percent));
-//                 }
-//                 ExportProgress::Complete => {
-//                     progress_text.set("Export complete!".to_string());
-//                     is_exporting.set(false);
-//                 }
-//                 ExportProgress::Error(err) => {
-//                     progress_text.set(format!("Export failed: {}", err));
-//                     is_exporting.set(false);
-//                 }
-//             }
-//         }
-//     });
-
-//     v_stack((h_stack((
-//         button(label(move || "Export Video"))
-//             .style(|s| s.background(Color::rgb8(255, 25, 25)).color(Color::WHITE))
-//             .on_click(move |_| {
-//                 if is_exporting.get() {
-//                     return EventPropagation::Stop;
-//                 }
-
-//                 is_exporting.set(true);
-//                 let progress_tx = progress_tx.clone();
-
-//                 progress_text.set("Starting export...".to_string());
-
-//                 println!("Starting export...");
-
-//                 let mut editor_state = editor_state.lock().unwrap();
-//                 let viewport = viewport.lock().unwrap();
-
-//                 let window_size = WindowSize {
-//                     width: viewport.width as u32,
-//                     height: viewport.height as u32,
-//                 };
-//                 let mut new_state = editor_state
-//                     .saved_state
-//                     .as_mut()
-//                     .expect("Couldn't get Saved State")
-//                     .clone();
-
-//                 let sequences = new_state.sequences.clone();
-
-//                 let timeline_state = sequence_timeline_signal.get();
-//                 let saved_timeline_state_config = timeline_state.to_config();
-//                 let total_duration_s: f64 = saved_timeline_state_config
-//                     .timeline_sequences
-//                     .iter()
-//                     .map(|s| s.duration_ms as f64 / 1000.0)
-//                     .sum();
-
-//                 println!("Sending tx export command...");
-
-//                 // Send command to export thread
-//                 // TODO: send_result is a future, how to solve? Exporter must be done in raw thread, not tokio thread, as only raw thread is compatable with wgpu, Media Foundation, etc
-//                 let export_thread = export_thread_tx.get();
-//                 let send_result = export_thread.send(ExportCommand::StartExport {
-//                     output_path: "D:/projects/common/stunts/output.mp4".to_string(),
-//                     window_size,
-//                     sequences: sequences.clone(),
-//                     saved_timeline_state_config: saved_timeline_state_config.clone(),
-//                     video_width: 1920,
-//                     video_height: 1080,
-//                     total_duration_s,
-//                     progress_tx,
-//                 });
-
-//                 println!("Tx command sent...");
-
-//                 EventPropagation::Stop
-//             })
-//             .disabled(move || is_exporting.get()),
-//         label(move || progress_text.get()),
-//     ))
-//     .style(|s| s.gap(10.0)),))
-//     .style(|s| s.padding(10.0))
-// }
 
 pub fn export_widget(
     editor_state: Arc<Mutex<EditorState>>,
@@ -293,12 +198,17 @@ pub fn export_widget(
                 thread::spawn(move || {
                     println!("Sending tx export command...");
 
+                    let output_path = get_exports_dir()
+                        .to_str()
+                        .expect("Couldn't convert exports to str")
+                        .to_string();
+
                     // Create a new runtime for this thread to handle the async send
                     let rt = tokio::runtime::Runtime::new().unwrap();
                     rt.block_on(async {
                         match export_thread_tx
                             .send(ExportCommand::StartExport {
-                                output_path: "D:/projects/common/stunts/".to_string() + &filename,
+                                output_path: output_path + &filename,
                                 window_size,
                                 sequences,
                                 saved_timeline_state_config: saved_timeline_state_config.clone(),
