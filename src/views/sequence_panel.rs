@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -30,7 +31,9 @@ use uuid::Uuid;
 
 use crate::editor_state::{self, EditorState};
 use crate::helpers::saved_state;
-use crate::helpers::utilities::save_saved_state_raw;
+use crate::helpers::utilities::{
+    get_ground_truth_dir, get_images_dir, get_videos_dir, save_saved_state_raw,
+};
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
@@ -1177,14 +1180,23 @@ pub fn sequence_panel(
                     "Add Image",
                     "image",
                     Some(move || {
-                        if let Some(path) = rfd::FileDialog::new()
+                        if let Some(original_path) = rfd::FileDialog::new()
                             .add_filter("images", &["png", "jpg", "jpeg"])
                             .pick_file()
                         {
-                            // selected_file.set(Some(path));
+                            // Get the storage directory
+                            let storage_dir = get_images_dir();
 
-                            // add a rendererstate polygon + image pair? + add as image to saved state?
+                            // Create a new file name to avoid conflicts
+                            let file_name =
+                                original_path.file_name().expect("Couldn't get file name");
+                            let new_path = storage_dir.join(file_name);
 
+                            // Copy the image to the storage directory
+                            fs::copy(&original_path, &new_path)
+                                .expect("Couldn't copy image to storage directory");
+
+                            // Add to scene
                             let mut editor = editor_cloned_3.lock().unwrap();
 
                             let mut rng = rand::thread_rng();
@@ -1203,7 +1215,10 @@ pub fn sequence_panel(
                                 name: "New Image Item".to_string(),
                                 dimensions: (100, 100),
                                 position,
-                                path: path.to_str().expect("Couldn't get path string").to_string(),
+                                path: new_path
+                                    .to_str()
+                                    .expect("Couldn't get path string")
+                                    .to_string(),
                                 layer: -1,
                             };
 
@@ -1225,7 +1240,7 @@ pub fn sequence_panel(
                                 &device,
                                 &queue,
                                 image_config.clone(),
-                                &path,
+                                &new_path,
                                 new_id,
                                 selected_sequence_id.get(),
                             );
@@ -1240,7 +1255,7 @@ pub fn sequence_panel(
                                 SavedStImageConfig {
                                     id: image_config.id.to_string().clone(),
                                     name: image_config.name.clone(),
-                                    path: path
+                                    path: new_path
                                         .to_str()
                                         .expect("Couldn't get path as string")
                                         .to_string(),
@@ -1394,11 +1409,23 @@ pub fn sequence_panel(
                     "Add Video",
                     "video",
                     Some(move || {
-                        if let Some(path) = rfd::FileDialog::new()
+                        if let Some(original_path) = rfd::FileDialog::new()
                             .add_filter("videos", &["mp4"])
                             .pick_file()
                         {
                             // add a rendererstate polygon + video pair?
+
+                            // Get the storage directory
+                            let storage_dir = get_videos_dir();
+
+                            // Create a new file name to avoid conflicts
+                            let file_name =
+                                original_path.file_name().expect("Couldn't get file name");
+                            let new_path = storage_dir.join(file_name);
+
+                            // Copy the image to the storage directory
+                            fs::copy(&original_path, &new_path)
+                                .expect("Couldn't copy image to storage directory");
 
                             let mut editor = editor_cloned_13.lock().unwrap();
 
@@ -1418,7 +1445,10 @@ pub fn sequence_panel(
                                 name: "New Video Item".to_string(),
                                 dimensions: (400, 225), // 16:9
                                 position,
-                                path: path.to_str().expect("Couldn't get path string").to_string(),
+                                path: new_path
+                                    .to_str()
+                                    .expect("Couldn't get path string")
+                                    .to_string(),
                                 layer: -1,
                             };
 
@@ -1440,7 +1470,7 @@ pub fn sequence_panel(
                                 &device,
                                 &queue,
                                 video_config.clone(),
-                                &path,
+                                &new_path,
                                 new_id,
                                 selected_sequence_id.get(),
                             );
@@ -1455,7 +1485,7 @@ pub fn sequence_panel(
                                 SavedStVideoConfig {
                                     id: video_config.id.to_string().clone(),
                                     name: video_config.name.clone(),
-                                    path: path
+                                    path: new_path
                                         .to_str()
                                         .expect("Couldn't get path as string")
                                         .to_string(),

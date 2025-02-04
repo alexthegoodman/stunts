@@ -39,6 +39,28 @@ pub fn get_ground_truth_dir() -> Option<PathBuf> {
     })
 }
 
+pub fn get_images_dir() -> PathBuf {
+    let main_dir = get_ground_truth_dir().expect("Couldn't check or create Stunts directory");
+    let images_dir = main_dir.join("images");
+
+    fs::create_dir_all(&images_dir)
+        .ok()
+        .expect("Couldn't check or create Stunts images directory");
+
+    images_dir
+}
+
+pub fn get_videos_dir() -> PathBuf {
+    let main_dir = get_ground_truth_dir().expect("Couldn't check or create Stunts directory");
+    let videos_dir = main_dir.join("videos");
+
+    fs::create_dir_all(&videos_dir)
+        .ok()
+        .expect("Couldn't check or create Stunts videos directory");
+
+    videos_dir
+}
+
 // pub fn load_ground_truth_state() -> Result<SavedState, Box<dyn std::error::Error>> {
 //     let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
 //     // let project_dir = sync_dir.join("midpoint/projects").join(project_id);
