@@ -1,3 +1,4 @@
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use chrono::Local;
@@ -82,7 +83,7 @@ pub fn spawn_export_thread() -> mpsc::Sender<ExportCommand> {
                             .await
                         {
                             Ok(_) => {
-                                let _ = progress_tx.send(ExportProgress::Complete);
+                                let _ = progress_tx.send(ExportProgress::Complete(output_path));
                             }
                             Err(e) => {
                                 let _ = progress_tx.send(ExportProgress::Error(e.to_string()));
@@ -118,9 +119,14 @@ pub fn export_widget(
                 ExportProgress::Progress(percent) => {
                     progress_text.set(format!("Exporting: {:.1}%", percent));
                 }
-                ExportProgress::Complete => {
+                ExportProgress::Complete(output_path) => {
                     progress_text.set("Export complete!".to_string());
                     is_exporting.set(false);
+
+                    // Open the output path in the file browser (on Windows)
+                    if let Err(e) = Command::new("explorer").arg(&output_path).spawn() {
+                        eprintln!("Failed to open file browser: {}", e);
+                    }
                 }
                 ExportProgress::Error(err) => {
                     progress_text.set(format!("Export failed: {}", err));
