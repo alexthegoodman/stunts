@@ -347,6 +347,7 @@ fn set_video_selected(
         video_selected.update(|c| {
             *c = true;
         });
+        println!("Video selected {:?}", video_selected.get());
         if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
             polygon_selected.update(|c| {
                 *c = false;
@@ -367,6 +368,7 @@ fn set_video_selected(
         selected_video_id.update(|c| {
             *c = video_id;
         });
+        println!("Video id {:?}", selected_video_id.get());
         if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
             selected_polygon_id.update(|c| {
                 *c = Uuid::nil();
@@ -839,6 +841,8 @@ pub fn project_view(
                 //     // Update editor as needed
                 // }
 
+                println!("Handling click {:?} {:?}", video_id, video_data.id);
+
                 set_video_selected(
                     editor_state.clone(),
                     text_selected_ref.clone(),
@@ -868,9 +872,13 @@ pub fn project_view(
                         .flat_map(|s| s.polygon_motion_paths.iter())
                         .find(|p| p.polygon_id == video_id.to_string());
 
-                    if let Some(image_animation_data) = saved_animation_data {
+                    if let Some(video_animation_data) = saved_animation_data {
+                        println!(
+                            "Setting animation data {:?}",
+                            video_animation_data.polygon_id
+                        );
                         animation_data.update(|c| {
-                            *c = Some(image_animation_data.clone());
+                            *c = Some(video_animation_data.clone());
                         });
                     } else {
                         // image is not saved animation data
@@ -1077,6 +1085,10 @@ pub fn project_view(
                         .active_text_items
                         .iter()
                         .find(|t| t.id == object_id.to_string());
+                    let is_video = selected_sequence
+                        .active_video_items
+                        .iter()
+                        .find(|t| t.id == object_id.to_string());
 
                     if let Some(polygon) = is_polygon {
                         set_polygon_selected(
@@ -1185,6 +1197,33 @@ pub fn project_view(
                                 layer: text.layer.clone(),
                                 color: text.color.clone(),
                                 font_size: text.font_size.clone(),
+                            },
+                        );
+                    }
+
+                    if let Some(video) = is_video {
+                        set_video_selected(
+                            editor_state.clone(),
+                            text_selected_ref.clone(),
+                            polygon_selected_ref.clone(),
+                            image_selected_ref.clone(),
+                            video_selected_ref.clone(),
+                            selected_text_id_ref.clone(),
+                            selected_polygon_id_ref.clone(),
+                            selected_image_id_ref.clone(),
+                            selected_video_id_ref.clone(),
+                            selected_video_data_ref.clone(),
+                            object_id,
+                            StVideoConfig {
+                                id: video.id.clone(),
+                                name: video.name.clone(),
+                                dimensions: video.dimensions,
+                                position: Point {
+                                    x: video.position.x as f32,
+                                    y: video.position.y as f32,
+                                },
+                                path: video.path.clone(),
+                                layer: video.layer.clone(),
                             },
                         );
                     }
@@ -1355,6 +1394,7 @@ pub fn project_view(
         let handle_polygon_click = Arc::clone(&handle_polygon_click);
         let handle_image_click = Arc::clone(&handle_image_click);
         let handle_text_click = Arc::clone(&handle_text_click);
+        let handle_video_click = Arc::clone(&handle_video_click);
         let editor_cloned3 = Arc::clone(&editor_cloned3);
         let state_cloned5 = Arc::clone(&state_cloned5);
         let viewport_cloned3 = Arc::clone(&viewport_cloned3);
@@ -1431,6 +1471,7 @@ pub fn project_view(
                     && !polygon_selected.get()
                     && !text_selected.get()
                     && !image_selected.get()
+                    && !video_selected.get()
                     && selected_keyframes.get().len() == 0
             },
             move |sequence_selected_real| {
@@ -1465,7 +1506,12 @@ pub fn project_view(
             },
         ),
         dyn_container(
-            move || polygon_selected.get() || text_selected.get() || image_selected.get(),
+            move || {
+                polygon_selected.get()
+                    || text_selected.get()
+                    || image_selected.get()
+                    || video_selected.get()
+            },
             move |object_selected_real| {
                 if object_selected_real {
                     let state_cloned3 = state_cloned3.clone();
@@ -1647,7 +1693,7 @@ pub fn project_view(
                                                 gpu_cloned6,
                                                 editor_cloned12,
                                                 viewport_cloned6,
-                                                image_selected,
+                                                video_selected,
                                                 selected_video_id,
                                                 selected_video_data,
                                                 selected_sequence_id,
@@ -1682,6 +1728,9 @@ pub fn project_view(
                                     }
                                     if image_selected.get() {
                                         object_type = ObjectType::ImageItem;
+                                    }
+                                    if video_selected.get() {
+                                        object_type = ObjectType::VideoItem;
                                     }
 
                                     keyframe_properties_view(

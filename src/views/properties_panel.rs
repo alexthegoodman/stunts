@@ -919,7 +919,7 @@ pub fn video_properties_view(
     gpu_helper: Arc<Mutex<GpuHelper>>,
     editor: std::sync::Arc<Mutex<Editor>>,
     viewport: std::sync::Arc<Mutex<Viewport>>,
-    image_selected: RwSignal<bool>,
+    video_selected: RwSignal<bool>,
     selected_video_id: RwSignal<Uuid>,
     selected_video_data: RwSignal<StVideoConfig>,
     selected_sequence_id: RwSignal<String>,
@@ -941,7 +941,7 @@ pub fn video_properties_view(
     v_stack((
         // label(|| "Properties"),
         simple_button("Back to Sequence".to_string(), move |_| {
-            image_selected.set(false);
+            video_selected.set(false);
         }),
         v_stack((
             h_stack((
