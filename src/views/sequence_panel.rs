@@ -1656,6 +1656,11 @@ pub fn sequence_panel(
                                             .into_any()
                                         } else {
                                             simple_button("Start Capture".to_string(), move |_| {
+                                                if !source_selected.get() {
+                                                    println!("Source must be selected!");
+                                                    return;
+                                                }
+
                                                 let editor_state = state_cloned_13.lock().unwrap();
 
                                                 let project_selected =
