@@ -23,7 +23,9 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use rand::Rng;
-use stunts_engine::capture::{get_sources, MousePosition, RectInfo, StCapture, WindowInfo};
+use stunts_engine::capture::{
+    get_sources, MousePosition, RectInfo, SourceData, StCapture, WindowInfo,
+};
 use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
@@ -212,6 +214,7 @@ pub fn import_video_to_scene(
     selected_sequence_data: RwSignal<Sequence>,
     output_path: PathBuf,
     mouse_positions_path: Option<PathBuf>,
+    source_data_path: Option<PathBuf>,
 ) {
     let mut saved_mouse_path = None;
     let mut stored_mouse_positions = None;
@@ -221,6 +224,15 @@ pub fn import_video_to_scene(
                 let the_path = mouse_path.to_str().expect("Couldn't make string from path");
                 saved_mouse_path = Some(the_path.to_string());
                 stored_mouse_positions = Some(mouse_positions);
+            }
+        }
+    }
+
+    let mut stored_source_data = None;
+    if let Some(source_path) = &source_data_path {
+        if let Ok(source_data) = fs::read_to_string(source_path) {
+            if let Ok(data) = serde_json::from_str::<SourceData>(&source_data) {
+                stored_source_data = Some(data);
             }
         }
     }
@@ -273,6 +285,7 @@ pub fn import_video_to_scene(
         new_id,
         selected_sequence_id.get(),
         stored_mouse_positions,
+        stored_source_data,
     );
 
     drop(viewport);
@@ -407,7 +420,7 @@ pub fn sequence_panel(
     let source_selected = create_rw_signal(false);
     let is_recording = create_rw_signal(false);
 
-    let capture_paths = RwSignal::new((String::new(), String::new()));
+    let capture_paths = RwSignal::new((String::new(), String::new(), String::new()));
     debounce_action(capture_paths, Duration::from_millis(1000), {
         let editor_cloned_13 = editor_cloned_13.clone();
         let state_cloned_11 = state_cloned_11.clone();
@@ -417,7 +430,7 @@ pub fn sequence_panel(
         move || {
             // r.set(local_r.get_untracked());
             // Now, import the video!
-            let (capture_path, mouse_positions_path) = capture_paths.get();
+            let (capture_path, mouse_positions_path, source_data_path) = capture_paths.get();
 
             import_video_to_scene(
                 editor_cloned_13.clone(),
@@ -428,6 +441,7 @@ pub fn sequence_panel(
                 selected_sequence_data,
                 Path::new(&capture_path).to_path_buf(),
                 Some(Path::new(&mouse_positions_path).to_path_buf()),
+                Some(Path::new(&source_data_path).to_path_buf()),
             );
         }
     });
@@ -1664,6 +1678,7 @@ pub fn sequence_panel(
                                 selected_sequence_data,
                                 new_path,
                                 None,
+                                None,
                             );
                         }
                     }),
@@ -1744,12 +1759,15 @@ pub fn sequence_panel(
                                                 let (mouse_positions_path) = st_capture
                                                     .stop_mouse_tracking(project_id.to_string())
                                                     .expect("Couldn't stop mouse tracking");
-                                                let (output_path) = st_capture
+                                                let (output_path, source_data_path) = st_capture
                                                     .stop_video_capture(project_id.to_string())
                                                     .expect("Couldn't stop video capture");
 
-                                                capture_paths
-                                                    .set((output_path, mouse_positions_path));
+                                                capture_paths.set((
+                                                    output_path,
+                                                    mouse_positions_path,
+                                                    source_data_path,
+                                                ));
 
                                                 source_selected.set(false);
                                                 is_recording.set(false);
