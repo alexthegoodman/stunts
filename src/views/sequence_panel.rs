@@ -23,7 +23,7 @@ use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use rand::Rng;
-use stunts_engine::capture::{get_sources, RectInfo, StCapture, WindowInfo};
+use stunts_engine::capture::{get_sources, MousePosition, RectInfo, StCapture, WindowInfo};
 use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
@@ -211,7 +211,20 @@ pub fn import_video_to_scene(
     selected_sequence_id: RwSignal<String>,
     selected_sequence_data: RwSignal<Sequence>,
     output_path: PathBuf,
+    mouse_positions_path: Option<PathBuf>,
 ) {
+    let mut saved_mouse_path = None;
+    let mut stored_mouse_positions = None;
+    if let Some(mouse_path) = &mouse_positions_path {
+        if let Ok(positions) = fs::read_to_string(mouse_path) {
+            if let Ok(mouse_positions) = serde_json::from_str::<Vec<MousePosition>>(&positions) {
+                let the_path = mouse_path.to_str().expect("Couldn't make string from path");
+                saved_mouse_path = Some(the_path.to_string());
+                stored_mouse_positions = Some(mouse_positions);
+            }
+        }
+    }
+
     let mut editor = editor_cloned.lock().unwrap();
 
     let mut rng = rand::thread_rng();
@@ -235,6 +248,7 @@ pub fn import_video_to_scene(
             .expect("Couldn't get path string")
             .to_string(),
         layer: -1,
+        mouse_path: saved_mouse_path.clone(),
     };
 
     let gpu_helper = gpu_helper_cloned.lock().unwrap();
@@ -258,6 +272,7 @@ pub fn import_video_to_scene(
         &output_path,
         new_id,
         selected_sequence_id.get(),
+        stored_mouse_positions,
     );
 
     drop(viewport);
@@ -280,6 +295,7 @@ pub fn import_video_to_scene(
                 y: position.y as i32 - 50,
             },
             layer: video_config.layer.clone(),
+            mouse_path: saved_mouse_path.clone(),
         },
     );
 
@@ -391,8 +407,8 @@ pub fn sequence_panel(
     let source_selected = create_rw_signal(false);
     let is_recording = create_rw_signal(false);
 
-    let capture_path = RwSignal::new(String::new());
-    debounce_action(capture_path, Duration::from_millis(1000), {
+    let capture_paths = RwSignal::new((String::new(), String::new()));
+    debounce_action(capture_paths, Duration::from_millis(1000), {
         let editor_cloned_13 = editor_cloned_13.clone();
         let state_cloned_11 = state_cloned_11.clone();
         let gpu_cloned_5 = gpu_cloned_5.clone();
@@ -401,6 +417,8 @@ pub fn sequence_panel(
         move || {
             // r.set(local_r.get_untracked());
             // Now, import the video!
+            let (capture_path, mouse_positions_path) = capture_paths.get();
+
             import_video_to_scene(
                 editor_cloned_13.clone(),
                 state_cloned_11.clone(),
@@ -408,7 +426,8 @@ pub fn sequence_panel(
                 viewport_cloned_7.clone(),
                 selected_sequence_id,
                 selected_sequence_data,
-                Path::new(&capture_path.get()).to_path_buf(),
+                Path::new(&capture_path).to_path_buf(),
+                Some(Path::new(&mouse_positions_path).to_path_buf()),
             );
         }
     });
@@ -1644,6 +1663,7 @@ pub fn sequence_panel(
                                 selected_sequence_id,
                                 selected_sequence_data,
                                 new_path,
+                                None,
                             );
                         }
                     }),
@@ -1655,7 +1675,13 @@ pub fn sequence_panel(
                     Some(move || {
                         let sources = get_sources().expect("Couldn't get capture sources");
 
-                        capture_sources.set(sources);
+                        let sources_with_titles = sources
+                            .iter()
+                            .cloned()
+                            .filter(|s| s.title.len() > 1)
+                            .collect();
+
+                        capture_sources.set(sources_with_titles);
                         capture_selected.set(true);
                     }),
                     false,
@@ -1715,14 +1741,15 @@ pub fn sequence_panel(
 
                                                 let project_id = project_selected.get();
 
-                                                st_capture
+                                                let (mouse_positions_path) = st_capture
                                                     .stop_mouse_tracking(project_id.to_string())
                                                     .expect("Couldn't stop mouse tracking");
                                                 let (output_path) = st_capture
                                                     .stop_video_capture(project_id.to_string())
                                                     .expect("Couldn't stop video capture");
 
-                                                capture_path.set(output_path);
+                                                capture_paths
+                                                    .set((output_path, mouse_positions_path));
 
                                                 source_selected.set(false);
                                                 is_recording.set(false);
