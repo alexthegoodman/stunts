@@ -963,7 +963,7 @@ pub fn video_properties_view(
                     },
                     editor_state,
                     "width".to_string(),
-                    ObjectType::ImageItem,
+                    ObjectType::VideoItem,
                 )
                 .style(move |s| s.width(halfs).margin_right(5.0)),
                 debounce_input(
@@ -981,7 +981,7 @@ pub fn video_properties_view(
                     },
                     editor_state2,
                     "height".to_string(),
-                    ObjectType::ImageItem,
+                    ObjectType::VideoItem,
                 )
                 .style(move |s| s.width(halfs)),
             )),
@@ -990,7 +990,7 @@ pub fn video_properties_view(
                 selected_video_id,
                 selected_sequence_id,
                 selected_sequence_data,
-                ObjectType::ImageItem,
+                ObjectType::VideoItem,
             ),
         ))
         .style(move |s| s.width(aside_width)),
