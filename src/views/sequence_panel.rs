@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -15,11 +15,14 @@ use floem::reactive::{create_effect, create_rw_signal, SignalUpdate};
 use floem::reactive::{RwSignal, SignalGet};
 use floem::style::CursorStyle;
 use floem::taffy::{AlignItems, FlexDirection, FlexWrap};
-use floem::views::{dyn_stack, h_stack, scroll, stack, svg, v_stack, Decorators};
+use floem::views::{
+    dyn_container, dyn_stack, empty, h_stack, scroll, stack, svg, v_stack, Decorators,
+};
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
 use rand::Rng;
+use stunts_engine::capture::{get_sources, RectInfo, StCapture, WindowInfo};
 use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
@@ -32,7 +35,7 @@ use uuid::Uuid;
 use crate::editor_state::{self, EditorState};
 use crate::helpers::saved_state;
 use crate::helpers::utilities::{
-    get_ground_truth_dir, get_images_dir, get_videos_dir, save_saved_state_raw,
+    get_captures_dir, get_ground_truth_dir, get_images_dir, get_videos_dir, save_saved_state_raw,
 };
 use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
@@ -190,6 +193,111 @@ where
     // })
 }
 
+pub fn import_video_to_scene(
+    editor_cloned: std::sync::Arc<Mutex<Editor>>,
+    editor_state_cloned: Arc<Mutex<EditorState>>,
+    gpu_helper_cloned: Arc<Mutex<GpuHelper>>,
+    viewport_cloned: Arc<Mutex<Viewport>>,
+    selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
+    output_path: PathBuf,
+) {
+    let mut editor = editor_cloned.lock().unwrap();
+
+    let mut rng = rand::thread_rng();
+    let random_number_800 = rng.gen_range(0..=800);
+    let random_number_450 = rng.gen_range(0..=450);
+
+    let new_id = Uuid::new_v4();
+
+    let position = Point {
+        x: random_number_800 as f32 + 600.0,
+        y: random_number_450 as f32 + 50.0,
+    };
+
+    let video_config = StVideoConfig {
+        id: new_id.clone().to_string(),
+        name: "New Video Item".to_string(),
+        dimensions: (400, 225), // 16:9
+        position,
+        path: output_path
+            .to_str()
+            .expect("Couldn't get path string")
+            .to_string(),
+        layer: -1,
+    };
+
+    let gpu_helper = gpu_helper_cloned.lock().unwrap();
+    let gpu_resources = gpu_helper
+        .gpu_resources
+        .as_ref()
+        .expect("Couldn't get gpu resources");
+    let device = &gpu_resources.device;
+    let queue = &gpu_resources.queue;
+    let viewport = viewport_cloned.lock().unwrap();
+    let window_size = WindowSize {
+        width: viewport.width as u32,
+        height: viewport.height as u32,
+    };
+
+    editor.add_video_item(
+        &window_size,
+        &device,
+        &queue,
+        video_config.clone(),
+        &output_path,
+        new_id,
+        selected_sequence_id.get(),
+    );
+
+    drop(viewport);
+    drop(gpu_helper);
+    drop(editor);
+
+    let mut editor_state = editor_state_cloned.lock().unwrap();
+    editor_state.add_saved_video_item(
+        selected_sequence_id.get(),
+        SavedStVideoConfig {
+            id: video_config.id.to_string().clone(),
+            name: video_config.name.clone(),
+            path: output_path
+                .to_str()
+                .expect("Couldn't get path as string")
+                .to_string(),
+            dimensions: (video_config.dimensions.0, video_config.dimensions.1),
+            position: SavedPoint {
+                x: position.x as i32,
+                y: position.y as i32,
+            },
+            layer: video_config.layer.clone(),
+        },
+    );
+
+    let saved_state = editor_state
+        .record_state
+        .saved_state
+        .as_ref()
+        .expect("Couldn't get saved state");
+    let updated_sequence = saved_state
+        .sequences
+        .iter()
+        .find(|s| s.id == selected_sequence_id.get())
+        .expect("Couldn't get updated sequence");
+
+    selected_sequence_data.set(updated_sequence.clone());
+
+    let sequence_cloned = updated_sequence.clone();
+
+    drop(editor_state);
+
+    let mut editor = editor_cloned.lock().unwrap();
+
+    editor.current_sequence_data = Some(sequence_cloned.clone());
+    editor.update_motion_paths(&sequence_cloned);
+
+    drop(editor);
+}
+
 pub fn sequence_panel(
     editor_state: Arc<Mutex<EditorState>>,
     gpu_helper: Arc<Mutex<GpuHelper>>,
@@ -212,6 +320,9 @@ pub fn sequence_panel(
     let state_cloned_9 = Arc::clone(&editor_state);
     let state_cloned_10 = Arc::clone(&editor_state);
     let state_cloned_11 = Arc::clone(&editor_state);
+    let state_cloned_12 = Arc::clone(&editor_state);
+    let state_cloned_13 = Arc::clone(&editor_state);
+    let state_cloned_14 = Arc::clone(&editor_state);
     let editor_cloned = Arc::clone(&editor);
     let editor_cloned_2 = Arc::clone(&editor);
     let editor_cloned_3 = Arc::clone(&editor);
@@ -225,6 +336,7 @@ pub fn sequence_panel(
     let editor_cloned_11 = Arc::clone(&editor);
     let editor_cloned_12 = Arc::clone(&editor);
     let editor_cloned_13 = Arc::clone(&editor);
+    let editor_cloned_14 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
@@ -232,11 +344,13 @@ pub fn sequence_panel(
     let gpu_cloned_3 = Arc::clone(&gpu_helper);
     let gpu_cloned_4 = Arc::clone(&gpu_helper);
     let gpu_cloned_5 = Arc::clone(&gpu_helper);
+    let gpu_cloned_6 = Arc::clone(&gpu_helper);
     let viewport_cloned_3 = Arc::clone(&viewport);
     let viewport_cloned_4 = Arc::clone(&viewport);
     let viewport_cloned_5 = Arc::clone(&viewport);
     let viewport_cloned_6 = Arc::clone(&viewport);
     let viewport_cloned_7 = Arc::clone(&viewport);
+    let viewport_cloned_8 = Arc::clone(&viewport);
 
     let selected_file = create_rw_signal(None::<PathBuf>);
     let local_mode = create_rw_signal("layout".to_string());
@@ -248,6 +362,23 @@ pub fn sequence_panel(
 
     let select_active = create_rw_signal(true);
     let pan_active = create_rw_signal(false);
+
+    let capture_selected = create_rw_signal(false);
+    let capture_sources = create_rw_signal(Vec::new());
+    let selected_source = create_rw_signal(WindowInfo {
+        hwnd: 0,
+        title: String::new(),
+        rect: RectInfo {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 100,
+            height: 100,
+        },
+    });
+    let source_selected = create_rw_signal(false);
+    let is_recording = create_rw_signal(false);
 
     let sequence_duration_input = create_rw_signal(String::new());
     let target_duration_signal = create_rw_signal(String::new());
@@ -1427,106 +1558,140 @@ pub fn sequence_panel(
                             fs::copy(&original_path, &new_path)
                                 .expect("Couldn't copy image to storage directory");
 
-                            let mut editor = editor_cloned_13.lock().unwrap();
-
-                            let mut rng = rand::thread_rng();
-                            let random_number_800 = rng.gen_range(0..=800);
-                            let random_number_450 = rng.gen_range(0..=450);
-
-                            let new_id = Uuid::new_v4();
-
-                            let position = Point {
-                                x: random_number_800 as f32 + 600.0,
-                                y: random_number_450 as f32 + 50.0,
-                            };
-
-                            let video_config = StVideoConfig {
-                                id: new_id.clone().to_string(),
-                                name: "New Video Item".to_string(),
-                                dimensions: (400, 225), // 16:9
-                                position,
-                                path: new_path
-                                    .to_str()
-                                    .expect("Couldn't get path string")
-                                    .to_string(),
-                                layer: -1,
-                            };
-
-                            let gpu_helper = gpu_cloned_5.lock().unwrap();
-                            let gpu_resources = gpu_helper
-                                .gpu_resources
-                                .as_ref()
-                                .expect("Couldn't get gpu resources");
-                            let device = &gpu_resources.device;
-                            let queue = &gpu_resources.queue;
-                            let viewport = viewport_cloned_7.lock().unwrap();
-                            let window_size = WindowSize {
-                                width: viewport.width as u32,
-                                height: viewport.height as u32,
-                            };
-
-                            editor.add_video_item(
-                                &window_size,
-                                &device,
-                                &queue,
-                                video_config.clone(),
-                                &new_path,
-                                new_id,
-                                selected_sequence_id.get(),
+                            import_video_to_scene(
+                                editor_cloned_14.clone(),
+                                state_cloned_14.clone(),
+                                gpu_cloned_6.clone(),
+                                viewport_cloned_8.clone(),
+                                selected_sequence_id,
+                                selected_sequence_data,
+                                new_path,
                             );
-
-                            drop(viewport);
-                            drop(gpu_helper);
-                            drop(editor);
-
-                            let mut editor_state = state_cloned_11.lock().unwrap();
-                            editor_state.add_saved_video_item(
-                                selected_sequence_id.get(),
-                                SavedStVideoConfig {
-                                    id: video_config.id.to_string().clone(),
-                                    name: video_config.name.clone(),
-                                    path: new_path
-                                        .to_str()
-                                        .expect("Couldn't get path as string")
-                                        .to_string(),
-                                    dimensions: (
-                                        video_config.dimensions.0,
-                                        video_config.dimensions.1,
-                                    ),
-                                    position: SavedPoint {
-                                        x: position.x as i32,
-                                        y: position.y as i32,
-                                    },
-                                    layer: video_config.layer.clone(),
-                                },
-                            );
-
-                            let saved_state = editor_state
-                                .record_state
-                                .saved_state
-                                .as_ref()
-                                .expect("Couldn't get saved state");
-                            let updated_sequence = saved_state
-                                .sequences
-                                .iter()
-                                .find(|s| s.id == selected_sequence_id.get())
-                                .expect("Couldn't get updated sequence");
-
-                            selected_sequence_data.set(updated_sequence.clone());
-
-                            let sequence_cloned = updated_sequence.clone();
-
-                            drop(editor_state);
-
-                            let mut editor = editor_cloned_13.lock().unwrap();
-
-                            editor.current_sequence_data = Some(sequence_cloned.clone());
-                            editor.update_motion_paths(&sequence_cloned);
-
-                            drop(editor);
                         }
                     }),
                     false,
+                ),
+                option_button(
+                    "Capture Screen",
+                    "video",
+                    Some(move || {
+                        let sources = get_sources().expect("Couldn't get capture sources");
+
+                        capture_sources.set(sources);
+                        capture_selected.set(true);
+                    }),
+                    false,
+                ),
+                dyn_container(
+                    move || capture_selected.get(),
+                    move |capture_selected_real| {
+                        let capture_sources = capture_sources.clone();
+                        let state_cloned_12 = state_cloned_12.clone();
+                        let state_cloned_13 = state_cloned_13.clone();
+                        let editor_cloned_13 = editor_cloned_13.clone();
+                        let state_cloned_11 = state_cloned_11.clone();
+                        let gpu_cloned_5 = gpu_cloned_5.clone();
+                        let viewport_cloned_7 = viewport_cloned_7.clone();
+
+                        if capture_selected_real {
+                            v_stack((
+                                dyn_stack(
+                                    move || capture_sources.get(),
+                                    move |source| source.hwnd.clone(),
+                                    move |source| {
+                                        simple_button(source.title.clone(), move |_| {
+                                            selected_source.set(source.clone());
+                                            source_selected.set(true);
+                                        })
+                                        .style(|s| s.width(260.0))
+                                    },
+                                )
+                                .style(|s| s.flex().flex_direction(FlexDirection::Column)),
+                                dyn_container(
+                                    move || is_recording.get(),
+                                    move |is_recording_real| {
+                                        let state_cloned_12 = state_cloned_12.clone();
+                                        let state_cloned_13 = state_cloned_13.clone();
+                                        let editor_cloned_13 = editor_cloned_13.clone();
+                                        let state_cloned_11 = state_cloned_11.clone();
+                                        let gpu_cloned_5 = gpu_cloned_5.clone();
+                                        let viewport_cloned_7 = viewport_cloned_7.clone();
+
+                                        let capture_dir = get_captures_dir();
+                                        let mut st_capture = StCapture::new(capture_dir);
+
+                                        if is_recording_real {
+                                            simple_button("Stop Capture".to_string(), move |_| {
+                                                let editor_state = state_cloned_12.lock().unwrap();
+
+                                                let project_selected =
+                                                    editor_state.project_selected_signal.expect(
+                                                        "Couldn't get project selection signal",
+                                                    );
+
+                                                let project_id = project_selected.get();
+
+                                                st_capture
+                                                    .stop_mouse_tracking(project_id.to_string())
+                                                    .expect("Couldn't stop mouse tracking");
+                                                let (output_path) = st_capture
+                                                    .stop_video_capture(project_id.to_string())
+                                                    .expect("Couldn't stop video capture");
+
+                                                // Now, import the video!
+                                                import_video_to_scene(
+                                                    editor_cloned_13.clone(),
+                                                    state_cloned_11.clone(),
+                                                    gpu_cloned_5.clone(),
+                                                    viewport_cloned_7.clone(),
+                                                    selected_sequence_id,
+                                                    selected_sequence_data,
+                                                    Path::new(&output_path).to_path_buf(),
+                                                );
+
+                                                source_selected.set(false);
+                                                is_recording.set(false);
+                                            })
+                                            .style(|s| s.width(260.0).background(Color::RED))
+                                            .into_any()
+                                        } else {
+                                            simple_button("Start Capture".to_string(), move |_| {
+                                                let editor_state = state_cloned_13.lock().unwrap();
+
+                                                let project_selected =
+                                                    editor_state.project_selected_signal.expect(
+                                                        "Couldn't get project selection signal",
+                                                    );
+
+                                                let project_id = project_selected.get();
+
+                                                let source = selected_source.get();
+
+                                                st_capture
+                                                    .start_mouse_tracking()
+                                                    .expect("Couldn't start mouse tracking");
+                                                st_capture
+                                                    .start_video_capture(
+                                                        source.hwnd,
+                                                        source.rect.width as u32,
+                                                        source.rect.height as u32,
+                                                        project_id.to_string(),
+                                                    )
+                                                    .expect("Couldn't start video capture");
+
+                                                is_recording.set(true);
+                                            })
+                                            .style(|s| s.width(260.0).background(Color::PALE_GREEN))
+                                            .into_any()
+                                        }
+                                    },
+                                ),
+                            ))
+                            .into_any()
+                        } else {
+                            empty().into_any()
+                        }
+                    },
                 ),
             ))
             .style(|s| {

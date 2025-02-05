@@ -73,6 +73,17 @@ pub fn get_exports_dir() -> PathBuf {
     exports_dir
 }
 
+pub fn get_captures_dir() -> PathBuf {
+    let main_dir = get_ground_truth_dir().expect("Couldn't check or create Stunts directory");
+    let captures_dir = main_dir.join("captures");
+
+    fs::create_dir_all(&captures_dir)
+        .ok()
+        .expect("Couldn't check or create Stunts captures directory");
+
+    captures_dir
+}
+
 // pub fn load_ground_truth_state() -> Result<SavedState, Box<dyn std::error::Error>> {
 //     let sync_dir = get_ground_truth_dir().expect("Couldn't get Stunts directory");
 //     // let project_dir = sync_dir.join("midpoint/projects").join(project_id);
