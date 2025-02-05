@@ -28,10 +28,11 @@ use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
     string_to_f32, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp, OnPathMouseUp, Point,
-    PolygonClickHandler, TextItemClickHandler, Viewport, WindowSize,
+    PolygonClickHandler, TextItemClickHandler, VideoItemClickHandler, Viewport, WindowSize,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
 use stunts_engine::st_image::StImageConfig;
+use stunts_engine::st_video::StVideoConfig;
 use stunts_engine::text_due::TextRendererConfig;
 use uuid::Uuid;
 // use views::buttons::{nav_button, option_button, small_button};
@@ -66,7 +67,9 @@ use super::keyframe_panel::keyframe_properties_view;
 use super::keyframe_timeline::{create_timeline, TimelineConfig, TimelineState};
 use super::object_timeline::build_object_timeline;
 use super::project_browser::project_browser;
-use super::properties_panel::{image_properties_view, properties_view, text_properties_view};
+use super::properties_panel::{
+    image_properties_view, properties_view, text_properties_view, video_properties_view,
+};
 use super::sequence_panel::sequence_panel;
 
 fn find_object_type(last_saved_state: &SavedState, object_id: &Uuid) -> Option<ObjectType> {
@@ -105,9 +108,11 @@ fn set_polygon_selected(
     text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    video_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_video_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_polygon_data_ref: Arc<Mutex<RwSignal<PolygonConfig>>>,
     polygon_id: Uuid,
     polygon_data: PolygonConfig,
@@ -126,6 +131,11 @@ fn set_polygon_selected(
                 *c = false;
             });
         }
+        if let Ok(mut video_selected) = video_selected_ref.lock() {
+            video_selected.update(|c| {
+                *c = false;
+            });
+        }
     }
     if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
         selected_polygon_id.update(|c| {
@@ -141,6 +151,11 @@ fn set_polygon_selected(
                 *c = Uuid::nil();
             });
         }
+        if let Ok(mut selected_video_id) = selected_video_id_ref.lock() {
+            selected_video_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
 
         let mut editor_state = editor_state.lock().unwrap();
 
@@ -151,6 +166,8 @@ fn set_polygon_selected(
         editor_state.text_selected = false;
         editor_state.selected_image_id = Uuid::nil();
         editor_state.image_selected = false;
+        editor_state.selected_video_id = Uuid::nil();
+        editor_state.video_selected = false;
 
         drop(editor_state);
     }
@@ -167,9 +184,11 @@ fn set_image_selected(
     text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    video_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_video_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_image_data_ref: Arc<Mutex<RwSignal<StImageConfig>>>,
     image_id: Uuid,
     image_data: StImageConfig,
@@ -188,6 +207,11 @@ fn set_image_selected(
                 *c = false;
             });
         }
+        if let Ok(mut video_selected) = video_selected_ref.lock() {
+            video_selected.update(|c| {
+                *c = false;
+            });
+        }
     }
     if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
         selected_image_id.update(|c| {
@@ -203,6 +227,11 @@ fn set_image_selected(
                 *c = Uuid::nil();
             });
         }
+        if let Ok(mut selected_video_id) = selected_video_id_ref.lock() {
+            selected_video_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
 
         let mut editor_state = editor_state.lock().unwrap();
 
@@ -213,6 +242,8 @@ fn set_image_selected(
         editor_state.text_selected = false;
         editor_state.selected_polygon_id = Uuid::nil();
         editor_state.polygon_selected = false;
+        editor_state.selected_video_id = Uuid::nil();
+        editor_state.video_selected = false;
 
         drop(editor_state);
     }
@@ -228,9 +259,11 @@ fn set_text_selected(
     text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    video_selected_ref: Arc<Mutex<RwSignal<bool>>>,
     selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_video_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
     selected_text_data_ref: Arc<Mutex<RwSignal<TextRendererConfig>>>,
     text_id: Uuid,
     text_data: TextRendererConfig,
@@ -249,6 +282,11 @@ fn set_text_selected(
                 *c = false;
             });
         }
+        if let Ok(mut video_selected) = video_selected_ref.lock() {
+            video_selected.update(|c| {
+                *c = false;
+            });
+        }
     }
     if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
         selected_text_id.update(|c| {
@@ -264,6 +302,11 @@ fn set_text_selected(
                 *c = Uuid::nil();
             });
         }
+        if let Ok(mut selected_video_id) = selected_video_id_ref.lock() {
+            selected_video_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
 
         let mut editor_state = editor_state.lock().unwrap();
 
@@ -274,12 +317,89 @@ fn set_text_selected(
         editor_state.polygon_selected = false;
         editor_state.selected_image_id = Uuid::nil();
         editor_state.image_selected = false;
+        editor_state.selected_video_id = Uuid::nil();
+        editor_state.video_selected = false;
 
         drop(editor_state);
     }
     if let Ok(mut selected_text_data) = selected_text_data_ref.lock() {
         selected_text_data.update(|c| {
             *c = text_data;
+        });
+    }
+}
+
+fn set_video_selected(
+    editor_state: Arc<Mutex<EditorState>>,
+    text_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    polygon_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    image_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    video_selected_ref: Arc<Mutex<RwSignal<bool>>>,
+    selected_text_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_polygon_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_image_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_video_id_ref: Arc<Mutex<RwSignal<Uuid>>>,
+    selected_video_data_ref: Arc<Mutex<RwSignal<StVideoConfig>>>,
+    video_id: Uuid,
+    video_data: StVideoConfig,
+) {
+    if let Ok(mut video_selected) = video_selected_ref.lock() {
+        video_selected.update(|c| {
+            *c = true;
+        });
+        if let Ok(mut polygon_selected) = polygon_selected_ref.lock() {
+            polygon_selected.update(|c| {
+                *c = false;
+            });
+        }
+        if let Ok(mut text_selected) = text_selected_ref.lock() {
+            text_selected.update(|c| {
+                *c = false;
+            });
+        }
+        if let Ok(mut image_selected) = image_selected_ref.lock() {
+            image_selected.update(|c| {
+                *c = false;
+            });
+        }
+    }
+    if let Ok(mut selected_video_id) = selected_video_id_ref.lock() {
+        selected_video_id.update(|c| {
+            *c = video_id;
+        });
+        if let Ok(mut selected_polygon_id) = selected_polygon_id_ref.lock() {
+            selected_polygon_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+        if let Ok(mut selected_text_id) = selected_text_id_ref.lock() {
+            selected_text_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+        if let Ok(mut selected_image_id) = selected_image_id_ref.lock() {
+            selected_image_id.update(|c| {
+                *c = Uuid::nil();
+            });
+        }
+
+        let mut editor_state = editor_state.lock().unwrap();
+
+        editor_state.selected_video_id = video_id;
+        editor_state.video_selected = true;
+
+        editor_state.selected_text_id = Uuid::nil();
+        editor_state.text_selected = false;
+        editor_state.selected_polygon_id = Uuid::nil();
+        editor_state.polygon_selected = false;
+        editor_state.selected_image_id = Uuid::nil();
+        editor_state.image_selected = false;
+
+        drop(editor_state);
+    }
+    if let Ok(mut selected_video_data) = selected_video_data_ref.lock() {
+        selected_video_data.update(|c| {
+            *c = video_data;
         });
     }
 }
@@ -301,6 +421,7 @@ pub fn project_view(
     let editor_cloned9 = Arc::clone(&editor);
     let editor_cloned10 = Arc::clone(&editor);
     let editor_cloned11 = Arc::clone(&editor);
+    let editor_cloned12 = Arc::clone(&editor);
 
     let state_cloned = Arc::clone(&editor_state);
     let state_cloned2 = Arc::clone(&editor_state);
@@ -312,18 +433,21 @@ pub fn project_view(
     let state_cloned8 = Arc::clone(&editor_state);
     let state_cloned9 = Arc::clone(&editor_state);
     let state_cloned10 = Arc::clone(&editor_state);
+    let state_cloned11 = Arc::clone(&editor_state);
 
     let gpu_cloned = Arc::clone(&gpu_helper);
     let gpu_cloned2 = Arc::clone(&gpu_helper);
     let gpu_cloned3 = Arc::clone(&gpu_helper);
     let gpu_cloned4 = Arc::clone(&gpu_helper);
     let gpu_cloned5 = Arc::clone(&gpu_helper);
+    let gpu_cloned6 = Arc::clone(&gpu_helper);
 
     let viewport_cloned = Arc::clone(&viewport);
     let viewport_cloned2 = Arc::clone(&viewport);
     let viewport_cloned3 = Arc::clone(&viewport);
     let viewport_cloned4 = Arc::clone(&viewport);
     let viewport_cloned5 = Arc::clone(&viewport);
+    let viewport_cloned6 = Arc::clone(&viewport);
 
     // set in sequence_panel
     let sequence_selected = create_rw_signal(false);
@@ -382,10 +506,25 @@ pub fn project_view(
         font_size: 28,
     });
 
+    let video_selected: RwSignal<bool> = create_rw_signal(false);
+    let selected_video_id: RwSignal<Uuid> = create_rw_signal(Uuid::nil());
+    let selected_video_data: RwSignal<StVideoConfig> = create_rw_signal(StVideoConfig {
+        id: String::new(),
+        name: String::new(),
+        path: String::new(),
+        dimensions: (100, 100),
+        position: Point { x: 0.0, y: 0.0 },
+        layer: -2,
+    });
+
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
     let selected_keyframes: RwSignal<Vec<UIKeyframe>> = create_rw_signal(Vec::new());
 
     let pixels_per_s = create_rw_signal(10);
+
+    let video_selected_ref = Arc::new(Mutex::new(video_selected));
+    let selected_video_id_ref = Arc::new(Mutex::new(selected_video_id));
+    let selected_video_data_ref = Arc::new(Mutex::new(selected_video_data));
 
     let image_selected_ref = Arc::new(Mutex::new(image_selected));
     let selected_image_id_ref = Arc::new(Mutex::new(selected_image_id));
@@ -420,6 +559,9 @@ pub fn project_view(
         let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
         let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
+        let video_selected_ref = Arc::clone(&video_selected_ref);
+        let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+        let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
@@ -433,6 +575,9 @@ pub fn project_view(
             let selected_image_id_ref = selected_image_id_ref.clone();
             let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
+            let video_selected_ref = Arc::clone(&video_selected_ref);
+            let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+            let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
             Some(
                 Box::new(move |polygon_id: Uuid, polygon_data: PolygonConfig| {
@@ -447,9 +592,11 @@ pub fn project_view(
                         text_selected_ref.clone(),
                         polygon_selected_ref.clone(),
                         image_selected_ref.clone(),
+                        video_selected_ref.clone(),
                         selected_text_id_ref.clone(),
                         selected_polygon_id_ref.clone(),
                         selected_image_id_ref.clone(),
+                        selected_video_id_ref.clone(),
                         selected_polygon_data_ref.clone(),
                         polygon_id,
                         polygon_data,
@@ -497,6 +644,9 @@ pub fn project_view(
         let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
         let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
+        let video_selected_ref = Arc::clone(&video_selected_ref);
+        let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+        let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
@@ -510,6 +660,9 @@ pub fn project_view(
             let selected_image_id_ref = selected_image_id_ref.clone();
             let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
+            let video_selected_ref = Arc::clone(&video_selected_ref);
+            let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+            let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
             Some(Box::new(move |image_id: Uuid, image_data: StImageConfig| {
                 // cannot lock editor here! probably because called from Editor
@@ -523,9 +676,11 @@ pub fn project_view(
                     text_selected_ref.clone(),
                     polygon_selected_ref.clone(),
                     image_selected_ref.clone(),
+                    video_selected_ref.clone(),
                     selected_text_id_ref.clone(),
                     selected_polygon_id_ref.clone(),
                     selected_image_id_ref.clone(),
+                    selected_video_id_ref.clone(),
                     selected_image_data_ref.clone(),
                     image_id,
                     image_data,
@@ -572,6 +727,9 @@ pub fn project_view(
         let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
         let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
+        let video_selected_ref = Arc::clone(&video_selected_ref);
+        let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+        let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
@@ -585,6 +743,9 @@ pub fn project_view(
             let selected_image_id_ref = selected_image_id_ref.clone();
             let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
+            let video_selected_ref = Arc::clone(&video_selected_ref);
+            let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+            let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
             Some(
                 Box::new(move |text_id: Uuid, text_data: TextRendererConfig| {
@@ -599,9 +760,11 @@ pub fn project_view(
                         text_selected_ref.clone(),
                         polygon_selected_ref.clone(),
                         image_selected_ref.clone(),
+                        video_selected_ref.clone(),
                         selected_text_id_ref.clone(),
                         selected_polygon_id_ref.clone(),
                         selected_image_id_ref.clone(),
+                        selected_video_id_ref.clone(),
                         selected_text_data_ref.clone(),
                         text_id,
                         text_data,
@@ -634,6 +797,89 @@ pub fn project_view(
                     }
                 }) as Box<dyn FnMut(Uuid, TextRendererConfig)>,
             )
+        }
+    });
+
+    let handle_video_click: Arc<VideoItemClickHandler> = Arc::new({
+        let editor_state = editor_state.clone();
+        let polygon_selected_ref = Arc::clone(&polygon_selected_ref);
+        let text_selected_ref = Arc::clone(&text_selected_ref);
+        let image_selected_ref = Arc::clone(&image_selected_ref);
+        let selected_polygon_id_ref = Arc::clone(&selected_polygon_id_ref);
+        let selected_polygon_data_ref = Arc::clone(&selected_polygon_data_ref);
+        let selected_text_id_ref = Arc::clone(&selected_text_id_ref);
+        let selected_text_data_ref = Arc::clone(&selected_text_data_ref);
+        let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
+        let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
+        let animation_data_ref = Arc::clone(&animation_data_ref);
+        let video_selected_ref = Arc::clone(&video_selected_ref);
+        let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+        let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
+
+        move || {
+            let editor_state = editor_state.clone();
+            let polygon_selected_ref = polygon_selected_ref.clone();
+            let text_selected_ref = text_selected_ref.clone();
+            let image_selected_ref = image_selected_ref.clone();
+            let selected_polygon_id_ref = selected_polygon_id_ref.clone();
+            let selected_polygon_data_ref = selected_polygon_data_ref.clone();
+            let selected_text_id_ref = selected_text_id_ref.clone();
+            let selected_text_data_ref = selected_text_data_ref.clone();
+            let selected_image_id_ref = selected_image_id_ref.clone();
+            let selected_image_data_ref = selected_image_data_ref.clone();
+            let animation_data_ref = animation_data_ref.clone();
+            let video_selected_ref = Arc::clone(&video_selected_ref);
+            let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+            let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
+
+            Some(Box::new(move |video_id: Uuid, video_data: StVideoConfig| {
+                // cannot lock editor here! probably because called from Editor
+                // {
+                //     let mut editor = new_editor.lock().unwrap();
+                //     // Update editor as needed
+                // }
+
+                set_video_selected(
+                    editor_state.clone(),
+                    text_selected_ref.clone(),
+                    polygon_selected_ref.clone(),
+                    image_selected_ref.clone(),
+                    video_selected_ref.clone(),
+                    selected_text_id_ref.clone(),
+                    selected_polygon_id_ref.clone(),
+                    selected_image_id_ref.clone(),
+                    selected_video_id_ref.clone(),
+                    selected_video_data_ref.clone(),
+                    video_id,
+                    video_data,
+                );
+
+                if let Ok(mut animation_data) = animation_data_ref.lock() {
+                    let editor_state = editor_state.lock().unwrap();
+                    let saved_state = editor_state
+                        .record_state
+                        .saved_state
+                        .as_ref()
+                        .expect("Couldn't get Saved State");
+
+                    let saved_animation_data = saved_state
+                        .sequences
+                        .iter()
+                        .flat_map(|s| s.polygon_motion_paths.iter())
+                        .find(|p| p.polygon_id == video_id.to_string());
+
+                    if let Some(image_animation_data) = saved_animation_data {
+                        animation_data.update(|c| {
+                            *c = Some(image_animation_data.clone());
+                        });
+                    } else {
+                        // image is not saved animation data
+                        // image_index,time,width,height,x,y,rotation,scale,perspective_x,perspective_y,opacity
+                    }
+
+                    drop(editor_state);
+                }
+            }) as Box<dyn FnMut(Uuid, StVideoConfig)>)
         }
     });
 
@@ -781,6 +1027,9 @@ pub fn project_view(
         let selected_image_id_ref = Arc::clone(&selected_image_id_ref);
         let selected_image_data_ref = Arc::clone(&selected_image_data_ref);
         let animation_data_ref = Arc::clone(&animation_data_ref);
+        let video_selected_ref = Arc::clone(&video_selected_ref);
+        let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+        let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
         move || {
             let editor_state = editor_state.clone();
@@ -794,6 +1043,9 @@ pub fn project_view(
             let selected_image_id_ref = selected_image_id_ref.clone();
             let selected_image_data_ref = selected_image_data_ref.clone();
             let animation_data_ref = animation_data_ref.clone();
+            let video_selected_ref = Arc::clone(&video_selected_ref);
+            let selected_video_id_ref = Arc::clone(&selected_video_id_ref);
+            let selected_video_data_ref = Arc::clone(&selected_video_data_ref);
 
             Some(
                 Box::new(move |keyframe_id: Uuid, object_id: Uuid, point: Point| {
@@ -832,9 +1084,11 @@ pub fn project_view(
                             text_selected_ref.clone(),
                             polygon_selected_ref.clone(),
                             image_selected_ref.clone(),
+                            video_selected_ref.clone(),
                             selected_text_id_ref.clone(),
                             selected_polygon_id_ref.clone(),
                             selected_image_id_ref.clone(),
+                            selected_video_id_ref.clone(),
                             selected_polygon_data_ref.clone(),
                             object_id,
                             PolygonConfig {
@@ -883,9 +1137,11 @@ pub fn project_view(
                             text_selected_ref.clone(),
                             polygon_selected_ref.clone(),
                             image_selected_ref.clone(),
+                            video_selected_ref.clone(),
                             selected_text_id_ref.clone(),
                             selected_polygon_id_ref.clone(),
                             selected_image_id_ref.clone(),
+                            selected_video_id_ref.clone(),
                             selected_image_data_ref.clone(),
                             object_id,
                             StImageConfig {
@@ -908,9 +1164,11 @@ pub fn project_view(
                             text_selected_ref.clone(),
                             polygon_selected_ref.clone(),
                             image_selected_ref.clone(),
+                            video_selected_ref.clone(),
                             selected_text_id_ref.clone(),
                             selected_polygon_id_ref.clone(),
                             selected_image_id_ref.clone(),
+                            selected_video_id_ref.clone(),
                             selected_text_data_ref.clone(),
                             object_id,
                             TextRendererConfig {
@@ -1121,6 +1379,7 @@ pub fn project_view(
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
             editor.handle_text_click = Some(Arc::clone(&handle_text_click));
             editor.handle_image_click = Some(Arc::clone(&handle_image_click));
+            editor.handle_video_click = Some(Arc::clone(&handle_video_click));
             editor.on_mouse_up = Some(Arc::clone(&on_mouse_up));
             editor.on_handle_mouse_up = Some(Arc::clone(&on_handle_mouse_up));
             editor.on_path_mouse_up = Some(Arc::clone(&on_path_mouse_up));
@@ -1230,6 +1489,10 @@ pub fn project_view(
                     let editor_cloned9 = editor_cloned9.clone();
                     let viewport_cloned5 = viewport_cloned5.clone();
                     let editor_cloned10 = editor_cloned9.clone();
+                    let state_cloned11 = state_cloned11.clone();
+                    let gpu_cloned6 = gpu_cloned6.clone();
+                    let editor_cloned12 = editor_cloned12.clone();
+                    let viewport_cloned6 = viewport_cloned6.clone();
 
                     let state = TimelineState {
                         current_time: Duration::from_secs_f64(0.0),
@@ -1355,6 +1618,38 @@ pub fn project_view(
                                                 image_selected,
                                                 selected_image_id,
                                                 selected_image_data,
+                                                selected_sequence_id,
+                                                selected_sequence_data,
+                                            ),
+                                        ))
+                                        .style(|s| card_styles(s))),
+                                    )
+                                    .into_any()
+                                } else {
+                                    empty().into_any()
+                                }
+                            },
+                        ),
+                        dyn_container(
+                            move || video_selected.get() && selected_keyframes.get().len() == 0,
+                            move |video_selected_real| {
+                                if video_selected_real {
+                                    let state_cloned11 = state_cloned11.clone();
+                                    let gpu_cloned6 = gpu_cloned6.clone();
+                                    let editor_cloned12 = editor_cloned12.clone();
+                                    let viewport_cloned6 = viewport_cloned6.clone();
+
+                                    container(
+                                        (v_stack((
+                                            label(|| "Video Properties"),
+                                            video_properties_view(
+                                                state_cloned11,
+                                                gpu_cloned6,
+                                                editor_cloned12,
+                                                viewport_cloned6,
+                                                image_selected,
+                                                selected_video_id,
+                                                selected_video_data,
                                                 selected_sequence_id,
                                                 selected_sequence_data,
                                             ),

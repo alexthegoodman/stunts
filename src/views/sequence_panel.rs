@@ -276,8 +276,8 @@ pub fn import_video_to_scene(
                 .to_string(),
             dimensions: (video_config.dimensions.0, video_config.dimensions.1),
             position: SavedPoint {
-                x: position.x as i32,
-                y: position.y as i32,
+                x: position.x as i32 - 600.0,
+                y: position.y as i32 - 50.0,
             },
             layer: video_config.layer.clone(),
         },

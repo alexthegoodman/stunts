@@ -13,6 +13,7 @@ use stunts_engine::editor::Editor;
 use stunts_engine::editor::Viewport;
 use stunts_engine::polygon::PolygonConfig;
 use stunts_engine::st_image::StImageConfig;
+use stunts_engine::st_video::StVideoConfig;
 use stunts_engine::text_due::TextRendererConfig;
 use uuid::Uuid;
 use wgpu::util::DeviceExt;
@@ -896,6 +897,97 @@ pub fn image_properties_view(
             keyframe_tools(
                 editor_state5,
                 selected_image_id,
+                selected_sequence_id,
+                selected_sequence_data,
+                ObjectType::ImageItem,
+            ),
+        ))
+        .style(move |s| s.width(aside_width)),
+    ))
+    // .style(|s| card_styles(s))
+    .style(|s| {
+        s.width(260.0)
+            .height(800.0)
+            .margin_left(0.0)
+            .margin_top(20)
+            .z_index(10)
+    })
+}
+
+pub fn video_properties_view(
+    editor_state: Arc<Mutex<EditorState>>,
+    gpu_helper: Arc<Mutex<GpuHelper>>,
+    editor: std::sync::Arc<Mutex<Editor>>,
+    viewport: std::sync::Arc<Mutex<Viewport>>,
+    image_selected: RwSignal<bool>,
+    selected_video_id: RwSignal<Uuid>,
+    selected_video_data: RwSignal<StVideoConfig>,
+    selected_sequence_id: RwSignal<String>,
+    selected_sequence_data: RwSignal<Sequence>,
+) -> impl IntoView {
+    let editor_cloned = Arc::clone(&editor);
+    let editor_state2 = Arc::clone(&editor_state);
+    let editor_state3 = Arc::clone(&editor_state);
+    let editor_state4 = Arc::clone(&editor_state);
+    let editor_state5 = Arc::clone(&editor_state);
+
+    let aside_width = 260.0;
+    let quarters = (aside_width / 4.0) + (5.0 * 4.0);
+    let thirds = (aside_width / 3.0) + (5.0 * 3.0);
+    let halfs = (aside_width / 2.0) + (5.0 * 2.0);
+
+    let back_active = RwSignal::new(false);
+
+    v_stack((
+        // label(|| "Properties"),
+        simple_button("Back to Sequence".to_string(), move |_| {
+            image_selected.set(false);
+        }),
+        v_stack((
+            h_stack((
+                debounce_input(
+                    "Width:".to_string(),
+                    &selected_video_data.read().borrow().dimensions.0.to_string(),
+                    "Enter width",
+                    move |value| {
+                        let mut editor_state = editor_state3.lock().unwrap();
+
+                        // NOTE: editor_state actions are hooked into undo/redo as well as file save
+                        editor_state
+                            .update_width(&value, ObjectType::VideoItem)
+                            .expect("Couldn't update width");
+
+                        drop(editor_state);
+
+                        // TODO: should update selected_polygon_data?
+                    },
+                    editor_state,
+                    "width".to_string(),
+                    ObjectType::ImageItem,
+                )
+                .style(move |s| s.width(halfs).margin_right(5.0)),
+                debounce_input(
+                    "Height:".to_string(),
+                    &selected_video_data.read().borrow().dimensions.1.to_string(),
+                    "Enter height",
+                    move |value| {
+                        let mut editor_state = editor_state4.lock().unwrap();
+
+                        editor_state
+                            .update_height(&value, ObjectType::VideoItem)
+                            .expect("Couldn't update height");
+
+                        drop(editor_state);
+                    },
+                    editor_state2,
+                    "height".to_string(),
+                    ObjectType::ImageItem,
+                )
+                .style(move |s| s.width(halfs)),
+            )),
+            keyframe_tools(
+                editor_state5,
+                selected_video_id,
                 selected_sequence_id,
                 selected_sequence_data,
                 ObjectType::ImageItem,
