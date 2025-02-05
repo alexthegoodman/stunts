@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crossbeam::queue;
+use floem::action::debounce_action;
 use floem::common::{
     card_styles, create_icon, icon_button, option_button, simple_button, small_button,
     toggle_button,
@@ -50,6 +51,7 @@ pub enum LayerKind {
     Image,
     Text,
     // Group,
+    Video,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -82,6 +84,14 @@ impl Layer {
             instance_id: config.id,
             instance_name: config.name.clone(),
             instance_kind: LayerKind::Text,
+            initial_layer_index: config.layer,
+        }
+    }
+    pub fn from_video_config(config: &StVideoConfig) -> Self {
+        Layer {
+            instance_id: Uuid::from_str(&config.id).expect("Couldn't convert uuid to string"),
+            instance_name: config.name.clone(),
+            instance_kind: LayerKind::Video,
             initial_layer_index: config.layer,
         }
     }
@@ -363,6 +373,7 @@ pub fn sequence_panel(
     let select_active = create_rw_signal(true);
     let pan_active = create_rw_signal(false);
 
+    let st_capture = create_rw_signal(StCapture::new(get_captures_dir()));
     let capture_selected = create_rw_signal(false);
     let capture_sources = create_rw_signal(Vec::new());
     let selected_source = create_rw_signal(WindowInfo {
@@ -379,6 +390,28 @@ pub fn sequence_panel(
     });
     let source_selected = create_rw_signal(false);
     let is_recording = create_rw_signal(false);
+
+    let capture_path = RwSignal::new(String::new());
+    debounce_action(capture_path, Duration::from_millis(1000), {
+        let editor_cloned_13 = editor_cloned_13.clone();
+        let state_cloned_11 = state_cloned_11.clone();
+        let gpu_cloned_5 = gpu_cloned_5.clone();
+        let viewport_cloned_7 = viewport_cloned_7.clone();
+
+        move || {
+            // r.set(local_r.get_untracked());
+            // Now, import the video!
+            import_video_to_scene(
+                editor_cloned_13.clone(),
+                state_cloned_11.clone(),
+                gpu_cloned_5.clone(),
+                viewport_cloned_7.clone(),
+                selected_sequence_id,
+                selected_sequence_data,
+                Path::new(&capture_path.get()).to_path_buf(),
+            );
+        }
+    });
 
     let sequence_duration_input = create_rw_signal(String::new());
     let target_duration_signal = create_rw_signal(String::new());
@@ -411,13 +444,13 @@ pub fn sequence_panel(
                     new_layers.push(new_layer);
                 }
             });
-            // editor.video_items.iter().for_each(|video| {
-            //     if !video.hidden {
-            //         let video_config: StVideoConfig = video.to_config();
-            //         let new_layer: Layer = Layer::from_image_config(&video_config);
-            //         new_layers.push(new_layer);
-            //     }
-            // });
+            editor.video_items.iter().for_each(|video| {
+                if !video.hidden {
+                    let video_config: StVideoConfig = video.to_config();
+                    let new_layer: Layer = Layer::from_video_config(&video_config);
+                    new_layers.push(new_layer);
+                }
+            });
 
             // sort layers by layer_index property, lower values should come first in the list
             // but reverse the order because the UI outputs the first one first, thus it displays last
@@ -489,6 +522,13 @@ pub fn sequence_panel(
                         }
                     });
                 }
+                LayerKind::Video => {
+                    editor.video_items.iter_mut().for_each(|v| {
+                        if v.id == l.instance_id.to_string() {
+                            v.update_layer(-(index as i32));
+                        }
+                    });
+                }
             });
 
         drop(editor);
@@ -525,6 +565,13 @@ pub fn sequence_panel(
                             s.active_image_items.iter_mut().for_each(|i| {
                                 if i.id == l.instance_id.to_string() {
                                     i.layer = -(index as i32);
+                                }
+                            });
+                        }
+                        LayerKind::Video => {
+                            s.active_video_items.iter_mut().for_each(|v| {
+                                if v.id == l.instance_id.to_string() {
+                                    v.layer = -(index as i32);
                                 }
                             });
                         }
@@ -703,6 +750,9 @@ pub fn sequence_panel(
 
                     new_image_config = Some(image_config);
                 }
+                LayerKind::Video => {
+                    println!("Duplicate not implemented for video");
+                }
             };
 
             drop(viewport);
@@ -825,6 +875,9 @@ pub fn sequence_panel(
                         layer: image_config.layer.clone(),
                     });
                 }
+                LayerKind::Video => {
+                    println!("Duplicate not implemented for video");
+                }
             }
 
             // no need to update the unused sequence, use this one
@@ -882,6 +935,15 @@ pub fn sequence_panel(
                         .expect("Couldn't match object");
 
                     editor.image_items.swap_remove(index);
+                }
+                LayerKind::Video => {
+                    let index = editor
+                        .video_items
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't match object");
+
+                    editor.video_items.swap_remove(index);
                 }
             }
 
@@ -943,6 +1005,22 @@ pub fn sequence_panel(
                         .expect("Couldn't find object match");
 
                     sequence.active_image_items.remove(object_index);
+                    sequence.polygon_motion_paths.remove(path_index);
+                }
+                LayerKind::Video => {
+                    let object_index = sequence
+                        .active_video_items
+                        .iter()
+                        .position(|p| p.id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    let path_index = sequence
+                        .polygon_motion_paths
+                        .iter()
+                        .position(|p| p.polygon_id == object_id.to_string())
+                        .expect("Couldn't find object match");
+
+                    sequence.active_video_items.remove(object_index);
                     sequence.polygon_motion_paths.remove(path_index);
                 }
             }
@@ -1585,6 +1663,7 @@ pub fn sequence_panel(
                 dyn_container(
                     move || capture_selected.get(),
                     move |capture_selected_real| {
+                        let st_capture = st_capture.clone();
                         let capture_sources = capture_sources.clone();
                         let state_cloned_12 = state_cloned_12.clone();
                         let state_cloned_13 = state_cloned_13.clone();
@@ -1595,21 +1674,25 @@ pub fn sequence_panel(
 
                         if capture_selected_real {
                             v_stack((
-                                dyn_stack(
-                                    move || capture_sources.get(),
-                                    move |source| source.hwnd.clone(),
-                                    move |source| {
-                                        simple_button(source.title.clone(), move |_| {
-                                            selected_source.set(source.clone());
-                                            source_selected.set(true);
-                                        })
-                                        .style(|s| s.width(260.0))
-                                    },
-                                )
-                                .style(|s| s.flex().flex_direction(FlexDirection::Column)),
+                                scroll({
+                                    dyn_stack(
+                                        move || capture_sources.get(),
+                                        move |source| source.hwnd.clone(),
+                                        move |source| {
+                                            simple_button(source.title.clone(), move |_| {
+                                                selected_source.set(source.clone());
+                                                source_selected.set(true);
+                                            })
+                                            .style(|s| s.width(260.0))
+                                        },
+                                    )
+                                    .style(|s| s.flex().flex_direction(FlexDirection::Column))
+                                })
+                                .style(|s| s.height(200.0).width(260.0)),
                                 dyn_container(
                                     move || is_recording.get(),
                                     move |is_recording_real| {
+                                        let st_capture = st_capture.clone();
                                         let state_cloned_12 = state_cloned_12.clone();
                                         let state_cloned_13 = state_cloned_13.clone();
                                         let editor_cloned_13 = editor_cloned_13.clone();
@@ -1617,8 +1700,9 @@ pub fn sequence_panel(
                                         let gpu_cloned_5 = gpu_cloned_5.clone();
                                         let viewport_cloned_7 = viewport_cloned_7.clone();
 
-                                        let capture_dir = get_captures_dir();
-                                        let mut st_capture = StCapture::new(capture_dir);
+                                        // let capture_dir = get_captures_dir();
+                                        // let mut st_capture = StCapture::new(capture_dir);
+                                        let mut st_capture = st_capture.get();
 
                                         if is_recording_real {
                                             simple_button("Stop Capture".to_string(), move |_| {
@@ -1638,16 +1722,7 @@ pub fn sequence_panel(
                                                     .stop_video_capture(project_id.to_string())
                                                     .expect("Couldn't stop video capture");
 
-                                                // Now, import the video!
-                                                import_video_to_scene(
-                                                    editor_cloned_13.clone(),
-                                                    state_cloned_11.clone(),
-                                                    gpu_cloned_5.clone(),
-                                                    viewport_cloned_7.clone(),
-                                                    selected_sequence_id,
-                                                    selected_sequence_data,
-                                                    Path::new(&output_path).to_path_buf(),
-                                                );
+                                                capture_path.set(output_path);
 
                                                 source_selected.set(false);
                                                 is_recording.set(false);
@@ -1734,6 +1809,7 @@ pub fn sequence_panel(
                             LayerKind::Polygon => "square",
                             LayerKind::Text => "text",
                             LayerKind::Image => "image",
+                            LayerKind::Video => "video",
                             // LayerKind::Path =>
                             //         // LayerKind::Imag(data) =>
                             //         // LayerKind::Text =>
