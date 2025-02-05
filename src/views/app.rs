@@ -517,6 +517,7 @@ pub fn project_view(
         dimensions: (100, 100),
         position: Point { x: 0.0, y: 0.0 },
         layer: -2,
+        mouse_path: None,
     });
 
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
@@ -1224,6 +1225,7 @@ pub fn project_view(
                                 },
                                 path: video.path.clone(),
                                 layer: video.layer.clone(),
+                                mouse_path: video.mouse_path.clone(),
                             },
                         );
                     }

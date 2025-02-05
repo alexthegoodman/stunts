@@ -998,6 +998,69 @@ impl EditorState {
         // properties.push(perspective_y_prop);
         properties.push(opacity_prop);
 
+        if object_type == ObjectType::VideoItem {
+            let mut zoom_keyframes = Vec::new();
+
+            zoom_keyframes.push(UIKeyframe {
+                id: Uuid::new_v4().to_string(),
+                time: Duration::from_secs(0),
+                value: KeyframeValue::Zoom(100),
+                easing: EasingType::EaseInOut,
+                path_type: PathType::Linear,
+                key_type: KeyType::Frame,
+            });
+            // zoom_keyframes.push(UIKeyframe {
+            //     id: Uuid::new_v4().to_string(),
+            //     time: Duration::from_millis(2500),
+            //     value: KeyframeValue::Position([object_position.x, object_position.y - 50]),
+            //     easing: EasingType::EaseInOut,
+            //     path_type: PathType::Linear,
+            //     key_type: KeyType::Frame,
+            // });
+            zoom_keyframes.push(UIKeyframe {
+                id: Uuid::new_v4().to_string(),
+                time: Duration::from_secs(5),
+                value: KeyframeValue::Zoom(135),
+                easing: EasingType::EaseInOut,
+                path_type: PathType::Linear,
+                key_type: KeyType::Frame,
+            });
+            zoom_keyframes.push(UIKeyframe {
+                id: Uuid::new_v4().to_string(),
+                time: Duration::from_secs(15),
+                value: KeyframeValue::Zoom(135),
+                easing: EasingType::EaseInOut,
+                path_type: PathType::Linear,
+                key_type: KeyType::Frame,
+            });
+            // zoom_keyframes.push(UIKeyframe {
+            //     id: Uuid::new_v4().to_string(),
+            //     time: Duration::from_millis(17500),
+            //     value: KeyframeValue::Position([object_position.x, object_position.y + 100]),
+            //     easing: EasingType::EaseInOut,
+            //     path_type: PathType::Linear,
+            //     key_type: KeyType::Frame,
+            // });
+            zoom_keyframes.push(UIKeyframe {
+                id: Uuid::new_v4().to_string(),
+                time: Duration::from_secs(20),
+                value: KeyframeValue::Zoom(100),
+                easing: EasingType::EaseInOut,
+                path_type: PathType::Linear,
+                key_type: KeyType::Frame,
+            });
+
+            let mut zoom_prop = AnimationProperty {
+                name: "Mouse Zoom".to_string(),
+                property_path: "zoom".to_string(),
+                children: Vec::new(),
+                keyframes: zoom_keyframes,
+                depth: 0,
+            };
+
+            properties.push(zoom_prop);
+        }
+
         let new_motion_path = AnimationData {
             id: Uuid::new_v4().to_string(),
             object_type,

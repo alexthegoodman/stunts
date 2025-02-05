@@ -346,9 +346,10 @@ pub fn timeline_object_track(
                                         x: related_video.transform.position.x,
                                         y: related_video.transform.position.y,
                                     },
-                                    layer: related_video.layer, // border_radius: polygon.border_radius,
-                                                                // fill: polygon.fill,
-                                                                // stroke: polygon.stroke,
+                                    layer: related_video.layer,
+                                    mouse_path: related_video.mouse_path.clone(), // border_radius: polygon.border_radius,
+                                                                                  // fill: polygon.fill,
+                                                                                  // stroke: polygon.stroke,
                                 },
                             );
                             editor.selected_polygon_id = uuid; // TODO: separate property for each object type? or combine in to object_id? currently its polygon for all types
