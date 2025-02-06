@@ -512,6 +512,11 @@ pub fn sequences_view(
                     editor.video_current_sequences_data = None;
                     editor.is_playing = false;
                     editor.start_playing_time = None;
+
+                    // TODO: reset_sequence_objects?
+                    editor.video_items.iter_mut().for_each(|v| {
+                        v.reset_playback().expect("Couldn't reset video playback");
+                    });
                 } else {
                     println!("Play Video...");
 
