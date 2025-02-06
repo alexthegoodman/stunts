@@ -29,6 +29,7 @@ use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
     string_to_f32, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp, OnPathMouseUp, Point,
     PolygonClickHandler, TextItemClickHandler, VideoItemClickHandler, Viewport, WindowSize,
+    CANVAS_HORIZ_OFFSET,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
 use stunts_engine::st_image::StImageConfig;
@@ -523,7 +524,8 @@ pub fn project_view(
     let animation_data: RwSignal<Option<AnimationData>> = create_rw_signal(None);
     let selected_keyframes: RwSignal<Vec<UIKeyframe>> = create_rw_signal(Vec::new());
 
-    let pixels_per_s = create_rw_signal(10);
+    let pixels_per_s = create_rw_signal(38.0);
+    let timeline_width = create_rw_signal(1200.0);
 
     let video_selected_ref = Arc::new(Mutex::new(video_selected));
     let selected_video_id_ref = Arc::new(Mutex::new(selected_video_id));
@@ -1417,6 +1419,15 @@ pub fn project_view(
             let viewport = viewport_cloned3.lock().unwrap();
             let camera = editor.camera.expect("Couldn't get camera");
 
+            let window_width = camera.window_size.width;
+            let total_s = selected_sequence_data.get().duration_ms / 1000;
+
+            let new_timeline_width = (window_width as f64 - CANVAS_HORIZ_OFFSET as f64 - 100.0);
+            let p_per_s = new_timeline_width / total_s as f64;
+
+            pixels_per_s.set(p_per_s);
+            timeline_width.set(new_timeline_width);
+
             // attach object interaction handlers
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
             editor.handle_text_click = Some(Arc::clone(&handle_text_click));
@@ -1561,10 +1572,10 @@ pub fn project_view(
                     };
 
                     let config = TimelineConfig {
-                        width: 1200.0,
+                        width: timeline_width.get(),
                         height: 300.0,
                         header_height: 30.0,
-                        property_width: 38.0,
+                        property_width: pixels_per_s.get(),
                         row_height: 24.0,
                         // offset_x: 325.0,
                         // offset_y: 300.0,

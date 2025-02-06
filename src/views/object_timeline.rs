@@ -57,23 +57,17 @@ pub fn build_object_timeline(
     let timeline_width = create_rw_signal(700);
 
     create_effect(move |_| {
-        // determine the pixels per s
-        let sequence_data = selected_sequence_data.get();
-
-        let total_s = sequence_data.duration_ms / 1000;
-        let new_per_s = timeline_width.get() / total_s;
-
-        pixels_per_s.set(new_per_s);
-
         let editor = editor_cloned.lock().unwrap();
         let camera = editor.camera.expect("Couldn't get camera");
 
         let window_width = camera.window_size.width;
         let total_s = selected_sequence_data.get().duration_ms / 1000;
 
-        let p_per_s = (window_width as i32 - CANVAS_HORIZ_OFFSET as i32) / total_s;
+        let new_timeline_width = (window_width as i32 - CANVAS_HORIZ_OFFSET as i32 - 100);
+        let p_per_s = new_timeline_width / total_s;
 
         pixels_per_s.set(p_per_s);
+        timeline_width.set(new_timeline_width);
 
         drop(editor);
     });
