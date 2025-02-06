@@ -172,72 +172,78 @@ pub fn export_widget(
 
                 let sequences = new_state.sequences.clone();
 
-                let saved_timeline_state_config =
-                    sequence_timeline.get().expect("Couldn't get a timeline");
+                // let saved_timeline_state_config =
+                //     sequence_timeline.get().expect("Couldn't get a timeline");
 
-                // get total duration of sequences that are in both the timleine and the saved state
-                let matching_sequences = sequences
-                    .iter()
-                    .filter(|s| {
-                        saved_timeline_state_config
-                            .timeline_sequences
-                            .iter()
-                            .any(|ts| ts.sequence_id == s.id)
-                    })
-                    .collect::<Vec<&Sequence>>();
+                if let Some(saved_timeline_state_config) = sequence_timeline.get() {
+                    // get total duration of sequences that are in both the timleine and the saved state
+                    let matching_sequences = sequences
+                        .iter()
+                        .filter(|s| {
+                            saved_timeline_state_config
+                                .timeline_sequences
+                                .iter()
+                                .any(|ts| ts.sequence_id == s.id)
+                        })
+                        .collect::<Vec<&Sequence>>();
 
-                // let total_duration_s: f64 = saved_timeline_state_config
-                //     .clone()
-                //     .timeline_sequences
-                //     .iter()
-                //     .map(|s| s.duration_ms as f64 / 1000.0)
-                //     .sum();
+                    // let total_duration_s: f64 = saved_timeline_state_config
+                    //     .clone()
+                    //     .timeline_sequences
+                    //     .iter()
+                    //     .map(|s| s.duration_ms as f64 / 1000.0)
+                    //     .sum();
 
-                let total_duration_s = matching_sequences
-                    .iter()
-                    .map(|s| s.duration_ms as f64 / 1000.0)
-                    .sum();
+                    let total_duration_s = matching_sequences
+                        .iter()
+                        .map(|s| s.duration_ms as f64 / 1000.0)
+                        .sum();
 
-                let filename = format!("export_{}.mp4", Local::now().format("%Y-%m-%d_%H-%M-%S"));
+                    let filename =
+                        format!("export_{}.mp4", Local::now().format("%Y-%m-%d_%H-%M-%S"));
 
-                // Spawn a new thread to handle the setup and sending
-                thread::spawn(move || {
-                    println!("Sending tx export command...");
+                    // Spawn a new thread to handle the setup and sending
+                    thread::spawn(move || {
+                        println!("Sending tx export command...");
 
-                    let output_path = get_exports_dir()
-                        .join(filename)
-                        .to_str()
-                        .expect("Couldn't convert exports to str")
-                        .to_string();
+                        let output_path = get_exports_dir()
+                            .join(filename)
+                            .to_str()
+                            .expect("Couldn't convert exports to str")
+                            .to_string();
 
-                    // Create a new runtime for this thread to handle the async send
-                    let rt = tokio::runtime::Runtime::new().unwrap();
-                    rt.block_on(async {
-                        match export_thread_tx
-                            .send(ExportCommand::StartExport {
-                                output_path,
-                                window_size,
-                                sequences,
-                                saved_timeline_state_config: saved_timeline_state_config.clone(),
-                                video_width: 1920,
-                                video_height: 1080,
-                                total_duration_s,
-                                progress_tx: progress_tx.clone(),
-                            })
-                            .await
-                        {
-                            Ok(_) => println!("Export command sent successfully"),
-                            Err(e) => {
-                                println!("Failed to send export command: {}", e);
-                                // You might want to send this error through the progress channel
-                                let _ = progress_tx.send(ExportProgress::Error(
-                                    "Failed to start export".to_string(),
-                                ));
+                        // Create a new runtime for this thread to handle the async send
+                        let rt = tokio::runtime::Runtime::new().unwrap();
+                        rt.block_on(async {
+                            match export_thread_tx
+                                .send(ExportCommand::StartExport {
+                                    output_path,
+                                    window_size,
+                                    sequences,
+                                    saved_timeline_state_config: saved_timeline_state_config
+                                        .clone(),
+                                    video_width: 1920,
+                                    video_height: 1080,
+                                    total_duration_s,
+                                    progress_tx: progress_tx.clone(),
+                                })
+                                .await
+                            {
+                                Ok(_) => println!("Export command sent successfully"),
+                                Err(e) => {
+                                    println!("Failed to send export command: {}", e);
+                                    // You might want to send this error through the progress channel
+                                    let _ = progress_tx.send(ExportProgress::Error(
+                                        "Failed to start export".to_string(),
+                                    ));
+                                }
                             }
-                        }
+                        });
                     });
-                });
-
+                } else {
+                    progress_text.set("Add to timeline first!".to_string());
+                    is_exporting.set(false);
+                }
                 EventPropagation::Stop
             })
             .disabled(move || is_exporting.get()),
