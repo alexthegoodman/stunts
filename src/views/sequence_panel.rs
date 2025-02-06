@@ -288,6 +288,13 @@ pub fn import_video_to_scene(
         stored_source_data,
     );
 
+    let source_duration_ms = editor
+        .video_items
+        .last()
+        .expect("Couldn't get latest video")
+        .source_duration_ms
+        .clone();
+
     drop(viewport);
     drop(gpu_helper);
     drop(editor);
@@ -310,6 +317,7 @@ pub fn import_video_to_scene(
             layer: video_config.layer.clone(),
             mouse_path: saved_mouse_path.clone(),
         },
+        source_duration_ms,
     );
 
     let saved_state = editor_state
@@ -317,11 +325,12 @@ pub fn import_video_to_scene(
         .saved_state
         .as_ref()
         .expect("Couldn't get saved state");
-    let updated_sequence = saved_state
+    let mut updated_sequence = saved_state
         .sequences
         .iter()
         .find(|s| s.id == selected_sequence_id.get())
-        .expect("Couldn't get updated sequence");
+        .expect("Couldn't get updated sequence")
+        .clone();
 
     selected_sequence_data.set(updated_sequence.clone());
 

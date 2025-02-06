@@ -1076,7 +1076,7 @@ impl EditorState {
 
     /// squish keyframes into target_duration, keeping proportional time between them
     pub fn scale_keyframes(
-        &mut self,
+        &self,
         selected_sequence_id: String,
         target_duration_s: f32,
     ) -> Vec<AnimationData> {
@@ -1220,29 +1220,56 @@ impl EditorState {
         &mut self,
         selected_sequence_id: String,
         savable_video_item: SavedStVideoConfig,
+        source_duration_ms: i64,
     ) {
-        let new_motion_path = self.save_default_keyframes(
-            savable_video_item.id.clone(),
-            ObjectType::VideoItem,
-            savable_video_item.position.clone(),
+        {
+            let new_motion_path = self.save_default_keyframes(
+                savable_video_item.id.clone(),
+                ObjectType::VideoItem,
+                savable_video_item.position.clone(),
+            );
+
+            let mut saved_state = self
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get Saved State");
+
+            saved_state.sequences.iter_mut().for_each(|s| {
+                if s.id == selected_sequence_id {
+                    if s.duration_ms < source_duration_ms as i32 {
+                        s.duration_ms = source_duration_ms as i32;
+                    }
+
+                    s.active_video_items.push(savable_video_item.clone());
+                    s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
+                }
+            });
+        }
+
+        // after updated with motion paths
+        let scaled_paths = self.scale_keyframes(
+            selected_sequence_id.clone(),
+            (source_duration_ms / 1000) as f32,
         );
 
-        let mut saved_state = self
-            .record_state
-            .saved_state
-            .as_mut()
-            .expect("Couldn't get Saved State");
+        {
+            let mut saved_state = self
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get Saved State");
 
-        saved_state.sequences.iter_mut().for_each(|s| {
-            if s.id == selected_sequence_id {
-                s.active_video_items.push(savable_video_item.clone());
-                s.polygon_motion_paths.push(new_motion_path.clone()); // storing alongside polygon motion paths for now
-            }
-        });
+            saved_state.sequences.iter_mut().for_each(|s| {
+                if s.id == selected_sequence_id {
+                    s.polygon_motion_paths = scaled_paths.clone();
+                }
+            });
 
-        save_saved_state_raw(saved_state.clone());
+            save_saved_state_raw(saved_state.clone());
 
-        self.record_state.saved_state = Some(saved_state.clone());
+            self.record_state.saved_state = Some(saved_state.clone());
+        }
     }
 
     // Helper method to register a new signal
