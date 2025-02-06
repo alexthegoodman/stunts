@@ -31,6 +31,7 @@ use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Point;
+use stunts_engine::editor::CANVAS_HORIZ_OFFSET;
 use stunts_engine::polygon::PolygonConfig;
 use stunts_engine::st_image::StImageConfig;
 use stunts_engine::st_video::StVideoConfig;
@@ -50,6 +51,7 @@ pub fn build_object_timeline(
     selected_sequence_data: RwSignal<Sequence>,
     deafult_pixels_per_s: i32,
 ) -> impl View {
+    let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let pixels_per_s = create_rw_signal(deafult_pixels_per_s);
     let timeline_width = create_rw_signal(700);
@@ -62,6 +64,18 @@ pub fn build_object_timeline(
         let new_per_s = timeline_width.get() / total_s;
 
         pixels_per_s.set(new_per_s);
+
+        let editor = editor_cloned.lock().unwrap();
+        let camera = editor.camera.expect("Couldn't get camera");
+
+        let window_width = camera.window_size.width;
+        let total_s = selected_sequence_data.get().duration_ms / 1000;
+
+        let p_per_s = (window_width as i32 - CANVAS_HORIZ_OFFSET as i32) / total_s;
+
+        pixels_per_s.set(p_per_s);
+
+        drop(editor);
     });
 
     v_stack((
