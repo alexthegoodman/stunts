@@ -483,7 +483,11 @@ fn handle_window_resize(
             height: size.height,
         };
 
-        // println!("window 1 {:?}", window_size);
+        println!("new window size {:?}", window_size);
+
+        if window_size.width < 10 || window_size.height < 10 {
+            return;
+        }
 
         let mut viewport = viewport.lock().unwrap();
 
