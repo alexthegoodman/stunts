@@ -4,7 +4,7 @@
     <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
 <?endif?>
 
-<?define Version = "1" ?>
+<?define Version = "3" ?>
 <?define Manufacturer = "Common" ?>
 <?define ProductName = "Stunts" ?>
 

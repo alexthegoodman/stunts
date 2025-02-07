@@ -225,7 +225,7 @@ pub fn project_browser(
                     alert(
                         floem::common::AlertVariant::Warning,
                         format!(
-                            "Your subscription is {}. Please upgrade to create projects.",
+                            "Your subscription is {}. Consider upgrading!",
                             sub.subscription_status.to_lowercase()
                         ),
                     )
@@ -249,7 +249,7 @@ pub fn project_browser(
                     h_stack((
                         alert(
                             floem::common::AlertVariant::Warning,
-                            "Please login and subscribe to create new projects.".to_string(),
+                            "Please login to create new projects.".to_string(),
                         )
                         .style(|s| s.width(200.0)),
                         button(label(|| "Login"))
@@ -299,12 +299,12 @@ pub fn project_browser(
                     }
                     EventPropagation::Stop
                 })
-                .disabled(move || !auth_state.get().can_create_projects())
+                // .disabled(move || !auth_state.get().can_create_projects())
                 .style(move |s| {
                     let can_create = auth_state.get().can_create_projects();
                     s.margin_left(8.0)
                         .padding(8.0)
-                        .background(if can_create {
+                        .background(if true {
                             Color::rgb(0.0, 122.0, 255.0)
                         } else {
                             Color::rgb(150.0, 150.0, 150.0)

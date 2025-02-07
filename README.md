@@ -10,4 +10,4 @@ Remember to increment version number in wix/main.wxs
 
 - `cargo build --release --features production`
 - `wix extension add -g WixToolset.UI.wixext` (once)
-- `wix build wix\main.wxs -ext WixToolset.UI.wixext -o stunts-installer.msi`
+- `wix build wix\main.wxs -ext WixToolset.UI.wixext -o stunts-installer-v1-0-0.msi`
