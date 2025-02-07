@@ -437,6 +437,7 @@ pub fn sequence_panel(
         let viewport_cloned_7 = viewport_cloned_7.clone();
 
         move || {
+            println!("Importing video to scene...");
             // r.set(local_r.get_untracked());
             // Now, import the video!
             let (capture_path, mouse_positions_path, source_data_path) = capture_paths.get();
@@ -462,6 +463,7 @@ pub fn sequence_panel(
         let editor_cloned_6 = Arc::clone(&editor_cloned_6);
 
         move |_| {
+            println!("Panel lock...");
             let mut editor = editor_cloned_6.lock().unwrap();
 
             let mut new_layers = Vec::new();
@@ -526,6 +528,7 @@ pub fn sequence_panel(
     create_effect({
         let viewport_cloned_4 = Arc::clone(&viewport_cloned_4);
         move |_| {
+            println!("Viewport lock...");
             let viewport = viewport_cloned_4.lock().unwrap();
 
             window_height.set(viewport.height);

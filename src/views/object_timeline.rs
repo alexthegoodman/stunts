@@ -49,28 +49,32 @@ pub fn build_object_timeline(
     editor_state: Arc<Mutex<EditorState>>,
     // timeline_animations: RwSignal<Vec<AnimationData>>,
     selected_sequence_data: RwSignal<Sequence>,
-    deafult_pixels_per_s: i32,
+    pixels_per_s: RwSignal<f64>,
+    timeline_width: RwSignal<f64>,
 ) -> impl View {
     let editor_cloned = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
-    let pixels_per_s = create_rw_signal(deafult_pixels_per_s);
-    let timeline_width = create_rw_signal(700);
+    // let pixels_per_s = create_rw_signal(deafult_pixels_per_s);
+    // let timeline_width = create_rw_signal(700);
 
-    create_effect(move |_| {
-        let editor = editor_cloned.lock().unwrap();
-        let camera = editor.camera.expect("Couldn't get camera");
+    // created conflict lock with another view
+    // create_effect(move |_| {
+    //     println!("Updating object timeline...");
 
-        let window_width = camera.window_size.width;
-        let total_s = selected_sequence_data.get().duration_ms / 1000;
+    //     let editor = editor_cloned.lock().unwrap();
+    //     let camera = editor.camera.expect("Couldn't get camera");
 
-        let new_timeline_width = (window_width as i32 - CANVAS_HORIZ_OFFSET as i32 - 100);
-        let p_per_s = new_timeline_width / total_s;
+    //     let window_width = camera.window_size.width;
+    //     let total_s = selected_sequence_data.get().duration_ms / 1000;
 
-        pixels_per_s.set(p_per_s);
-        timeline_width.set(new_timeline_width);
+    //     let new_timeline_width = (window_width as i32 - CANVAS_HORIZ_OFFSET as i32 - 100);
+    //     let p_per_s = new_timeline_width / total_s;
 
-        drop(editor);
-    });
+    //     pixels_per_s.set(p_per_s);
+    //     timeline_width.set(new_timeline_width);
+
+    //     drop(editor);
+    // });
 
     v_stack((
         // Tick marks for the timeline
@@ -88,7 +92,7 @@ pub fn build_object_timeline(
                             .height(20.0)
                             .background(Color::rgb8(50, 50, 50)) // Tick mark color
                             .position(Position::Absolute)
-                            .margin_left((time * pixels_per_second) as f32)
+                            .margin_left(time as f64 * pixels_per_second)
                     })
                     .style(|s| s.margin_top(0.0))
             },
@@ -146,7 +150,7 @@ pub fn timeline_object_track(
     editor_state: Arc<Mutex<EditorState>>,
     // timeline_animations: RwSignal<Vec<AnimationData>>,
     selected_sequence_data: RwSignal<Sequence>,
-    pixels_per_s: RwSignal<i32>,
+    pixels_per_s: RwSignal<f64>,
     animation: AnimationData,
 ) -> impl View {
     // let state_2 = state.clone();

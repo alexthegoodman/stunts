@@ -526,6 +526,7 @@ pub fn project_view(
 
     let pixels_per_s = create_rw_signal(38.0);
     let timeline_width = create_rw_signal(1200.0);
+    let viewport_width = create_rw_signal(1600.0);
 
     let video_selected_ref = Arc::new(Mutex::new(video_selected));
     let selected_video_id_ref = Arc::new(Mutex::new(selected_video_id));
@@ -1404,6 +1405,7 @@ pub fn project_view(
         let viewport_cloned3 = Arc::clone(&viewport_cloned3);
 
         move |_| {
+            // println!("Starting project view...");
             let editor_state = state_cloned5.lock().unwrap();
 
             let saved_state = editor_state
@@ -1416,17 +1418,14 @@ pub fn project_view(
             drop(editor_state);
 
             let mut editor = editor_cloned3.lock().unwrap();
-            let viewport = viewport_cloned3.lock().unwrap();
             let camera = editor.camera.expect("Couldn't get camera");
 
-            let window_width = camera.window_size.width;
-            let total_s = selected_sequence_data.get().duration_ms / 1000;
+            let viewport = viewport_cloned3.lock().unwrap();
+            let window_width = viewport.width;
 
-            let new_timeline_width = (window_width as f64 - CANVAS_HORIZ_OFFSET as f64 - 100.0);
-            let p_per_s = new_timeline_width / total_s as f64;
+            viewport_width.set(window_width);
 
-            pixels_per_s.set(p_per_s);
-            timeline_width.set(new_timeline_width);
+            // println!("Building project view...");
 
             // attach object interaction handlers
             editor.handle_polygon_click = Some(Arc::clone(&handle_polygon_click));
@@ -1454,10 +1453,7 @@ pub fn project_view(
             cloned_sequences.iter().enumerate().for_each(|(i, s)| {
                 editor.restore_sequence_objects(
                     &s,
-                    WindowSize {
-                        width: viewport.width as u32,
-                        height: viewport.height as u32,
-                    },
+                    camera.window_size.clone(),
                     &camera,
                     true,
                     // device,
@@ -1465,6 +1461,18 @@ pub fn project_view(
                 );
             });
         }
+    });
+
+    create_effect(move |_| {
+        // println!("Viewport effect...");
+        let window_width = viewport_width.get();
+        let total_s = selected_sequence_data.get().duration_ms / 1000; // track separate from main effect
+
+        let new_timeline_width = (window_width as f64 - CANVAS_HORIZ_OFFSET as f64 - 200.0);
+        let p_per_s = new_timeline_width / total_s as f64;
+
+        pixels_per_s.set(p_per_s);
+        timeline_width.set(new_timeline_width);
     });
 
     container((
@@ -1507,7 +1515,8 @@ pub fn project_view(
                                 editor_cloned10.clone(),
                                 state_cloned10.clone(),
                                 selected_sequence_data,
-                                10,
+                                pixels_per_s,
+                                timeline_width,
                             ),
                         ))
                         .style(|s| s.margin_top(450.0).margin_left(25.0)),

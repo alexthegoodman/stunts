@@ -282,11 +282,12 @@ pub fn sequences_view(
                                     .sequences
                                     .iter()
                                     .find(|s| s.id == item.clone())
-                                    .expect("Couldn't find matching sequence");
+                                    .expect("Couldn't find matching sequence")
+                                    .clone();
 
-                                selected_sequence_data.set(saved_sequence.clone());
-                                selected_sequence_id.set(item.clone());
-                                sequence_selected.set(true);
+                                drop(editor_state);
+
+                                println!("Opening Sequence...");
 
                                 let mut editor = editor_cloned.lock().unwrap();
 
@@ -364,6 +365,12 @@ pub fn sequences_view(
                                 editor.update_motion_paths(&saved_sequence);
 
                                 println!("Motion Paths restored!");
+
+                                drop(editor);
+
+                                selected_sequence_data.set(saved_sequence.clone());
+                                selected_sequence_id.set(item.clone());
+                                sequence_selected.set(true);
 
                                 // EventPropagation::Continue
                             })
