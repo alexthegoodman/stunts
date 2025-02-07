@@ -26,6 +26,12 @@ use super::saved_state::ProjectData;
 use super::saved_state::ProjectsDataFile;
 use super::saved_state::SavedState;
 
+#[cfg(feature = "production")]
+pub const API_URL: &str = "https://madebycommon.com";
+
+#[cfg(not(feature = "production"))]
+pub const API_URL: &str = "http://localhost:3000";
+
 pub fn get_ground_truth_dir() -> Option<PathBuf> {
     UserDirs::new().map(|user_dirs| {
         let common_os = user_dirs
@@ -287,7 +293,7 @@ pub async fn fetch_subscription_details(
     let client = Client::new();
 
     let response = client
-        .get("http://localhost:3000/api/subscription/details")
+        .get(API_URL.to_owned() + &"/api/subscription/details")
         .header("Authorization", format!("Bearer {}", token))
         .send()
         .await?;

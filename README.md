@@ -8,5 +8,6 @@ Stunts intends to make motion graphics and film much more efficient.
 
 Remember to increment version number in wix/main.wxs
 
-- `wix extension add -g WixToolset.UI.wixext`
+- `cargo build --release --features production`
+- `wix extension add -g WixToolset.UI.wixext` (once)
 - `wix build wix\main.wxs -ext WixToolset.UI.wixext -o stunts-installer.msi`

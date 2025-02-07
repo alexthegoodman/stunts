@@ -35,7 +35,7 @@ use crate::editor_state::EditorState;
 use crate::helpers::projects::{get_projects, ProjectInfo};
 use crate::helpers::utilities::{
     clear_auth_token, create_project_state, fetch_subscription_details, load_auth_token,
-    load_project_state, save_auth_token, AuthState, AuthToken, SubscriptionDetails,
+    load_project_state, save_auth_token, AuthState, AuthToken, SubscriptionDetails, API_URL,
 };
 // use crate::helpers::projects::{get_projects, ProjectInfo};
 // use crate::helpers::websocket::WebSocketManager;
@@ -624,7 +624,7 @@ async fn login_user(
         .build()?;
 
     let response = client
-        .post("http://localhost:3000/api/auth/login")
+        .post(API_URL.to_owned() + &"/api/auth/login")
         .json(&LoginRequest { email, password })
         .send()
         .await?;
