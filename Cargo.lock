@@ -1267,6 +1267,7 @@ dependencies = [
 [[package]]
 name = "common-motion-2d-reg"
 version = "0.1.0"
+source = "git+https://github.com/alexthegoodman/common-motion-2d-reg#fa731d64d343b22afc16eefb8a469785f4c854be"
 dependencies = [
  "burn",
  "csv",
