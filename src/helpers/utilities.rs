@@ -32,6 +32,12 @@ pub const API_URL: &str = "https://madebycommon.com";
 #[cfg(not(feature = "production"))]
 pub const API_URL: &str = "http://localhost:3000";
 
+#[cfg(feature = "production")]
+pub const AUTH_TOKEN_NAME: &str = "prod_auth_token.json";
+
+#[cfg(not(feature = "production"))]
+pub const AUTH_TOKEN_NAME: &str = "auth_token.json";
+
 pub fn get_ground_truth_dir() -> Option<PathBuf> {
     UserDirs::new().map(|user_dirs| {
         let common_os = user_dirs
@@ -327,7 +333,7 @@ pub async fn fetch_subscription_details(
 pub fn get_auth_token_path() -> PathBuf {
     get_ground_truth_dir()
         .expect("Couldn't get Stunts directory")
-        .join("auth_token.json")
+        .join(AUTH_TOKEN_NAME)
 }
 
 // Load saved auth token if it exists
