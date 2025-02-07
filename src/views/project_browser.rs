@@ -294,9 +294,9 @@ pub fn project_browser(
             label(|| "Select a Project").style(|s| s.margin_bottom(4.0)),
             button(label(|| "Create New"))
                 .on_click(move |_| {
-                    if auth_state.get().can_create_projects() {
-                        show_create_dialog.set(true);
-                    }
+                    // if auth_state.get().can_create_projects() {
+                    show_create_dialog.set(true);
+                    // }
                     EventPropagation::Stop
                 })
                 // .disabled(move || !auth_state.get().can_create_projects())
