@@ -1,8 +1,14 @@
 # Stunts - Professional Video Editor
 
+Requires these repos aside this one:
+
+- `common-floem`
+- `stunts-engine`
+- `common-motion-2d-reg` (attention branch)
+
 Stunts intends to make motion graphics and film much more efficient.
 
-- `cargo run`
+- `cargo run --release`
 
 ## Release
 
