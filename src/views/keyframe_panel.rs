@@ -1,9 +1,11 @@
+// use chrono::Duration;
 use floem::common::card_styles;
 use floem::common::simple_button;
 use floem::common::small_button;
 use floem::views::Checkbox;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 use stunts_engine::animations::AnimationData;
 use stunts_engine::animations::KeyframeValue;
 use stunts_engine::animations::ObjectType;
@@ -139,6 +141,7 @@ pub fn keyframe_properties_view(
     let editor_cloned5 = Arc::clone(&editor);
     let editor_cloned6 = Arc::clone(&editor);
     let editor_cloned7 = Arc::clone(&editor);
+    let editor_cloned8 = Arc::clone(&editor);
     let editor_state_cloned = Arc::clone(&editor_state);
     let editor_state_cloned2 = Arc::clone(&editor_state);
     let editor_state_cloned3 = Arc::clone(&editor_state);
@@ -159,6 +162,8 @@ pub fn keyframe_properties_view(
     let editor_state_cloned18 = Arc::clone(&editor_state);
     let editor_state_cloned19 = Arc::clone(&editor_state);
     let editor_state_cloned20 = Arc::clone(&editor_state);
+    let editor_state_cloned21 = Arc::clone(&editor_state);
+    let editor_state_cloned22 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -186,6 +191,58 @@ pub fn keyframe_properties_view(
     let object_type_cloned = object_type.clone();
 
     v_stack((
+        debounce_input(
+            "Time (secs):".to_string(),
+            &selected_keyframe.time.as_secs().to_string(),
+            "Enter time",
+            move |value| {
+                // update animation_data, selected_polygon_data, and selected_keyframes, and selected_sequence_data,
+                // then save merge animation_data with saved_data and save to file
+                // although perhaps polygon_data is not related to the keyframe data? no need to update here?
+
+                let value = string_to_f32(&value)
+                    .map_err(|_| "Couldn't convert string to f32")
+                    .expect("Couldn't convert string to f32");
+
+                let mut current_animation_data =
+                    animation_data.get().expect("Couldn't get Animation Data");
+                let mut current_keyframe = selected_keyframes.get();
+                let mut current_keyframe = current_keyframe
+                    .get_mut(0)
+                    .expect("Couldn't get Selected Keyframe");
+                let mut current_sequence = selected_sequence_data.get();
+                // let current_polygon = selected_polygon_data.read();
+                // let current_polygon = current_polygon.borrow();
+
+                // update keyframe
+                current_keyframe.time = Duration::from_secs(value as u64);
+
+                let editor_state = editor_state_cloned21.lock().unwrap();
+
+                update_keyframe(
+                    editor_state,
+                    current_animation_data,
+                    current_keyframe,
+                    current_sequence,
+                    selected_keyframes,
+                    animation_data,
+                    selected_sequence_data,
+                    selected_sequence_id,
+                    sequence_selected,
+                );
+
+                println!("Keyframe updated!");
+
+                let mut editor = editor_cloned8.lock().unwrap();
+                editor.update_motion_paths(&selected_sequence_data.get());
+
+                println!("Motion Paths updated!");
+            },
+            editor_state_cloned22,
+            "time".to_string(),
+            object_type_cloned.clone(),
+        )
+        .style(move |s| s.width(260.0)),
         match selected_keyframe.value {
             KeyframeValue::Position(position) => container(
                 (v_stack((
