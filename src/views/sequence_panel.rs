@@ -17,7 +17,7 @@ use floem::reactive::{RwSignal, SignalGet};
 use floem::style::CursorStyle;
 use floem::taffy::{AlignItems, FlexDirection, FlexWrap};
 use floem::views::{
-    dyn_container, dyn_stack, empty, h_stack, scroll, stack, svg, v_stack, Decorators,
+    dyn_container, dyn_stack, empty, h_stack, scroll, stack, svg, v_stack, Checkbox, Decorators,
 };
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
@@ -26,7 +26,9 @@ use rand::Rng;
 use stunts_engine::capture::{
     get_sources, MousePosition, RectInfo, SourceData, StCapture, WindowInfo,
 };
-use stunts_engine::editor::{string_to_f32, ControlMode, Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{
+    string_to_f32, string_to_u32, ControlMode, Editor, Point, Viewport, WindowSize,
+};
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
 };
@@ -44,7 +46,7 @@ use stunts_engine::animations::{
     AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
 };
 
-use super::inputs::debounce_input;
+use super::inputs::{debounce_input, inline_dropdown, DropdownOption};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum LayerKind {
@@ -458,6 +460,39 @@ pub fn sequence_panel(
 
     let sequence_duration_input = create_rw_signal(String::new());
     let target_duration_signal = create_rw_signal(String::new());
+
+    let count_dropdown_options: RwSignal<Vec<DropdownOption>> = create_rw_signal(Vec::new());
+    let selected_count = create_rw_signal("4".to_string());
+
+    let curve_is_checked = create_rw_signal(false);
+
+    create_effect(move |_| {
+        let mut options: Vec<DropdownOption> = Vec::new();
+        options.push(DropdownOption {
+            id: "4".to_string(),
+            label: "4".to_string(),
+        });
+        options.push(DropdownOption {
+            id: "6".to_string(),
+            label: "6".to_string(),
+        });
+
+        count_dropdown_options.set(options);
+    });
+
+    create_effect({
+        let editor_cloned_6 = Arc::clone(&editor_cloned_6);
+
+        move |_| {
+            let is_curved = curve_is_checked.get();
+
+            let mut editor = editor_cloned_6.lock().unwrap();
+
+            editor.generation_curved = is_curved;
+
+            drop(editor);
+        }
+    });
 
     create_effect({
         let editor_cloned_6 = Arc::clone(&editor_cloned_6);
@@ -1103,6 +1138,19 @@ pub fn sequence_panel(
         }
     };
 
+    let on_count_selection = move |count: String| {
+        // TODO: wrap up in editor_state for undo/redo
+
+        println!("on_count_selection {:?}", count);
+
+        // update editor's text_item, recall render text
+        let mut editor = editor.lock().unwrap();
+
+        editor.generation_count = string_to_u32(&count).expect("Couldn't convert string to u32");
+
+        drop(editor);
+    };
+
     v_stack((
         v_stack((
             label(move || format!("Update Sequence"))
@@ -1124,6 +1172,16 @@ pub fn sequence_panel(
 
                 drop(editor);
             })
+            .style(|s| s.margin_bottom(5.0)),
+            h_stack((
+                inline_dropdown(
+                    "Choose keyframe count".to_string(),
+                    selected_count,
+                    count_dropdown_options,
+                    on_count_selection,
+                ),
+                Checkbox::new_labeled_rw(curve_is_checked, || "Curved Paths"),
+            ))
             .style(|s| s.margin_bottom(5.0)),
             v_stack((simple_button("Generate Animation".to_string(), move |_| {
                 // hook into CommonMotion2D run_motion_inference

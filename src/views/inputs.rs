@@ -369,9 +369,12 @@ where
     });
 
     v_stack((
-        simple_button(button_text, move |_| {
-            dropdown_open.set(true);
-        }),
+        h_stack((
+            simple_button(button_text, move |_| {
+                dropdown_open.set(true);
+            }),
+            label(move || label_text.get()),
+        )),
         dyn_container(
             move || dropdown_open.get(),
             move |is_dropdown_open| {
@@ -395,7 +398,7 @@ where
                         )
                         .style(|s| {
                             s.flex_col()
-                                .width(260.0)
+                                .max_width(260.0)
                                 .padding_vert(15.0)
                                 .padding_horiz(20.0)
                                 .background(Color::LIGHT_BLUE)
@@ -407,7 +410,6 @@ where
                 }
             },
         ),
-        label(move || label_text.get()),
     ))
 }
 
