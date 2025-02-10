@@ -27,9 +27,9 @@ use floem_renderer::gpu_resources::{self, GpuResources};
 use floem_winit::dpi::{LogicalSize, PhysicalSize};
 use floem_winit::event::{ElementState, MouseButton};
 use stunts_engine::editor::{
-    string_to_f32, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp, OnPathMouseUp, Point,
-    PolygonClickHandler, TextItemClickHandler, VideoItemClickHandler, Viewport, WindowSize,
-    CANVAS_HORIZ_OFFSET,
+    string_to_f32, wgpu_to_human, Editor, ImageItemClickHandler, OnHandleMouseUp, OnMouseUp,
+    OnPathMouseUp, Point, PolygonClickHandler, TextItemClickHandler, VideoItemClickHandler,
+    Viewport, WindowSize, CANVAS_HORIZ_OFFSET,
 };
 use stunts_engine::polygon::{PolygonConfig, SavedPoint, Stroke};
 use stunts_engine::st_image::StImageConfig;
@@ -58,7 +58,8 @@ use crate::helpers::saved_state::SavedState;
 use crate::helpers::utilities::save_saved_state_raw;
 use crate::views::keyframe_panel::update_keyframe;
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, ObjectType, Sequence, UIKeyframe,
+    AnimationData, AnimationProperty, BackgroundFill, EasingType, KeyframeValue, ObjectType,
+    Sequence, UIKeyframe,
 };
 
 use super::aside::tab_interface;
@@ -458,6 +459,12 @@ pub fn project_view(
     let selected_sequence_data: RwSignal<Sequence> = create_rw_signal(Sequence {
         id: String::new(),
         name: String::new(),
+        background_fill: Some(BackgroundFill::Color([
+            wgpu_to_human(0.8) as i32,
+            wgpu_to_human(0.8) as i32,
+            wgpu_to_human(0.8) as i32,
+            1,
+        ])),
         duration_ms: 20000,
         active_polygons: Vec::new(),
         polygon_motion_paths: Vec::new(),

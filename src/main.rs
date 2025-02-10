@@ -59,7 +59,7 @@ pub fn render_ray_intersection(
             x: editor.ds_ndc_pos.x,
             y: editor.ds_ndc_pos.y,
         },
-        rgb_to_wgpu(47, 131, 222, 1.0), // Blue dot
+        rgb_to_wgpu(47, 131, 222, 255.0), // Blue dot
         camera,
     );
 
@@ -1015,36 +1015,36 @@ async fn main() {
 
                 println!("Initialized...");
 
-                let canvas_polygon = Polygon::new(
-                    &window_size,
-                    &gpu_resources.device,
-                    &gpu_resources.queue,
-                    &model_bind_group_layout,
-                    &group_bind_group_layout,
-                    &camera,
-                    vec![
-                        Point { x: 0.0, y: 0.0 },
-                        Point { x: 1.0, y: 0.0 },
-                        Point { x: 1.0, y: 1.0 },
-                        Point { x: 0.0, y: 1.0 },
-                    ],
-                    (800.0 as f32, 450.0 as f32),
-                    Point { x: 400.0, y: 225.0 },
-                    0.0,
-                    0.0,
-                    [0.8, 0.8, 0.8, 1.0],
-                    Stroke {
-                        thickness: 0.0,
-                        fill: rgb_to_wgpu(0, 0, 0, 1.0),
-                    },
-                    0.0,
-                    -89, // camera far is -100
-                    "Canvas Background".to_string(),
-                    Uuid::new_v4(),
-                    Uuid::nil(),
-                );
+                // let canvas_polygon = Polygon::new(
+                //     &window_size,
+                //     &gpu_resources.device,
+                //     &gpu_resources.queue,
+                //     &model_bind_group_layout,
+                //     &group_bind_group_layout,
+                //     &camera,
+                //     vec![
+                //         Point { x: 0.0, y: 0.0 },
+                //         Point { x: 1.0, y: 0.0 },
+                //         Point { x: 1.0, y: 1.0 },
+                //         Point { x: 0.0, y: 1.0 },
+                //     ],
+                //     (800.0 as f32, 450.0 as f32),
+                //     Point { x: 400.0, y: 225.0 },
+                //     0.0,
+                //     0.0,
+                //     [0.8, 0.8, 0.8, 1.0],
+                //     Stroke {
+                //         thickness: 0.0,
+                //         fill: rgb_to_wgpu(0, 0, 0, 1.0),
+                //     },
+                //     0.0,
+                //     -89, // camera far is -100
+                //     "canvas_background".to_string(),
+                //     Uuid::new_v4(),
+                //     Uuid::nil(),
+                // );
 
-                editor.static_polygons.push(canvas_polygon);
+                // editor.static_polygons.push(canvas_polygon);
 
                 let cursor_ring_dot = RingDot::new(
                     &gpu_resources.device,
@@ -1053,7 +1053,7 @@ async fn main() {
                     &group_bind_group_layout,
                     &window_size,
                     Point { x: 600.0, y: 300.0 },
-                    rgb_to_wgpu(250, 20, 10, 0.5),
+                    rgb_to_wgpu(250, 20, 10, 255.0 / 2.0),
                     &camera,
                 );
 

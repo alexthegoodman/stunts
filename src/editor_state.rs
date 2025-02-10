@@ -9,7 +9,8 @@ use std::time::Duration;
 use floem::keyboard::ModifiersState;
 use floem::reactive::{RwSignal, SignalUpdate};
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyType, KeyframeValue, ObjectType, UIKeyframe,
+    AnimationData, AnimationProperty, BackgroundFill, EasingType, KeyType, KeyframeValue,
+    ObjectType, UIKeyframe,
 };
 use stunts_engine::editor::{
     color_to_wgpu, string_to_f32, wgpu_to_human, Editor, InputValue, ObjectProperty, PathType,
@@ -29,6 +30,8 @@ use crate::helpers::utilities::save_saved_state_raw;
 pub struct ObjectEdit {
     pub object_id: Uuid,
     pub object_type: ObjectType,
+    pub background_flag: bool,
+    pub selected_sequence_id: Option<String>,
     pub field_name: String,
     pub old_value: ObjectProperty,
     pub new_value: ObjectProperty,
@@ -200,58 +203,172 @@ impl Edit for ObjectEdit {
                 }
             }
             ObjectProperty::Red(h) => {
-                editor.update_polygon(self.object_id, "red", InputValue::Number(*h));
+                if self.background_flag {
+                    if let Some(selected_sequence_id) = self.selected_sequence_id.clone() {
+                        editor.update_background(self.object_id, "red", InputValue::Number(*h));
 
-                let mut red = h.to_string();
-                self.signal.expect("signal error").set(red);
+                        let mut red = h.to_string();
+                        self.signal.expect("signal error").set(red);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() {
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.fill[0] = color_to_wgpu(*h) as i32;
-                        }
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id {
+                                if s.background_fill.is_none() {
+                                    s.background_fill = Some(BackgroundFill::Color([
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        255,
+                                    ]));
+                                }
+
+                                let background_fill = s
+                                    .background_fill
+                                    .as_mut()
+                                    .expect("Couldn't get background fill");
+
+                                match background_fill {
+                                    BackgroundFill::Color(fill) => {
+                                        fill[0] = *h as i32;
+                                    }
+                                    _ => {
+                                        println!("Not supported");
+                                    }
+                                }
+                            }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                } else {
+                    editor.update_polygon(self.object_id, "red", InputValue::Number(*h));
+
+                    let mut red = h.to_string();
+                    self.signal.expect("signal error").set(red);
+
+                    saved_state.sequences.iter_mut().for_each(|s| {
+                        // if s.id == selected_sequence_id.get() {
+                        s.active_polygons.iter_mut().for_each(|p| {
+                            if p.id == self.object_id.to_string() {
+                                p.fill[0] = color_to_wgpu(*h) as i32;
+                            }
+                        });
+                        // }
                     });
-                    // }
-                });
 
-                save_saved_state_raw(saved_state.clone());
+                    save_saved_state_raw(saved_state.clone());
+                }
             }
             ObjectProperty::Green(h) => {
-                editor.update_polygon(self.object_id, "green", InputValue::Number(*h));
+                if self.background_flag {
+                    if let Some(selected_sequence_id) = self.selected_sequence_id.clone() {
+                        editor.update_background(self.object_id, "green", InputValue::Number(*h));
 
-                let mut green = h.to_string();
-                self.signal.expect("signal error").set(green);
+                        let mut red = h.to_string();
+                        self.signal.expect("signal error").set(red);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() {
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.fill[1] = color_to_wgpu(*h) as i32;
-                        }
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id {
+                                if s.background_fill.is_none() {
+                                    s.background_fill = Some(BackgroundFill::Color([
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        255,
+                                    ]));
+                                }
+
+                                let background_fill = s
+                                    .background_fill
+                                    .as_mut()
+                                    .expect("Couldn't get background fill");
+
+                                match background_fill {
+                                    BackgroundFill::Color(fill) => {
+                                        fill[1] = *h as i32;
+                                    }
+                                    _ => {
+                                        println!("Not supported");
+                                    }
+                                }
+                            }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                } else {
+                    editor.update_polygon(self.object_id, "green", InputValue::Number(*h));
+
+                    let mut green = h.to_string();
+                    self.signal.expect("signal error").set(green);
+
+                    saved_state.sequences.iter_mut().for_each(|s| {
+                        // if s.id == selected_sequence_id.get() {
+                        s.active_polygons.iter_mut().for_each(|p| {
+                            if p.id == self.object_id.to_string() {
+                                p.fill[1] = color_to_wgpu(*h) as i32;
+                            }
+                        });
+                        // }
                     });
-                    // }
-                });
 
-                save_saved_state_raw(saved_state.clone());
+                    save_saved_state_raw(saved_state.clone());
+                }
             }
             ObjectProperty::Blue(h) => {
-                editor.update_polygon(self.object_id, "blue", InputValue::Number(*h));
+                if self.background_flag {
+                    if let Some(selected_sequence_id) = self.selected_sequence_id.clone() {
+                        editor.update_background(self.object_id, "blue", InputValue::Number(*h));
 
-                let mut blue = h.to_string();
-                self.signal.expect("signal error").set(blue);
+                        let mut red = h.to_string();
+                        self.signal.expect("signal error").set(red);
 
-                saved_state.sequences.iter_mut().for_each(|s| {
-                    // if s.id == selected_sequence_id.get() {
-                    s.active_polygons.iter_mut().for_each(|p| {
-                        if p.id == self.object_id.to_string() {
-                            p.fill[2] = color_to_wgpu(*h) as i32;
-                        }
+                        saved_state.sequences.iter_mut().for_each(|s| {
+                            if s.id == selected_sequence_id {
+                                if s.background_fill.is_none() {
+                                    s.background_fill = Some(BackgroundFill::Color([
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        wgpu_to_human(0.8) as i32,
+                                        255,
+                                    ]));
+                                }
+
+                                let background_fill = s
+                                    .background_fill
+                                    .as_mut()
+                                    .expect("Couldn't get background fill");
+
+                                match background_fill {
+                                    BackgroundFill::Color(fill) => {
+                                        fill[2] = *h as i32;
+                                    }
+                                    _ => {
+                                        println!("Not supported");
+                                    }
+                                }
+                            }
+                        });
+
+                        save_saved_state_raw(saved_state.clone());
+                    }
+                } else {
+                    editor.update_polygon(self.object_id, "blue", InputValue::Number(*h));
+
+                    let mut blue = h.to_string();
+                    self.signal.expect("signal error").set(blue);
+
+                    saved_state.sequences.iter_mut().for_each(|s| {
+                        // if s.id == selected_sequence_id.get() {
+                        s.active_polygons.iter_mut().for_each(|p| {
+                            if p.id == self.object_id.to_string() {
+                                p.fill[2] = color_to_wgpu(*h) as i32;
+                            }
+                        });
+                        // }
                     });
-                    // }
-                });
 
-                save_saved_state_raw(saved_state.clone());
+                    save_saved_state_raw(saved_state.clone());
+                }
             }
             ObjectProperty::BorderRadius(h) => {
                 editor.update_polygon(self.object_id, "border_radius", InputValue::Number(*h));
@@ -1349,6 +1466,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id,
             object_type,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::Width(old_width),
             new_value: ObjectProperty::Width(new_width),
             field_name: "width".to_string(),
@@ -1391,6 +1510,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id,
             object_type,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::Height(old_height),
             new_value: ObjectProperty::Height(new_height),
             field_name: "height".to_string(),
@@ -1401,6 +1522,115 @@ impl EditorState {
                     .get(&format!("height{}", object_id))
                     .cloned()
                     .expect("Couldn't get height value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_background_red(
+        &mut self,
+        new_red_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_red = string_to_f32(new_red_str).map_err(|_| "Couldn't convert string to f32")?;
+
+        let old_red = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_background_red(self.selected_polygon_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::Red(old_red),
+            new_value: ObjectProperty::Red(new_red),
+            field_name: "red".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("red{}", self.selected_polygon_id))
+                    .cloned()
+                    .expect("Couldn't get width value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_background_green(
+        &mut self,
+        new_green_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_green =
+            string_to_f32(new_green_str).map_err(|_| "Couldn't convert string to f32")?;
+
+        let old_green = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_background_green(self.selected_polygon_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::Green(old_green),
+            new_value: ObjectProperty::Green(new_green),
+            field_name: "green".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("green{}", self.selected_polygon_id))
+                    .cloned()
+                    .expect("Couldn't get green value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_background_blue(
+        &mut self,
+        new_blue_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_blue = string_to_f32(new_blue_str).map_err(|_| "Couldn't convert string to f32")?;
+
+        let old_blue = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_background_blue(self.selected_polygon_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_polygon_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::Blue(old_blue),
+            new_value: ObjectProperty::Blue(new_blue),
+            field_name: "blue".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("blue{}", self.selected_polygon_id))
+                    .cloned()
+                    .expect("Couldn't get blue value signal"),
             ),
         };
 
@@ -1421,6 +1651,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::Red(old_red),
             new_value: ObjectProperty::Red(new_red),
             field_name: "red".to_string(),
@@ -1452,6 +1684,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::Green(old_green),
             new_value: ObjectProperty::Green(new_green),
             field_name: "green".to_string(),
@@ -1482,6 +1716,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::Blue(old_blue),
             new_value: ObjectProperty::Blue(new_blue),
             field_name: "blue".to_string(),
@@ -1513,6 +1749,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::BorderRadius(old_border_radius),
             new_value: ObjectProperty::BorderRadius(new_border_radius),
             field_name: "border_radius".to_string(),
@@ -1547,6 +1785,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::StrokeThickness(old_stroke_thickness),
             new_value: ObjectProperty::StrokeThickness(new_stroke_thickness),
             field_name: "stroke_thickness".to_string(),
@@ -1578,6 +1818,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::StrokeRed(old_stroke_red),
             new_value: ObjectProperty::StrokeRed(new_stroke_red),
             field_name: "stroke_red".to_string(),
@@ -1609,6 +1851,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::StrokeGreen(old_stroke_green),
             new_value: ObjectProperty::StrokeGreen(new_stroke_green),
             field_name: "stroke_green".to_string(),
@@ -1640,6 +1884,8 @@ impl EditorState {
         let edit = ObjectEdit {
             object_id: self.selected_polygon_id,
             object_type: ObjectType::Polygon,
+            background_flag: false,
+            selected_sequence_id: None,
             old_value: ObjectProperty::StrokeBlue(old_stroke_blue),
             new_value: ObjectProperty::StrokeBlue(new_stroke_blue),
             field_name: "stroke_blue".to_string(),

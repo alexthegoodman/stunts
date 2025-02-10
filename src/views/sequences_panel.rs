@@ -14,7 +14,7 @@ use floem_renderer::gpu_resources;
 use im::HashMap;
 use rand::Rng;
 use std::str::FromStr;
-use stunts_engine::editor::{rgb_to_wgpu, Editor, Point, Viewport, WindowSize};
+use stunts_engine::editor::{rgb_to_wgpu, wgpu_to_human, Editor, Point, Viewport, WindowSize};
 use stunts_engine::polygon::{Polygon, PolygonConfig, SavedPolygonConfig, Stroke};
 use stunts_engine::st_image::{StImage, StImageConfig};
 use stunts_engine::text_due::{TextRenderer, TextRendererConfig};
@@ -24,7 +24,8 @@ use uuid::Uuid;
 use crate::editor_state::EditorState;
 use crate::helpers::utilities::{parse_animation_data, save_saved_state_raw};
 use stunts_engine::animations::{
-    AnimationData, AnimationProperty, EasingType, KeyframeValue, Sequence, UIKeyframe,
+    AnimationData, AnimationProperty, BackgroundFill, EasingType, KeyframeValue, Sequence,
+    UIKeyframe,
 };
 
 use super::export::export_widget;
@@ -160,6 +161,12 @@ pub fn sequences_view(
                 let new_sequence = Sequence {
                     id: new_sequence_id.clone(),
                     name: "New Sequence".to_string(),
+                    background_fill: Some(BackgroundFill::Color([
+                        wgpu_to_human(0.8) as i32,
+                        wgpu_to_human(0.8) as i32,
+                        wgpu_to_human(0.8) as i32,
+                        1,
+                    ])),
                     duration_ms: 20000,
                     active_polygons: Vec::new(),
                     polygon_motion_paths: Vec::new(),
@@ -271,7 +278,7 @@ pub fn sequences_view(
                             simple_button("Edit ".to_string() + &quick_access_info, move |_| {
                                 println!("Open Sequence...");
 
-                                let editor_state = state_cloned2.lock().unwrap();
+                                let mut editor_state = state_cloned2.lock().unwrap();
                                 let saved_state = editor_state
                                     .record_state
                                     .saved_state
@@ -284,6 +291,22 @@ pub fn sequences_view(
                                     .find(|s| s.id == item.clone())
                                     .expect("Couldn't find matching sequence")
                                     .clone();
+
+                                let mut background_fill = Some(BackgroundFill::Color([
+                                    wgpu_to_human(0.8) as i32,
+                                    wgpu_to_human(0.8) as i32,
+                                    wgpu_to_human(0.8) as i32,
+                                    255,
+                                ]));
+
+                                if saved_sequence.background_fill.is_some() {
+                                    background_fill = saved_sequence.background_fill.clone();
+                                }
+
+                                // for the background polygon and its signal
+                                editor_state.selected_polygon_id =
+                                    Uuid::from_str(&saved_sequence.id)
+                                        .expect("Couldn't convert string to uuid");
 
                                 drop(editor_state);
 
@@ -359,6 +382,25 @@ pub fn sequences_view(
                                         .expect("Couldn't find image");
                                     video.hidden = false;
                                 });
+
+                                match background_fill.expect("Couldn't get default background fill")
+                                {
+                                    BackgroundFill::Color(fill) => {
+                                        editor.replace_background(
+                                            Uuid::from_str(&saved_sequence.id)
+                                                .expect("Couldn't convert string to uuid"),
+                                            rgb_to_wgpu(
+                                                fill[0] as u8,
+                                                fill[1] as u8,
+                                                fill[2] as u8,
+                                                fill[3] as f32,
+                                            ),
+                                        );
+                                    }
+                                    _ => {
+                                        println!("Not supported yet...");
+                                    }
+                                }
 
                                 println!("Objects restored!");
 

@@ -9,12 +9,14 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use stunts_engine::animations::AnimationData;
 use stunts_engine::animations::AnimationProperty;
+use stunts_engine::animations::BackgroundFill;
 use stunts_engine::animations::EasingType;
 use stunts_engine::animations::KeyType;
 use stunts_engine::animations::KeyframeValue;
 use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
 use stunts_engine::animations::UIKeyframe;
+use stunts_engine::editor::wgpu_to_human;
 use stunts_engine::editor::PathType;
 use stunts_engine::polygon::SavedPoint;
 use stunts_engine::polygon::SavedPolygonConfig;
@@ -399,6 +401,12 @@ pub fn parse_animation_data(content: &str) -> Result<Vec<Sequence>, Box<dyn std:
         let sequence = Sequence {
             id: Uuid::new_v4().to_string(),
             name: "Imported Seq".to_string(),
+            background_fill: Some(BackgroundFill::Color([
+                wgpu_to_human(0.8) as i32,
+                wgpu_to_human(0.8) as i32,
+                wgpu_to_human(0.8) as i32,
+                1,
+            ])),
             duration_ms: 20000,
             active_polygons,
             polygon_motion_paths: motion_paths,
