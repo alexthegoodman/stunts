@@ -1074,6 +1074,35 @@ impl EditorState {
         new_motion_path
     }
 
+    pub fn reverse_keyframes(&self, animation: AnimationData) -> AnimationData {
+        let mut new_animation = animation.clone();
+
+        // For each property in the animation
+        for property in &mut new_animation.properties {
+            if property.keyframes.len() <= 1 {
+                continue; // No need to reverse single keyframe or empty properties
+            }
+
+            // Sort keyframes by time first to ensure proper ordering
+            property
+                .keyframes
+                .sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap());
+
+            // Create a vector of all times
+            let times: Vec<Duration> = property.keyframes.iter().map(|k| k.time).collect();
+
+            // Reverse the times vector
+            let reversed_times: Vec<Duration> = times.iter().rev().cloned().collect();
+
+            // Apply the reversed times to the keyframes
+            for (keyframe, new_time) in property.keyframes.iter_mut().zip(reversed_times.iter()) {
+                keyframe.time = *new_time;
+            }
+        }
+
+        new_animation
+    }
+
     /// squish keyframes into target_duration, keeping proportional time between them
     pub fn scale_keyframes(
         &self,

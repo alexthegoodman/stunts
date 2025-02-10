@@ -387,6 +387,7 @@ pub fn sequence_panel(
     let editor_cloned_12 = Arc::clone(&editor);
     let editor_cloned_13 = Arc::clone(&editor);
     let editor_cloned_14 = Arc::clone(&editor);
+    let editor_cloned_15 = Arc::clone(&editor);
     let gpu_cloned = Arc::clone(&gpu_helper);
     let viewport_cloned = Arc::clone(&viewport);
     let gpu_cloned_2 = Arc::clone(&gpu_helper);
@@ -1356,6 +1357,40 @@ pub fn sequence_panel(
             //     )),
             // ))
             // .style(|s| s.margin_bottom(5.0)),
+            // v_stack((simple_button("Reverse Keyframes".to_string(), move |_| {
+            //     let mut editor_state = state_cloned_9.lock().unwrap();
+
+            //     let target_keyframes = editor_state.reverse_keyframes(selected_sequence_id.get());
+
+            //     let mut new_sequence = selected_sequence_data.get();
+            //     new_sequence.polygon_motion_paths = target_keyframes.clone();
+
+            //     selected_sequence_data.set(new_sequence.clone());
+
+            //     let mut saved_state = editor_state
+            //         .record_state
+            //         .saved_state
+            //         .as_mut()
+            //         .expect("Couldn't get Saved State");
+
+            //     saved_state.sequences.iter_mut().for_each(|s| {
+            //         if s.id == selected_sequence_id.get() {
+            //             s.polygon_motion_paths = target_keyframes.clone();
+            //         }
+            //     });
+
+            //     save_saved_state_raw(saved_state.clone());
+
+            //     editor_state.record_state.saved_state = Some(saved_state.clone());
+
+            //     drop(editor_state);
+
+            //     let mut editor = editor_cloned_15.lock().unwrap();
+
+            //     editor.update_motion_paths(&new_sequence);
+
+            //     drop(editor);
+            // }),)),
             stack((
                 option_button(
                     "Add Square",

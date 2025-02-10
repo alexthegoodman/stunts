@@ -39,16 +39,19 @@ use super::inputs::styled_input;
 use super::inputs::DropdownOption;
 
 pub fn keyframe_tools(
+    editor: Arc<Mutex<Editor>>,
     editor_state: Arc<Mutex<EditorState>>,
     selected_polygon_id: RwSignal<Uuid>,
     selected_sequence_id: RwSignal<String>,
     selected_sequence_data: RwSignal<Sequence>,
     object_type: ObjectType,
 ) -> impl IntoView {
+    let editor_2 = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
     let editor_state4 = Arc::clone(&editor_state);
     let editor_state5 = Arc::clone(&editor_state);
+    let editor_state6 = Arc::clone(&editor_state);
 
     let sequence_duration_input = create_rw_signal(String::new());
     let target_duration_signal = create_rw_signal(String::new());
@@ -68,6 +71,44 @@ pub fn keyframe_tools(
 
     v_stack((
         label(|| "Update Keyframes").style(|s| s.margin_bottom(5.0)),
+        v_stack((simple_button("Reverse Keyframes".to_string(), move |_| {
+            let mut editor_state = editor_state6.lock().unwrap();
+
+            let mut new_sequence = selected_sequence_data.get();
+
+            for (i, animation) in new_sequence.polygon_motion_paths.iter_mut().enumerate() {
+                if animation.polygon_id == selected_polygon_id.get().to_string() {
+                    let target_animation = editor_state.reverse_keyframes(animation.clone());
+                    *animation = target_animation.clone();
+                }
+            }
+
+            selected_sequence_data.set(new_sequence.clone());
+
+            let mut saved_state = editor_state
+                .record_state
+                .saved_state
+                .as_mut()
+                .expect("Couldn't get Saved State");
+
+            saved_state.sequences.iter_mut().for_each(|s| {
+                if s.id == selected_sequence_id.get() {
+                    *s = new_sequence.clone()
+                }
+            });
+
+            save_saved_state_raw(saved_state.clone());
+
+            editor_state.record_state.saved_state = Some(saved_state.clone());
+
+            drop(editor_state);
+
+            let mut editor = editor_2.lock().unwrap();
+
+            editor.update_motion_paths(&new_sequence);
+
+            drop(editor);
+        }),)),
         v_stack((
             debounce_input(
                 "Target Duration".to_string(),
@@ -463,6 +504,7 @@ pub fn properties_view(
                 .style(move |s| s.width(quarters)),
             )),
             keyframe_tools(
+                editor_cloned,
                 editor_state22,
                 selected_polygon_id,
                 selected_sequence_id,
@@ -497,6 +539,8 @@ pub fn text_properties_view(
     let editor_cloned2 = Arc::clone(&editor);
     let editor_cloned3 = Arc::clone(&editor);
     let editor_cloned4 = Arc::clone(&editor);
+    let editor_cloned5 = Arc::clone(&editor);
+    let editor_cloned6 = Arc::clone(&editor);
     let editor_state2 = Arc::clone(&editor_state);
     let editor_state3 = Arc::clone(&editor_state);
     let editor_state4 = Arc::clone(&editor_state);
@@ -507,6 +551,7 @@ pub fn text_properties_view(
     let editor_state9 = Arc::clone(&editor_state);
     let editor_state10 = Arc::clone(&editor_state);
     let editor_state11 = Arc::clone(&editor_state);
+    let editor_state12 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -650,6 +695,7 @@ pub fn text_properties_view(
             move |defaults_are_set| {
                 let on_font_selection = on_font_selection.clone();
                 let on_color_update = on_color_update.clone();
+                let editor_cloned6 = editor_cloned6.clone();
                 let editor_state = editor_state.clone();
                 let editor_state2 = editor_state2.clone();
                 let editor_state5 = editor_state5.clone();
@@ -800,6 +846,7 @@ pub fn text_properties_view(
                             rgb_view_debounced(on_color_update, init_red, init_green, init_blue),
                         )),
                         keyframe_tools(
+                            editor_cloned6,
                             editor_state9,
                             selected_text_id,
                             selected_sequence_id,
@@ -895,6 +942,7 @@ pub fn image_properties_view(
                 .style(move |s| s.width(halfs)),
             )),
             keyframe_tools(
+                editor_cloned,
                 editor_state5,
                 selected_image_id,
                 selected_sequence_id,
@@ -986,6 +1034,7 @@ pub fn video_properties_view(
                 .style(move |s| s.width(halfs)),
             )),
             keyframe_tools(
+                editor_cloned,
                 editor_state5,
                 selected_video_id,
                 selected_sequence_id,
