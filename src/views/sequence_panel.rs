@@ -1976,6 +1976,8 @@ pub fn sequence_panel(
                         let text_color: Rgb<Rgb, u8> =
                             Rgb::from_str(&text_color).expect("Couldn't get text color");
 
+                        let font_index = theme[2];
+
                         option_button(
                             "Apply Theme",
                             "brush",
@@ -2027,8 +2029,17 @@ pub fn sequence_panel(
                                     .map(|text| text.id)
                                     .collect();
 
+                                let font_id = editor
+                                    .font_manager
+                                    .font_data
+                                    .get(font_index as usize)
+                                    .expect("Couldn't get font by index")
+                                    .0
+                                    .clone();
+
                                 for id in ids_to_update.clone() {
                                     editor.update_text_color(id, background_color);
+                                    editor.update_text_font_family(font_id.clone(), id);
                                 }
 
                                 drop(editor);
