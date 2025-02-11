@@ -18,18 +18,21 @@ use floem::reactive::{RwSignal, SignalGet};
 use floem::style::CursorStyle;
 use floem::taffy::{AlignItems, FlexDirection, FlexWrap};
 use floem::views::{
-    dyn_container, dyn_stack, empty, h_stack, scroll, stack, svg, v_stack, Checkbox, Decorators,
+    dyn_container, dyn_stack, empty, h_stack, list, scroll, stack, svg, v_stack, Checkbox,
+    Decorators,
 };
 use floem::GpuHelper;
 use floem::{views::label, IntoView};
 use floem_renderer::gpu_resources;
+use palette::rgb::Rgb;
+use palette::Srgb;
 use rand::Rng;
 use stunts_engine::capture::{
     get_sources, MousePosition, RectInfo, SourceData, StCapture, WindowInfo,
 };
 use stunts_engine::editor::{
-    rgb_to_wgpu, string_to_f32, string_to_u32, wgpu_to_human, ControlMode, Editor, Point, Viewport,
-    WindowSize,
+    rgb_to_wgpu, string_to_f32, string_to_u32, wgpu_to_human, ControlMode, Editor, InputValue,
+    Point, Viewport, WindowSize,
 };
 use stunts_engine::polygon::{
     Polygon, PolygonConfig, SavedPoint, SavedPolygonConfig, SavedStroke, Stroke,
@@ -1211,6 +1214,64 @@ pub fn sequence_panel(
     let thirds = (aside_width / 3.0) + (5.0 * 3.0);
     let halfs = (aside_width / 2.0) + (5.0 * 2.0);
 
+    let colors = [
+        ["#FFE4E1", "#FF6B6B", "#FF0000", "#B22222", "#8B0000"], // red
+        ["#FFECD9", "#FFB347", "#FF8C00", "#D95E00", "#993D00"], // orange
+        ["#FFFACD", "#FFE66D", "#FFD700", "#DAA520", "#B8860B"], // yellow
+        ["#E8F5E9", "#7CB342", "#2E7D32", "#1B5E20", "#0A3D0A"], // green
+        ["#E3F2FD", "#64B5F6", "#1E88E5", "#1565C0", "#0D47A1"], // blue
+        ["#F3E5F5", "#AB47BC", "#8E24AA", "#6A1B9A", "#4A148C"], // purple
+        ["#FCE4EC", "#F06292", "#E91E63", "#C2185B", "#880E4F"], // pink
+        ["#E0F2F1", "#4DB6AC", "#00897B", "#00695C", "#004D40"], // teal
+        ["#EFEBE9", "#A1887F", "#795548", "#5D4037", "#3E2723"], // brown
+        ["#F5F5F5", "#BDBDBD", "#757575", "#424242", "#212121"], // gray
+    ];
+
+    // 50 color / text combinations (style portion of format)
+    // background_color_index, text_length, font_family_index, font_size, font_color_index
+    let themes = [
+        [0.0, 120.0, 12.0, 24.0, 0.4],
+        [1.2, 80.0, 25.0, 32.0, 1.0],
+        [2.1, 150.0, 37.0, 18.0, 2.3],
+        [3.3, 200.0, 45.0, 20.0, 3.1],
+        [4.4, 100.0, 50.0, 28.0, 4.0],
+        [5.2, 90.0, 55.0, 22.0, 5.1],
+        [6.0, 130.0, 10.0, 26.0, 6.3],
+        [7.2, 110.0, 30.0, 16.0, 7.4],
+        [8.1, 140.0, 40.0, 20.0, 8.3],
+        [9.3, 180.0, 5.0, 18.0, 9.1],
+        [0.1, 95.0, 18.0, 30.0, 0.3],
+        [1.3, 110.0, 22.0, 20.0, 1.2],
+        [2.2, 130.0, 35.0, 22.0, 2.4],
+        [3.0, 160.0, 48.0, 18.0, 3.2],
+        [4.1, 75.0, 7.0, 28.0, 4.3],
+        [5.4, 140.0, 53.0, 24.0, 5.0],
+        [6.2, 100.0, 14.0, 26.0, 6.1],
+        [7.1, 120.0, 29.0, 20.0, 7.3],
+        [8.2, 150.0, 42.0, 18.0, 8.4],
+        [9.0, 200.0, 3.0, 16.0, 9.2],
+        [0.3, 85.0, 20.0, 32.0, 0.2],
+        [1.4, 105.0, 26.0, 24.0, 1.1],
+        [2.0, 115.0, 38.0, 20.0, 2.3],
+        [3.2, 170.0, 47.0, 18.0, 3.4],
+        [4.2, 90.0, 9.0, 30.0, 4.1],
+        [5.1, 125.0, 54.0, 22.0, 5.3],
+        [6.3, 135.0, 16.0, 24.0, 6.2],
+        [7.0, 145.0, 31.0, 18.0, 7.4],
+        [8.3, 155.0, 43.0, 20.0, 8.1],
+        [9.4, 180.0, 6.0, 16.0, 9.0],
+        [0.4, 100.0, 23.0, 28.0, 0.1],
+        [1.0, 115.0, 27.0, 22.0, 1.3],
+        [2.3, 140.0, 39.0, 20.0, 2.2],
+        [3.1, 160.0, 46.0, 18.0, 3.0],
+        [4.3, 80.0, 8.0, 32.0, 4.2],
+        [5.0, 130.0, 55.0, 24.0, 5.4],
+        [6.1, 95.0, 15.0, 26.0, 6.4],
+        [7.3, 110.0, 32.0, 20.0, 7.2],
+        [8.4, 165.0, 44.0, 18.0, 8.0],
+        [9.2, 190.0, 4.0, 16.0, 9.3],
+    ];
+
     v_stack((
         v_stack((
             label(move || format!("Update Sequence"))
@@ -1877,6 +1938,262 @@ pub fn sequence_panel(
                         ),
                     ))
                     .style(|s| {
+                        s.flex()
+                            .width(260.0)
+                            .flex_direction(FlexDirection::Row)
+                            .justify_start()
+                            .align_items(AlignItems::Start)
+                            .flex_wrap(FlexWrap::Wrap)
+                            .gap(5.0)
+                            .margin_bottom(5.0)
+                    }),
+                    stack((list(themes.iter().map(|theme: &[f64; 5]| {
+                        let editor_cloned_15 = editor_cloned_15.clone();
+                        let state_cloned_15 = state_cloned_15.clone();
+
+                        let background_color_row = theme[0].trunc() as usize;
+                        let background_color_column = (theme[0].fract() * 10.0) as usize;
+                        let background_color =
+                            colors[background_color_row][background_color_column];
+
+                        println!(
+                            "Background color: {:?} {:?} {:?}",
+                            background_color_row, background_color_column, background_color
+                        );
+
+                        let background_color: Rgb<Rgb, u8> = Rgb::from_str(&background_color)
+                            .expect("Couldn't get background color");
+
+                        let text_color_row = theme[4].trunc() as usize;
+                        let text_color_column = (theme[4].fract() * 10.0) as usize;
+                        let text_color = colors[text_color_row][text_color_column];
+
+                        println!(
+                            "Text color: {:?} {:?} {:?}",
+                            text_color_row, text_color_column, text_color
+                        );
+
+                        let text_color: Rgb<Rgb, u8> =
+                            Rgb::from_str(&text_color).expect("Couldn't get text color");
+
+                        option_button(
+                            "Apply Theme",
+                            "brush",
+                            Some(move || {
+                                // apply theme to background canvas and text objects
+                                println!(
+                                    "Updating text color... {} {} {}",
+                                    text_color.red, text_color.green, text_color.blue
+                                );
+
+                                let text_color_wgpu = rgb_to_wgpu(
+                                    text_color.red,
+                                    text_color.green,
+                                    text_color.blue,
+                                    255.0,
+                                );
+
+                                let text_color = [
+                                    text_color.red as i32,
+                                    text_color.green as i32,
+                                    text_color.blue as i32,
+                                    255,
+                                ];
+
+                                let background_color_wgpu = rgb_to_wgpu(
+                                    background_color.red,
+                                    background_color.green,
+                                    background_color.blue,
+                                    255.0,
+                                );
+
+                                // using for text and canvas, so text_color can provide contrast
+                                let background_color = [
+                                    background_color.red as i32,
+                                    background_color.green as i32,
+                                    background_color.blue as i32,
+                                    255,
+                                ];
+
+                                let mut editor = editor_cloned_15.lock().unwrap();
+
+                                let ids_to_update: Vec<_> = editor
+                                    .text_items
+                                    .iter()
+                                    .filter(|text| {
+                                        text.current_sequence_id.to_string()
+                                            == selected_sequence_id.get()
+                                    })
+                                    .map(|text| text.id)
+                                    .collect();
+
+                                for id in ids_to_update.clone() {
+                                    editor.update_text_color(id, background_color);
+                                }
+
+                                drop(editor);
+
+                                // update selected_text_data
+                                // let mut new_text_data = selected_text_data.get();
+                                // new_text_data.color = color;
+                                // selected_text_data.set(new_text_data);
+
+                                // save to saved_state
+                                let mut editor_state = state_cloned_15.lock().unwrap();
+                                let mut saved_state = editor_state
+                                    .record_state
+                                    .saved_state
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State");
+
+                                saved_state.sequences.iter_mut().for_each(|s| {
+                                    if s.id == selected_sequence_id.get() {
+                                        s.active_text_items.iter_mut().for_each(|t| {
+                                            // if t.id == selected_text_id.get().to_string() {
+                                            t.color = background_color;
+                                            // }
+                                        });
+                                    }
+                                });
+
+                                drop(editor_state);
+
+                                // save_saved_state_raw(saved_state.clone());
+
+                                // editor_state.record_state.saved_state = Some(saved_state.clone());
+
+                                println!("Updating text background...");
+
+                                // let red_human = wgpu_to_human(*h);
+
+                                let mut editor = editor_cloned_15.lock().unwrap();
+
+                                for id in ids_to_update.clone() {
+                                    editor.update_text(
+                                        id,
+                                        "red_fill",
+                                        InputValue::Number(text_color_wgpu[0] as f32),
+                                    );
+                                    editor.update_text(
+                                        id,
+                                        "green_fill",
+                                        InputValue::Number(text_color_wgpu[1] as f32),
+                                    );
+                                    editor.update_text(
+                                        id,
+                                        "blue_fill",
+                                        InputValue::Number(text_color_wgpu[2] as f32),
+                                    );
+                                }
+
+                                drop(editor);
+
+                                let mut editor_state = state_cloned_15.lock().unwrap();
+                                let mut saved_state = editor_state
+                                    .record_state
+                                    .saved_state
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State");
+
+                                saved_state.sequences.iter_mut().for_each(|s| {
+                                    // if s.id == selected_sequence_id.get() {
+                                    s.active_text_items.iter_mut().for_each(|p| {
+                                        // if p.id == self.object_id.to_string() {
+                                        let background_fill = p
+                                            .background_fill
+                                            .as_mut()
+                                            .expect("Couldn't get bg fill");
+                                        *background_fill = text_color;
+                                        // }
+                                    });
+                                    // }
+                                });
+
+                                drop(editor_state);
+
+                                println!("Updating canvas background...");
+
+                                let mut editor = editor_cloned_15.lock().unwrap();
+
+                                let background_uuid = Uuid::from_str(&selected_sequence_id.get())
+                                    .expect("Couldn't convert string to uuid");
+
+                                editor.update_background(
+                                    background_uuid,
+                                    "red",
+                                    InputValue::Number(background_color[0] as f32),
+                                );
+                                editor.update_background(
+                                    background_uuid,
+                                    "green",
+                                    InputValue::Number(background_color[1] as f32),
+                                );
+                                editor.update_background(
+                                    background_uuid,
+                                    "blue",
+                                    InputValue::Number(background_color[2] as f32),
+                                );
+
+                                drop(editor);
+
+                                let mut editor_state = state_cloned_15.lock().unwrap();
+                                let mut saved_state = editor_state
+                                    .record_state
+                                    .saved_state
+                                    .as_mut()
+                                    .expect("Couldn't get Saved State");
+                                // let mut red = h.to_string();
+                                // self.signal.expect("signal error").set(red);
+
+                                saved_state.sequences.iter_mut().for_each(|s| {
+                                    if s.id == selected_sequence_id.get() {
+                                        if s.background_fill.is_none() {
+                                            s.background_fill = Some(BackgroundFill::Color([
+                                                wgpu_to_human(0.8) as i32,
+                                                wgpu_to_human(0.8) as i32,
+                                                wgpu_to_human(0.8) as i32,
+                                                255,
+                                            ]));
+                                        }
+
+                                        let background_fill = s
+                                            .background_fill
+                                            .as_mut()
+                                            .expect("Couldn't get background fill");
+
+                                        match background_fill {
+                                            BackgroundFill::Color(fill) => {
+                                                *fill = background_color;
+                                            }
+                                            _ => {
+                                                println!("Not supported");
+                                            }
+                                        }
+                                    }
+                                });
+
+                                save_saved_state_raw(saved_state.clone());
+                                // editor_state.record_state.saved_state = Some(saved_state.clone()); // all are iter_mut
+
+                                drop(editor_state);
+                            }),
+                            false,
+                        )
+                        .style(move |s| {
+                            s.width(260.0)
+                                .background(Color::rgb8(
+                                    background_color.red,
+                                    background_color.green,
+                                    background_color.blue,
+                                ))
+                                .color(Color::rgb8(
+                                    text_color.red,
+                                    text_color.green,
+                                    text_color.blue,
+                                ))
+                        })
+                    })),))
+                    .style(move |s| {
                         s.flex()
                             .width(260.0)
                             .flex_direction(FlexDirection::Row)
