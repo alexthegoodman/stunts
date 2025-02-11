@@ -552,6 +552,11 @@ pub fn text_properties_view(
     let editor_state10 = Arc::clone(&editor_state);
     let editor_state11 = Arc::clone(&editor_state);
     let editor_state12 = Arc::clone(&editor_state);
+    let editor_state13 = Arc::clone(&editor_state);
+    let editor_state14 = Arc::clone(&editor_state);
+    let editor_state15 = Arc::clone(&editor_state);
+    let editor_state16 = Arc::clone(&editor_state);
+    let editor_state17 = Arc::clone(&editor_state);
 
     let aside_width = 260.0;
     let quarters = (aside_width / 4.0) + (5.0 * 4.0);
@@ -707,6 +712,12 @@ pub fn text_properties_view(
                 let editor_state9 = editor_state9.clone();
                 let editor_state10 = editor_state10.clone();
                 let editor_state11 = editor_state11.clone();
+                let editor_state12 = editor_state12.clone();
+                let editor_state13 = editor_state13.clone();
+                let editor_state14 = editor_state14.clone();
+                let editor_state15 = editor_state15.clone();
+                let editor_state16 = editor_state16.clone();
+                let editor_state17 = editor_state17.clone();
 
                 if defaults_are_set {
                     v_stack((
@@ -844,6 +855,69 @@ pub fn text_properties_view(
                                 on_font_selection,
                             ),
                             rgb_view_debounced(on_color_update, init_red, init_green, init_blue),
+                        )),
+                        v_stack((
+                            label(|| "Background Color").style(|s| s.margin_bottom(5.0)),
+                            h_stack((
+                                debounce_input(
+                                    "Red:".to_string(),
+                                    &selected_text_data.read().borrow().background_fill[0]
+                                        .to_string(),
+                                    "0-255",
+                                    move |value| {
+                                        let mut editor_state = editor_state12.lock().unwrap();
+
+                                        editor_state
+                                            .update_fill_red(&value, selected_sequence_id.get())
+                                            .expect("Couldn't update red");
+
+                                        drop(editor_state);
+                                    },
+                                    editor_state13,
+                                    "red_fill".to_string(),
+                                    ObjectType::TextItem,
+                                )
+                                .style(move |s| s.width(thirds).margin_right(5.0)),
+                                debounce_input(
+                                    "Green:".to_string(),
+                                    &selected_text_data.read().borrow().background_fill[1]
+                                        .to_string(),
+                                    "0-255",
+                                    move |value| {
+                                        let mut editor_state = editor_state14.lock().unwrap();
+
+                                        editor_state
+                                            .update_fill_green(&value, selected_sequence_id.get())
+                                            .expect("Couldn't update green");
+
+                                        drop(editor_state);
+                                    },
+                                    editor_state15,
+                                    "green_fill".to_string(),
+                                    ObjectType::TextItem,
+                                )
+                                .style(move |s| s.width(thirds).margin_right(5.0)),
+                                debounce_input(
+                                    "Blue:".to_string(),
+                                    &selected_text_data.read().borrow().background_fill[2]
+                                        .to_string(),
+                                    "0-255",
+                                    move |value| {
+                                        let mut editor_state = editor_state16.lock().unwrap();
+
+                                        editor_state
+                                            .update_fill_blue(&value, selected_sequence_id.get())
+                                            .expect("Couldn't update blue");
+
+                                        drop(editor_state);
+                                    },
+                                    editor_state17,
+                                    "blue_fill".to_string(),
+                                    ObjectType::TextItem,
+                                )
+                                .style(move |s| s.width(thirds)),
+                            ))
+                            .style(move |s| s.width(aside_width)),
                         )),
                         keyframe_tools(
                             editor_cloned6,

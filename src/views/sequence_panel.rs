@@ -1578,7 +1578,7 @@ pub fn sequence_panel(
                                 let random_number_450 = rng.gen_range(0..=450);
 
                                 let new_id = Uuid::new_v4();
-                                let new_text = "Hello world!".to_string();
+                                let new_text = "New text".to_string();
                                 let font_family = "Aleo".to_string();
 
                                 let position = Point {

@@ -370,6 +370,80 @@ impl Edit for ObjectEdit {
                     save_saved_state_raw(saved_state.clone());
                 }
             }
+
+            ObjectProperty::FillRed(h) => {
+                // let mut stroke_green = h.to_string();
+                let red_human = wgpu_to_human(*h);
+
+                editor.update_text(self.object_id, "red_fill", InputValue::Number(*h));
+
+                self.signal
+                    .expect("signal error")
+                    .set(red_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[0] = red_human as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+            ObjectProperty::FillGreen(h) => {
+                // let mut stroke_green = h.to_string();
+                let green_human = wgpu_to_human(*h);
+
+                editor.update_text(self.object_id, "green_fill", InputValue::Number(*h));
+
+                self.signal
+                    .expect("signal error")
+                    .set(green_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[1] = green_human as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+            ObjectProperty::FillBlue(h) => {
+                // let mut stroke_green = h.to_string();
+                let blue_human = wgpu_to_human(*h);
+
+                editor.update_text(self.object_id, "blue_fill", InputValue::Number(*h));
+
+                self.signal
+                    .expect("signal error")
+                    .set(blue_human.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[2] = blue_human as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+
             ObjectProperty::BorderRadius(h) => {
                 editor.update_polygon(self.object_id, "border_radius", InputValue::Number(*h));
 
@@ -692,6 +766,78 @@ impl Edit for ObjectEdit {
 
                 save_saved_state_raw(saved_state.clone());
             }
+
+            ObjectProperty::FillRed(h) => {
+                // let mut stroke_green = h.to_string();
+                // let red_human = wgpu_to_human(*h);
+
+                editor.update_text(self.object_id, "red_fill", InputValue::Number(*h));
+
+                self.signal.expect("signal error").set(h.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[0] = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+            ObjectProperty::FillGreen(h) => {
+                // let mut stroke_green = h.to_string();
+                let green_human = wgpu_to_human(*h);
+
+                editor.update_text(
+                    self.object_id,
+                    "green_fill",
+                    InputValue::Number(green_human),
+                );
+
+                self.signal.expect("signal error").set(h.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[1] = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+            ObjectProperty::FillBlue(h) => {
+                // let mut stroke_green = h.to_string();
+                let blue_human = wgpu_to_human(*h);
+
+                editor.update_text(self.object_id, "blue_fill", InputValue::Number(blue_human));
+
+                self.signal.expect("signal error").set(h.to_string());
+
+                saved_state.sequences.iter_mut().for_each(|s| {
+                    // if s.id == selected_sequence_id.get() {
+                    s.active_text_items.iter_mut().for_each(|p| {
+                        if p.id == self.object_id.to_string() {
+                            let background_fill =
+                                p.background_fill.as_mut().expect("Couldn't get bg fill");
+                            background_fill[2] = *h as i32;
+                        }
+                    });
+                    // }
+                });
+
+                save_saved_state_raw(saved_state.clone());
+            }
+
             ObjectProperty::BorderRadius(h) => {
                 editor.update_polygon(self.object_id, "border_radius", InputValue::Number(*h));
 
@@ -1522,6 +1668,118 @@ impl EditorState {
                     .get(&format!("height{}", object_id))
                     .cloned()
                     .expect("Couldn't get height value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_fill_red(
+        &mut self,
+        new_red_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_red = string_to_f32(new_red_str).map_err(|_| "Couldn't convert string to f32")?;
+        let new_red = color_to_wgpu(new_red);
+
+        let old_red = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_fill_red(self.selected_text_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_text_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::FillRed(old_red),
+            new_value: ObjectProperty::FillRed(new_red),
+            field_name: "red_fill".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("red_fill{}", self.selected_text_id))
+                    .cloned()
+                    .expect("Couldn't get red_fill value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_fill_green(
+        &mut self,
+        new_green_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_green =
+            string_to_f32(new_green_str).map_err(|_| "Couldn't convert string to f32")?;
+        let new_green = color_to_wgpu(new_green);
+
+        let old_green = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_fill_green(self.selected_text_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_text_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::FillGreen(old_green),
+            new_value: ObjectProperty::FillGreen(new_green),
+            field_name: "green_fill".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("green_fill{}", self.selected_text_id))
+                    .cloned()
+                    .expect("Couldn't get green_fill value signal"),
+            ),
+        };
+
+        let mut record = self.record.lock().unwrap();
+        record.edit(&mut self.record_state, edit);
+
+        Ok(())
+    }
+
+    pub fn update_fill_blue(
+        &mut self,
+        new_blue_str: &str,
+        selected_sequence_id: String,
+    ) -> Result<(), String> {
+        let new_blue = string_to_f32(new_blue_str).map_err(|_| "Couldn't convert string to f32")?;
+        let new_blue = color_to_wgpu(new_blue);
+
+        let old_blue = {
+            let editor = self.editor.lock().unwrap();
+            editor.get_fill_blue(self.selected_text_id)
+        };
+
+        let edit = ObjectEdit {
+            object_id: self.selected_text_id,
+            object_type: ObjectType::Polygon,
+            background_flag: true,
+            selected_sequence_id: Some(selected_sequence_id),
+            old_value: ObjectProperty::FillBlue(old_blue),
+            new_value: ObjectProperty::FillBlue(new_blue),
+            field_name: "blue_fill".to_string(),
+            signal: Some(
+                self.value_signals
+                    .lock()
+                    .unwrap()
+                    .get(&format!("blue_fill{}", self.selected_text_id))
+                    .cloned()
+                    .expect("Couldn't get blue_fill value signal"),
             ),
         };
 
