@@ -523,6 +523,7 @@ pub fn project_view(
         layer: -2,
         color: [0, 0, 0, 255],
         font_size: 28,
+        background_fill: [200, 200, 200, 255],
     });
 
     let video_selected: RwSignal<bool> = create_rw_signal(false);
@@ -1217,6 +1218,9 @@ pub fn project_view(
                                 layer: text.layer.clone(),
                                 color: text.color.clone(),
                                 font_size: text.font_size.clone(),
+                                background_fill: text
+                                    .background_fill
+                                    .unwrap_or([200, 200, 200, 255]),
                             },
                         );
                     }

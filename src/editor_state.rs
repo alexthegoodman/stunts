@@ -1168,7 +1168,7 @@ impl EditorState {
             });
 
             let mut zoom_prop = AnimationProperty {
-                name: "Mouse Zoom".to_string(),
+                name: "Zoom / Popout".to_string(),
                 property_path: "zoom".to_string(),
                 children: Vec::new(),
                 keyframes: zoom_keyframes,

@@ -36,6 +36,7 @@ use stunts_engine::polygon::{
 };
 use stunts_engine::st_image::{SavedStImageConfig, StImage, StImageConfig};
 use stunts_engine::st_video::{SavedStVideoConfig, StVideoConfig};
+use stunts_engine::text;
 use stunts_engine::text_due::{SavedTextRendererConfig, TextRenderer, TextRendererConfig};
 use uuid::Uuid;
 
@@ -991,6 +992,7 @@ pub fn sequence_panel(
                             layer: text_config.layer.clone(),
                             color: text_config.color.clone(),
                             font_size: text_config.font_size.clone(),
+                            background_fill: Some(text_config.background_fill),
                         });
                 }
                 LayerKind::Image => {
@@ -1594,6 +1596,7 @@ pub fn sequence_panel(
                                     layer: -2,
                                     color: [20, 20, 200, 255],
                                     font_size: 28,
+                                    background_fill: [200, 200, 200, 255],
                                 };
 
                                 let gpu_helper = gpu_cloned_2.lock().unwrap();
@@ -1642,6 +1645,7 @@ pub fn sequence_panel(
                                         layer: text_config.layer.clone(),
                                         color: text_config.color.clone(),
                                         font_size: text_config.font_size.clone(),
+                                        background_fill: Some(text_config.background_fill),
                                     },
                                 );
 

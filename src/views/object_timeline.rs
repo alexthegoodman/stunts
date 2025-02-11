@@ -29,6 +29,7 @@ use std::sync::Mutex;
 use stunts_engine::animations::AnimationData;
 use stunts_engine::animations::ObjectType;
 use stunts_engine::animations::Sequence;
+use stunts_engine::editor::wgpu_to_human;
 use stunts_engine::editor::Editor;
 use stunts_engine::editor::Point;
 use stunts_engine::editor::CANVAS_HORIZ_OFFSET;
@@ -286,9 +287,20 @@ pub fn timeline_object_track(
                                     },
                                     layer: related_text.layer,
                                     color: related_text.color,
-                                    font_size: related_text.font_size, // border_radius: polygon.border_radius,
-                                                                       // fill: polygon.fill,
-                                                                       // stroke: polygon.stroke,
+                                    font_size: related_text.font_size,
+                                    background_fill: [
+                                        wgpu_to_human(related_text.background_polygon.fill[0])
+                                            as i32,
+                                        wgpu_to_human(related_text.background_polygon.fill[1])
+                                            as i32,
+                                        wgpu_to_human(related_text.background_polygon.fill[2])
+                                            as i32,
+                                        wgpu_to_human(related_text.background_polygon.fill[3])
+                                            as i32,
+                                    ],
+                                    // border_radius: polygon.border_radius,
+                                    // fill: polygon.fill,
+                                    // stroke: polygon.stroke,
                                 },
                             );
                             editor.selected_polygon_id = related_text.id; // TODO: separate property for each object type?

@@ -277,6 +277,55 @@ fn create_render_callback<'a>() -> Box<RenderCallback<'a>> {
                 // draw text items
                 for (text_index, text_item) in editor.text_items.iter().enumerate() {
                     if !text_item.hidden {
+                        if !text_item.background_polygon.hidden {
+                            // uniform buffers are pricier, no reason to over-update when idle
+                            // also need to remember to update uniform buffers after changes like scale, rotation, position
+                            if let Some(dragging_id) = editor.dragging_text {
+                                if dragging_id == text_item.background_polygon.id {
+                                    text_item
+                                        .background_polygon
+                                        .transform
+                                        .update_uniform_buffer(
+                                            &gpu_resources.queue,
+                                            &camera.window_size,
+                                        );
+                                }
+                            } else if editor.is_playing {
+                                // still need to be careful of playback performance
+                                text_item
+                                    .background_polygon
+                                    .transform
+                                    .update_uniform_buffer(
+                                        &gpu_resources.queue,
+                                        &camera.window_size,
+                                    );
+                            }
+
+                            render_pass.set_bind_group(
+                                1,
+                                &text_item.background_polygon.bind_group,
+                                &[],
+                            );
+                            render_pass.set_bind_group(
+                                3,
+                                &text_item.background_polygon.group_bind_group,
+                                &[],
+                            );
+                            render_pass.set_vertex_buffer(
+                                0,
+                                text_item.background_polygon.vertex_buffer.slice(..),
+                            );
+                            render_pass.set_index_buffer(
+                                text_item.background_polygon.index_buffer.slice(..),
+                                wgpu::IndexFormat::Uint32,
+                            );
+                            render_pass.draw_indexed(
+                                0..text_item.background_polygon.indices.len() as u32,
+                                0,
+                                0..1,
+                            );
+                        }
+
                         // uniform buffers are pricier, no reason to over-update when idle
                         if let Some(dragging_id) = editor.dragging_text {
                             if dragging_id == text_item.id {
