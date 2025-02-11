@@ -102,6 +102,15 @@ fn find_object_type(last_saved_state: &SavedState, object_id: &Uuid) -> Option<O
         return Some(ObjectType::TextItem);
     }
 
+    // Check active videos
+    if last_saved_state.sequences.iter().any(|s| {
+        s.active_video_items
+            .iter()
+            .any(|at| at.id == object_id.to_string())
+    }) {
+        return Some(ObjectType::VideoItem);
+    }
+
     None
 }
 
