@@ -480,6 +480,8 @@ pub fn sequence_panel(
     let selected_count = create_rw_signal("4".to_string());
 
     let curve_is_checked = create_rw_signal(false);
+    let choreographed_is_checked = create_rw_signal(true);
+    let fade_is_checked = create_rw_signal(true);
 
     let background_polygon_data: RwSignal<PolygonConfig> = create_rw_signal(PolygonConfig {
         id: Uuid::nil(),
@@ -542,10 +544,14 @@ pub fn sequence_panel(
 
         move |_| {
             let is_curved = curve_is_checked.get();
+            let is_choreographed = choreographed_is_checked.get();
+            let is_fade = fade_is_checked.get();
 
             let mut editor = editor_cloned_6.lock().unwrap();
 
             editor.generation_curved = is_curved;
+            editor.generation_choreographed = is_choreographed;
+            editor.generation_fade = is_fade;
 
             drop(editor);
         }
@@ -1306,6 +1312,11 @@ pub fn sequence_panel(
                         Checkbox::new_labeled_rw(curve_is_checked, || "Curved Paths"),
                     ))
                     .style(|s| s.margin_bottom(5.0)),
+                    h_stack((
+                        Checkbox::new_labeled_rw(choreographed_is_checked, || "Auto-Choreograph"),
+                        Checkbox::new_labeled_rw(fade_is_checked, || "Auto-Fade"),
+                    ))
+                    .style(|s| s.margin_bottom(5.0)),
                     v_stack((simple_button("Generate Animation".to_string(), move |_| {
                         // hook into CommonMotion2D run_motion_inference
                         let mut editor = editor_cloned_4.lock().unwrap();
@@ -1956,10 +1967,10 @@ pub fn sequence_panel(
                         let background_color =
                             colors[background_color_row][background_color_column];
 
-                        println!(
-                            "Background color: {:?} {:?} {:?}",
-                            background_color_row, background_color_column, background_color
-                        );
+                        // println!(
+                        //     "Background color: {:?} {:?} {:?}",
+                        //     background_color_row, background_color_column, background_color
+                        // );
 
                         let background_color: Rgb<Rgb, u8> = Rgb::from_str(&background_color)
                             .expect("Couldn't get background color");
@@ -1968,10 +1979,10 @@ pub fn sequence_panel(
                         let text_color_column = (theme[4].fract() * 10.0) as usize;
                         let text_color = colors[text_color_row][text_color_column];
 
-                        println!(
-                            "Text color: {:?} {:?} {:?}",
-                            text_color_row, text_color_column, text_color
-                        );
+                        // println!(
+                        //     "Text color: {:?} {:?} {:?}",
+                        //     text_color_row, text_color_column, text_color
+                        // );
 
                         let text_color: Rgb<Rgb, u8> =
                             Rgb::from_str(&text_color).expect("Couldn't get text color");

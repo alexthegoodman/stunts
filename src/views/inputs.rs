@@ -374,7 +374,8 @@ where
                 dropdown_open.set(true);
             }),
             label(move || label_text.get()),
-        )),
+        ))
+        .style(|s| s.flex().flex_row().align_items(AlignItems::Center)),
         dyn_container(
             move || dropdown_open.get(),
             move |is_dropdown_open| {
