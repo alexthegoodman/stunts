@@ -1,5 +1,7 @@
 # Stunts - Professional Video Editor
 
+**Note: This repo is deprecated. Please use the newer repo: https://github.com/alexthegoodman/stunts-native**
+
 Requires these repos aside this one:
 
 - `common-floem`
